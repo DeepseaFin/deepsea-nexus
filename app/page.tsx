@@ -256,7 +256,7 @@ export default function DeepseaNexusPlatform() {
 
             <div>
               <label className="block text-sm text-slate-400 mb-3">Nature of Receivables</label>
-              <textarea rows="4" className="w-full bg-[#0c1c2c] border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400" placeholder="Describe receivables structure"></textarea>
+              <textarea rows={4} className="w-full bg-[#0c1c2c] border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400" placeholder="Describe receivables structure"></textarea>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
