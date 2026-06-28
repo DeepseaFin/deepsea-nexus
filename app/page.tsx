@@ -5,6 +5,7 @@ import Solutions from "@/components/Solutions";
 import Industries from "@/components/Industries";
 import WhyNexus from "@/components/WhyNexus";
 import FundingProcess from "@/components/FundingProcess";
+import FundingCalculator from "@/components/FundingCalculator";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <Industries />
       <WhyNexus />
       <FundingProcess />
+      <FundingCalculator />
     </>
   );
 }
