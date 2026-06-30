@@ -18,6 +18,8 @@ export interface Invoice {
   currency: string;
   invoiceValue: number;
   description: string;
+  maturityDate?: string;
+  referenceNumber?: string;
 }
 
 export interface Financial {
@@ -29,6 +31,8 @@ export interface Financial {
   grossReturn: number;
   netReturn: number;
   brokerCommission: number;
+  expectedReturn?: number;
+  riskRating?: string;
 }
 
 export interface Pricing {
@@ -37,12 +41,28 @@ export interface Pricing {
   discountRate: number;
   brokerCommission: number;
   tenureDays: number;
+  fundingAmount?: number;
+  discountFee?: number;
+  netDisbursement?: number;
+}
+
+export interface Risk {
+  rating: string;
+  score?: number;
+  dealSizePass?: boolean;
+  minimumReturnPass?: boolean;
+  documentationPass?: boolean;
 }
 
 export interface Deal {
+  id?: string;
+  title?: string;
+  status?: string;
+  createdAt?: string;
   seller: Seller;
   counterparty: Counterparty;
   invoice: Invoice;
   financial: Financial;
   pricing: Pricing;
+  risk: Risk;
 }

@@ -1,4 +1,21 @@
+"use client";
+
+import { useDeal } from "@/components/atlas/common/DealContext";
+import { calculatePricing } from "@/components/lib/engines/pricing";
+
 export default function FinancialSummary() {
+  const { deal } = useDeal();
+  const pricing = calculatePricing({
+    invoiceValue: deal.pricing.invoiceValue,
+    advanceRate: deal.pricing.advanceRate,
+    tenure: deal.pricing.tenureDays,
+    discountRate: deal.pricing.discountRate,
+    brokerCommission: deal.pricing.brokerCommission,
+  });
+
+  const formatMoney = (value: number) =>
+    `AED ${new Intl.NumberFormat("en-AE").format(value)}`;
+
   return (
     <div className="mt-8 bg-slate-900 rounded-2xl p-6">
 
@@ -10,43 +27,43 @@ export default function FinancialSummary() {
 
         <Metric
           title="Invoice Value"
-          value="AED 2,500,000"
+          value={formatMoney(deal.invoice.invoiceValue)}
         />
 
         <Metric
           title="Advance"
-          value="90%"
+          value={`${deal.pricing.advanceRate}%`}
         />
 
         <Metric
           title="Funding Amount"
-          value="AED 2,250,000"
+          value={formatMoney(pricing.fundingAmount)}
         />
 
         <Metric
           title="Tenure"
-          value="90 Days"
+          value={`${deal.pricing.tenureDays} Days`}
         />
 
         <Metric
-          title="Discount Rate"
-          value="1.65%"
+          title="Discount Fee"
+          value={formatMoney(pricing.discountFee)}
         />
 
         <Metric
           title="Gross Return"
-          value="18.20%"
+          value={`${deal.financial.grossReturn}%`}
         />
 
         <Metric
-          title="Net Return"
-          value="16.90%"
+          title="Net Disbursement"
+          value={formatMoney(pricing.netDisbursement)}
           highlight
         />
 
         <Metric
-          title="Broker Commission"
-          value="2.00%"
+          title="Broker Fee"
+          value={formatMoney(pricing.brokerFee)}
         />
 
       </div>

@@ -1,23 +1,38 @@
+"use client";
+
+import { useDeal } from "@/components/atlas/common/DealContext";
+
 const cards = [
   {
     title: "Invoice Value",
-    value: "AED 2,500,000",
+    value: "invoiceValue",
   },
   {
     title: "Funding Required",
-    value: "AED 2,250,000",
+    value: "fundingAmount",
   },
   {
     title: "Expected Return",
-    value: "18.20%",
+    value: "expectedReturn",
   },
   {
     title: "Risk Rating",
-    value: "AA",
+    value: "riskRating",
   },
 ];
 
 export default function DealKPIs() {
+  const { deal } = useDeal();
+
+  const numberFormatter = new Intl.NumberFormat("en-AE");
+
+  const cardValues = {
+    invoiceValue: `AED ${new Intl.NumberFormat("en-AE").format(deal.invoice.invoiceValue)}`,
+    fundingAmount: `AED ${new Intl.NumberFormat("en-AE").format(deal.financial.fundingAmount)}`,
+    expectedReturn: `${deal.financial.expectedReturn?.toFixed(2)}%`,
+    riskRating: deal.risk.rating,
+  };
+
   return (
     <div className="grid grid-cols-4 gap-6">
 
@@ -33,7 +48,7 @@ export default function DealKPIs() {
           </p>
 
           <h2 className="text-3xl font-bold text-white mt-3">
-            {card.value}
+            {cardValues[card.value as keyof typeof cardValues]}
           </h2>
 
         </div>
