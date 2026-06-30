@@ -1,0 +1,58 @@
+import type { DealEvent } from "./DealEvent";
+
+export const sampleEvents: DealEvent[] = [
+  {
+    id: "evt-001",
+    timestamp: "2026-06-30T09:12:00Z",
+    type: "deal_created",
+    title: "Deal Created",
+    description: "Deepak Singh created Deal DNX-2026-000001",
+    user: "Deepak Singh",
+    status: "completed",
+  },
+  {
+    id: "evt-002",
+    timestamp: "2026-06-30T09:25:00Z",
+    type: "seller_verified",
+    title: "Seller Verified",
+    description: "KYC completed successfully",
+    user: "KYC Team",
+    status: "completed",
+  },
+  {
+    id: "evt-003",
+    timestamp: "2026-06-30T09:42:00Z",
+    type: "pricing_calculated",
+    title: "Pricing Calculated",
+    description: "Funding Amount AED 2,250,000",
+    user: "Pricing Engine",
+    status: "completed",
+  },
+  {
+    id: "evt-004",
+    timestamp: "2026-06-30T10:05:00Z",
+    type: "credit_started",
+    title: "Credit Review Started",
+    description: "Assigned to Credit Team",
+    user: "Credit Team",
+    status: "current",
+  },
+  {
+    id: "evt-005",
+    timestamp: "2026-06-30T10:32:00Z",
+    type: "documents_uploaded",
+    title: "Invoice Uploaded",
+    description: "Invoice INV-2026-001 uploaded",
+    user: "Seller Ops",
+    status: "future",
+  },
+  {
+    id: "evt-006",
+    timestamp: "2026-06-30T11:10:00Z",
+    type: "credit_approved",
+    title: "Current Stage",
+    description: "Waiting for Credit Approval",
+    user: "Credit Team",
+    status: "future",
+  },
+];

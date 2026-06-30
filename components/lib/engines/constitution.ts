@@ -1,3 +1,5 @@
+import type { Deal } from "@/atlas-core/models/Deal";
+
 export interface ConstitutionResult {
   dealSize: boolean;
   minimumReturn: boolean;
@@ -5,21 +7,16 @@ export interface ConstitutionResult {
   documentation: boolean;
 }
 
-export function evaluateConstitution(deal: any): ConstitutionResult {
+export function evaluateConstitution(deal: Deal): ConstitutionResult {
   return {
+    dealSize: deal.financial.fundingAmount <= 500000,
 
-    dealSize:
-      deal.financial.fundingAmount <= 500000,
+    minimumReturn: deal.financial.netReturn >= 15,
 
-    minimumReturn:
-      deal.financial.netReturn >= 15,
-
-    rating:
-      ["AAA", "AA"].includes(
-        deal.counterparty.rating
-      ),
+    rating: ["AAA", "AA"].includes(
+      deal.counterparty.internalRating
+    ),
 
     documentation: true,
-
   };
 }

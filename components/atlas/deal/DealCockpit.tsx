@@ -3,6 +3,8 @@ import DealOverview from "./DealOverview";
 import DealHeader from "./DealHeader";
 import DealKPIs from "./DealKPIs";
 import DealTabs from "./DealTabs";
+import PricingEditor from "./PricingEditor";
+import DealWorkspace from "@/components/atlas/workspace/DealWorkspace";
 
 export default function DealCockpit() {
   return (
@@ -13,6 +15,8 @@ export default function DealCockpit() {
       <DealKPIs />
 
       <DealTabs />
+      <DealWorkspace />
+      <PricingEditor />
       <DealOverview />
       <FinancialSummary />
 

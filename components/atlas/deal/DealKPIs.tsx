@@ -24,8 +24,6 @@ const cards = [
 export default function DealKPIs() {
   const { deal } = useDeal();
 
-  const numberFormatter = new Intl.NumberFormat("en-AE");
-
   const cardValues = {
     invoiceValue: `AED ${new Intl.NumberFormat("en-AE").format(deal.invoice.invoiceValue)}`,
     fundingAmount: `AED ${new Intl.NumberFormat("en-AE").format(deal.financial.fundingAmount)}`,
