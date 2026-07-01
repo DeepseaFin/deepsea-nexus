@@ -4,9 +4,9 @@ import { useState } from "react";
 import DealHeader from "./DealHeader";
 import DealKPIs from "./DealKPIs";
 import DealTabs from "./DealTabs";
-import OverviewWorkspace from "@/components/atlas/workspaces/OverviewWorkspace";
-import PricingWorkspace from "@/components/atlas/workspaces/PricingWorkspace";
-import DocumentsWorkspace from "@/components/atlas/workspaces/DocumentsWorkspace";
+import OverviewWorkspace from "@/components/atlas/workspace/OverviewWorkspace";
+import PricingWorkspace from "@/components/atlas/workspace/PricingWorkspace";
+import DocumentsWorkspace from "@/components/atlas/workspace/DocumentsWorkspace";
 
 export default function DealCockpit() {
   const [activeTab, setActiveTab] = useState<string>("Overview");
