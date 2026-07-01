@@ -10,7 +10,7 @@ import EvidencePanel from '@/components/atlas/intelligence/EvidencePanel';
 import FindingsPanel from '@/components/atlas/intelligence/FindingsPanel';
 import RecommendationPanel from '@/components/atlas/intelligence/RecommendationPanel';
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
-import sampleDocumentIntelligence from '@/components/atlas/intelligence/sampleDocumentIntelligence';
+import sampleDocumentIntelligence from '@/atlas-core/intelligence/sampleDocumentIntelligence';
 
 export default function DocumentsWorkspace() {
   const intelligence = sampleDocumentIntelligence;
