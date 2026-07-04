@@ -12,9 +12,12 @@ import FindingsPanel from '@/components/atlas/intelligence/FindingsPanel';
 import RecommendationPanel from '@/components/atlas/intelligence/RecommendationPanel';
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
 import { documentEngine } from '@/atlas-core/engines/DocumentEngine';
+import { decisionOrchestrator } from '@/atlas-core/orchestrator/DecisionOrchestrator';
+import { FindingCategory, FindingSeverity } from '@/atlas-core/intelligence/types';
+import { VerdictBand } from '@/atlas-core/intelligence/verdict';
 
 export default function DocumentsWorkspace() {
-  const documentIntelligence = {
+  const documentIntelligenceInput = {
     metadata: {
       analysisDuration: 2847,
       analyzedAt: new Date().toISOString(),
@@ -123,17 +126,74 @@ export default function DocumentsWorkspace() {
     ],
   };
 
-  const intelligenceResult = documentEngine.run(documentIntelligence);
+  const documentEngineResult = documentEngine.run(documentIntelligenceInput);
+  const orchestratedDecision = decisionOrchestrator.run([documentEngineResult]);
 
-  const intelligence = {
-    ...documentIntelligence,
-    trustScore: intelligenceResult.trustScore.overall,
-    executiveSummary: {
-      ...documentIntelligence.executiveSummary,
-      summary: intelligenceResult.summary,
-      timestamp: intelligenceResult.completedAt,
-      score: intelligenceResult.confidence,
-    },
+  const recommendationByVerdict: Record<VerdictBand, 'approve' | 'conditional' | 'review' | 'reject'> = {
+    [VerdictBand.Proceed]: 'approve',
+    [VerdictBand.ProceedWithConditions]: 'conditional',
+    [VerdictBand.Hold]: 'review',
+    [VerdictBand.DoNotProceed]: 'reject',
+  };
+
+  const recommendationForSummary = recommendationByVerdict[orchestratedDecision.verdict.band];
+
+  const evidence = documentEngineResult.evidence.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: 'Sourced from Document Engine output.',
+    source: item.source,
+    confidence: item.confidence,
+    status: item.source.toLowerCase() === 'pending' ? 'missing' as const : 'complete' as const,
+  }));
+
+  const findings = {
+    strengths: orchestratedDecision.findings
+      .filter((item) => item.category === FindingCategory.Document)
+      .map((item) => ({
+        id: item.id,
+        text: item.description,
+        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
+      })),
+    observations: orchestratedDecision.findings
+      .filter((item) => item.category !== FindingCategory.Document && item.category !== FindingCategory.Fraud)
+      .map((item) => ({
+        id: item.id,
+        text: item.description,
+        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
+      })),
+    risks: orchestratedDecision.findings
+      .filter((item) => item.category === FindingCategory.Fraud)
+      .map((item) => ({
+        id: item.id,
+        text: item.description,
+        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
+      })),
+  };
+
+  const recommendation = {
+    recommendation:
+      recommendationForSummary === 'review' ? 'conditional' : recommendationForSummary,
+    reasons:
+      orchestratedDecision.recommendations.length > 0
+        ? orchestratedDecision.recommendations.map((item) => item.title)
+        : ['No recommendation factors available yet from orchestrated engines.'],
+    confidence: orchestratedDecision.dealConfidence.confidence,
+  };
+
+  const criticalBlockers =
+    orchestratedDecision.dealConfidence.blockers.length > 0
+      ? orchestratedDecision.dealConfidence.blockers
+      : ['No critical blockers flagged by placeholder orchestration.'];
+
+  const actions = documentIntelligenceInput.actions;
+
+  const summary = {
+    summary: orchestratedDecision.summary,
+    recommendation: recommendationForSummary,
+    status: 'completed' as const,
+    timestamp: orchestratedDecision.verdict.issuedAt,
+    score: orchestratedDecision.dealConfidence.score,
   };
 
   return (
@@ -142,40 +202,40 @@ export default function DocumentsWorkspace() {
       subtitle="Executive Due Diligence Report"
       rightSidebar={
         <div className="space-y-6">
-          <TrustScore score={intelligence.trustScore} label="Document Readiness" />
-          {intelligence.recommendations.map((rec) => (
+          <TrustScore score={orchestratedDecision.trustScore} label="Document Readiness" />
+          {[recommendation].map((rec) => (
   <RecommendationPanel
-    key={rec.id}
+    key="orchestrated-recommendation"
     recommendation={rec.recommendation}
     reasons={rec.reasons}
     confidence={rec.confidence}
   />
 ))}
-          <ActionPanel actions={intelligence.actions} title="Next Actions" />
+          <ActionPanel actions={actions} title="Next Actions" />
         </div>
       }
     >
       <ExecutiveVerdict
         title="ATLAS Executive Verdict"
-        recommendation="Proceed to Legal Review"
-        overallReadiness={94}
-        riskLevel="Low"
-        criticalBlockers={['Board Resolution Missing']}
+        recommendation={orchestratedDecision.verdict.title}
+        overallReadiness={orchestratedDecision.dealConfidence.score}
+        riskLevel={orchestratedDecision.verdict.band}
+        criticalBlockers={criticalBlockers}
         estimatedFundingTime="2 Business Days"
       />
 
       <ExecutiveSummary
-  summary={intelligence.executiveSummary.summary}
-  recommendation={intelligence.executiveSummary.recommendation}
-  status="completed"
-  timestamp={intelligence.executiveSummary.timestamp}
-  score={intelligence.executiveSummary.score}
+  summary={summary.summary}
+  recommendation={summary.recommendation}
+  status={summary.status}
+  timestamp={summary.timestamp}
+  score={summary.score}
 />
 
       <div className="space-y-6">
         <SectionCard title="Document Vault" icon={FileCheck}>
           <div className="space-y-2">
-            {intelligence.evidence.map((doc) => (
+            {evidence.map((doc) => (
               <div
                 key={doc.id}
                 className={`flex items-center justify-between rounded-lg bg-slate-800/50 p-3 border ${
@@ -193,9 +253,9 @@ export default function DocumentsWorkspace() {
           </div>
         </SectionCard>
 
-        <EvidencePanel evidence={intelligence.evidence} />
+        <EvidencePanel evidence={evidence} />
 
-        <FindingsPanel findings={intelligence.findings} />
+        <FindingsPanel findings={findings} />
       </div>
     </IntelligenceLayout>
   );
