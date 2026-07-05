@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { FileCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { FileCheck } from 'lucide-react';
 import IntelligenceLayout from '@/components/atlas/intelligence/IntelligenceLayout';
 import ExecutiveVerdict from '@/components/atlas/intelligence/ExecutiveVerdict';
 import ExecutiveSummary from '@/components/atlas/intelligence/ExecutiveSummary';
@@ -11,189 +11,97 @@ import EvidencePanel from '@/components/atlas/intelligence/EvidencePanel';
 import FindingsPanel from '@/components/atlas/intelligence/FindingsPanel';
 import RecommendationPanel from '@/components/atlas/intelligence/RecommendationPanel';
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
-import { documentEngine } from '@/atlas-core/engines/DocumentEngine';
+import DocumentUploadZone from '@/components/atlas/documents/DocumentUploadZone';
 import { decisionOrchestrator } from '@/atlas-core/orchestrator/DecisionOrchestrator';
-import { FindingCategory, FindingSeverity } from '@/atlas-core/intelligence/types';
-import { VerdictBand } from '@/atlas-core/intelligence/verdict';
+import type { UploadedFileView } from '@/components/atlas/documents/DocumentUploadZone';
 
 export default function DocumentsWorkspace() {
-  const documentIntelligenceInput = {
-    metadata: {
-      analysisDuration: 2847,
-      analyzedAt: new Date().toISOString(),
-      analysisId: 'analysis-2026-07-001',
-    },
-    executiveSummary: {
-      recommendation: 'approve' as const,
-      score: 94,
-      timestamp: new Date().toISOString(),
-      summary:
-        'Atlas analysed four uploaded documents. Three documents satisfy constitutional requirements. One mandatory Board Resolution is missing. No document tampering detected. Funding readiness remains high pending document completion.',
-    },
-    confidence: {
-      overall: 94,
-      documentAnalysis: 96,
-      fraudDetection: 98,
-      legalCompliance: 92,
-    },
-    trustScore: 94,
-    evidence: [
-      {
-        id: 'ev-001',
-        title: 'Invoice',
-        description: 'Corporate invoice with supplier verification and payment terms',
-        source: 'Uploaded 2026-06-28T14:22:00Z',
-        confidence: 98,
-        status: 'complete' as const,
-      },
-      {
-        id: 'ev-002',
-        title: 'Purchase Order',
-        description: 'Authorized purchase order with procurement approval signatures',
-        source: 'Uploaded 2026-06-28T14:25:30Z',
-        confidence: 95,
-        status: 'complete' as const,
-      },
-      {
-        id: 'ev-003',
-        title: 'Credit Summary',
-        description: 'Credit analysis and scoring summary with counterparty ratings',
-        source: 'Uploaded 2026-06-29T09:15:00Z',
-        confidence: 92,
-        status: 'complete' as const,
-      },
-      {
-        id: 'ev-004',
-        title: 'Board Resolution',
-        description: 'Required board approval documentation for constitutional compliance',
-        source: 'Pending',
-        confidence: 0,
-        status: 'missing' as const,
-      },
-    ],
-    findings: {
-      strengths: [
-        {
-          id: 'find-s-001',
-          text: 'Complete Invoice with all required fields and authorized signatures',
-          severity: 'low' as const,
-          impact: 'Fully verifiable documentation reduces legal risk',
-        },
-      ],
-      observations: [
-        {
-          id: 'find-o-001',
-          text: 'Board Resolution outstanding and required for legal review approval',
-          severity: 'medium' as const,
-          impact: 'Blocks progression to next intelligence stage',
-        },
-      ],
-      risks: [
-        {
-          id: 'find-r-001',
-          text: 'Legal review cannot be completed until Board Resolution is received',
-          severity: 'high' as const,
-          impact: 'Critical blocker for deal progression and funding approval',
-        },
-      ],
-    },
-    recommendations: [
-      {
-        id: 'rec-001',
-        recommendation: 'approve' as const,
-        label: 'Proceed to Legal Review',
-        reasons: [
-          'Three of four required documents received and verified',
-          'Document OCR verification passed with 96% quality score',
-          'No tampering, forgery, or fraud indicators detected',
-        ],
-        confidence: 94,
-        riskFactors: ['Board Resolution must be received before legal analysis completion'],
-      },
-    ],
-    actions: [
-      {
-        id: 'act-001',
-        title: 'Upload Board Resolution',
-        description: 'Critical document required for legal compliance and constitutional review',
-        owner: 'Deal Manager',
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        priority: 'critical' as const,
-        status: 'pending' as const,
-        assignee: 'Sarah Chen',
-        estimatedHours: 0.5,
-      },
-    ],
-  };
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileView[]>([]);
 
-  const documentEngineResult = documentEngine.run(documentIntelligenceInput);
-  const orchestratedDecision = decisionOrchestrator.run([documentEngineResult]);
+  const orchestratedDecision = useMemo(() => {
+    if (uploadedFiles.length === 0) {
+      return null;
+    }
 
-  const recommendationByVerdict: Record<VerdictBand, 'approve' | 'conditional' | 'review' | 'reject'> = {
-    [VerdictBand.Proceed]: 'approve',
-    [VerdictBand.ProceedWithConditions]: 'conditional',
-    [VerdictBand.Hold]: 'review',
-    [VerdictBand.DoNotProceed]: 'reject',
-  };
+    const filenames = uploadedFiles.map((file) => file.name);
+    return decisionOrchestrator.run(filenames);
+  }, [uploadedFiles]);
 
-  const recommendationForSummary = recommendationByVerdict[orchestratedDecision.verdict.band];
+  const actions = [
+    {
+      id: 'act-001',
+      title: 'Upload Board Resolution',
+      description: 'Critical document required for legal compliance and constitutional review',
+      owner: 'Deal Manager',
+      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      priority: 'critical' as const,
+      status: 'pending' as const,
+      assignee: 'Sarah Chen',
+      estimatedHours: 0.5,
+    },
+  ];
 
-  const evidence = documentEngineResult.evidence.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: 'Sourced from Document Engine output.',
-    source: item.source,
-    confidence: item.confidence,
-    status: item.source.toLowerCase() === 'pending' ? 'missing' as const : 'complete' as const,
-  }));
+  const recommendationForSummary: 'approve' | 'review' = orchestratedDecision?.readyForReview
+    ? 'approve'
+    : 'review';
+  const recommendationForPanel: 'approve' | 'conditional' | 'reject' = orchestratedDecision?.readyForReview
+    ? 'approve'
+    : 'conditional';
+
+  const evidence = orchestratedDecision?.classifiedDocuments.map((document, index) => ({
+    id: `${document.filename}-${index}`,
+    title: document.filename,
+    description: 'Uploaded file attached to the deal.',
+    source: 'Uploaded file',
+    confidence: document.confidence,
+    status: 'complete' as const,
+  })) ?? [];
+
+  const uploadedDocumentCards = orchestratedDecision?.classifiedDocuments ?? [];
+  const missingDocuments = orchestratedDecision?.documentRequirements.missing ?? [];
+  const optionalMissing = orchestratedDecision?.documentRequirements.optionalMissing ?? [];
+  const completionPercentage = orchestratedDecision?.overallCompletion ?? 0;
+  const readyForReview = orchestratedDecision?.readyForReview ?? false;
 
   const findings = {
-    strengths: orchestratedDecision.findings
-      .filter((item) => item.category === FindingCategory.Document)
-      .map((item) => ({
-        id: item.id,
-        text: item.description,
-        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
-      })),
-    observations: orchestratedDecision.findings
-      .filter((item) => item.category !== FindingCategory.Document && item.category !== FindingCategory.Fraud)
-      .map((item) => ({
-        id: item.id,
-        text: item.description,
-        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
-      })),
-    risks: orchestratedDecision.findings
-      .filter((item) => item.category === FindingCategory.Fraud)
-      .map((item) => ({
-        id: item.id,
-        text: item.description,
-        severity: item.severity === FindingSeverity.Critical ? 'high' as const : item.severity,
-      })),
+    strengths: readyForReview
+      ? [
+          {
+            id: 'find-s-001',
+            text: 'All mandatory documents are present.',
+            severity: 'low' as const,
+          },
+        ]
+      : [],
+    observations: optionalMissing.map((documentType, index) => ({
+      id: `find-o-${index + 1}`,
+      text: `${documentType} is optional and not uploaded yet.`,
+      severity: 'low' as const,
+    })),
+    risks: missingDocuments.map((documentType, index) => ({
+      id: `find-r-${index + 1}`,
+      text: `${documentType} is mandatory and missing.`,
+      severity: 'high' as const,
+    })),
   };
 
   const recommendation = {
-    recommendation:
-      recommendationForSummary === 'review' ? 'conditional' : recommendationForSummary,
+    recommendation: recommendationForSummary,
     reasons:
-      orchestratedDecision.recommendations.length > 0
-        ? orchestratedDecision.recommendations.map((item) => item.title)
-        : ['No recommendation factors available yet from orchestrated engines.'],
-    confidence: orchestratedDecision.dealConfidence.confidence,
+      missingDocuments.length > 0
+        ? missingDocuments.map((documentType) => `${documentType} is required before review can proceed.`)
+        : ['All mandatory documents are present.'],
+    confidence: completionPercentage,
   };
 
-  const criticalBlockers =
-    orchestratedDecision.dealConfidence.blockers.length > 0
-      ? orchestratedDecision.dealConfidence.blockers
-      : ['No critical blockers flagged by placeholder orchestration.'];
-
-  const actions = documentIntelligenceInput.actions;
-
   const summary = {
-    summary: orchestratedDecision.summary,
+    summary: orchestratedDecision
+      ? `Uploaded ${orchestratedDecision.classifiedDocuments.length} file(s). Document completion is ${completionPercentage}%.`
+      : 'Upload documents to begin the ATLAS document pipeline.',
     recommendation: recommendationForSummary,
     status: 'completed' as const,
-    timestamp: orchestratedDecision.verdict.issuedAt,
-    score: orchestratedDecision.dealConfidence.score,
+    timestamp: new Date().toISOString(),
+    score: completionPercentage,
   };
 
   return (
@@ -202,61 +110,122 @@ export default function DocumentsWorkspace() {
       subtitle="Executive Due Diligence Report"
       rightSidebar={
         <div className="space-y-6">
-          <TrustScore score={orchestratedDecision.trustScore} label="Document Readiness" />
-          {[recommendation].map((rec) => (
-  <RecommendationPanel
-    key="orchestrated-recommendation"
-    recommendation={rec.recommendation}
-    reasons={rec.reasons}
-    confidence={rec.confidence}
-  />
-))}
+          {orchestratedDecision ? (
+            <>
+              <TrustScore score={completionPercentage} label="Document Completion" />
+              <RecommendationPanel
+                recommendation={recommendationForPanel}
+                reasons={recommendation.reasons}
+                confidence={recommendation.confidence}
+              />
+            </>
+          ) : (
+            <SectionCard title="Onboarding" icon={FileCheck}>
+              <p className="text-sm leading-relaxed text-slate-300">
+                Upload documents to start the first-stage ATLAS decision pipeline.
+              </p>
+            </SectionCard>
+          )}
           <ActionPanel actions={actions} title="Next Actions" />
         </div>
       }
     >
-      <ExecutiveVerdict
-        title="ATLAS Executive Verdict"
-        recommendation={orchestratedDecision.verdict.title}
-        overallReadiness={orchestratedDecision.dealConfidence.score}
-        riskLevel={orchestratedDecision.verdict.band}
-        criticalBlockers={criticalBlockers}
-        estimatedFundingTime="2 Business Days"
-      />
+      <SectionCard title="Upload Documents" icon={FileCheck}>
+        <DocumentUploadZone onFilesChange={setUploadedFiles} />
+      </SectionCard>
 
-      <ExecutiveSummary
-  summary={summary.summary}
-  recommendation={summary.recommendation}
-  status={summary.status}
-  timestamp={summary.timestamp}
-  score={summary.score}
-/>
+      {orchestratedDecision ? (
+        <>
+          <ExecutiveVerdict
+            title="ATLAS Executive Verdict"
+            recommendation={orchestratedDecision.executiveRecommendation}
+            overallReadiness={completionPercentage}
+            riskLevel={readyForReview ? 'Low' : 'High'}
+            criticalBlockers={missingDocuments.length > 0 ? missingDocuments : ['No critical blockers flagged.']}
+            estimatedFundingTime="2 Business Days"
+          />
 
-      <div className="space-y-6">
-        <SectionCard title="Document Vault" icon={FileCheck}>
-          <div className="space-y-2">
-            {evidence.map((doc) => (
-              <div
-                key={doc.id}
-                className={`flex items-center justify-between rounded-lg bg-slate-800/50 p-3 border ${
-                  doc.status === 'missing' ? 'border-rose-800' : 'border-emerald-800'
-                }`}
-              >
-                <span className="text-sm font-medium text-slate-200">{doc.title}</span>
-                {doc.status === 'missing' ? (
-                  <AlertCircle className="h-4 w-4 text-rose-400" />
+          <ExecutiveSummary
+            summary={summary.summary}
+            recommendation={recommendationForSummary}
+            status={summary.status}
+            timestamp={summary.timestamp}
+            score={summary.score}
+          />
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <SectionCard title="Uploaded Documents" icon={FileCheck}>
+              <div className="space-y-3">
+                {uploadedDocumentCards.map((document) => (
+                  <div
+                    key={document.filename}
+                    className="rounded-lg border border-slate-800 bg-slate-950/60 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-slate-100">{document.filename}</span>
+                      <span className="text-xs text-slate-400">{document.documentType}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">Confidence: {document.confidence}%</p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Missing Documents" icon={FileCheck}>
+              <div className="space-y-3">
+                {missingDocuments.length === 0 ? (
+                  <p className="text-sm text-slate-400">No mandatory documents are missing.</p>
                 ) : (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  missingDocuments.map((documentType) => (
+                    <div
+                      key={documentType}
+                      className="rounded-lg border border-rose-900/50 bg-rose-950/20 p-3 text-sm text-rose-100"
+                    >
+                      {documentType}
+                    </div>
+                  ))
                 )}
               </div>
-            ))}
+            </SectionCard>
+
+            <SectionCard title="Ready for Review" icon={FileCheck}>
+              <div className="space-y-2">
+                <p className="text-2xl font-semibold text-slate-100">{readyForReview ? 'Ready' : 'Not Ready'}</p>
+                <p className="text-sm text-slate-400">
+                  The current document set is {readyForReview ? 'sufficient' : 'incomplete'} for review.
+                </p>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Document Completion" icon={FileCheck}>
+              <div className="space-y-2">
+                <p className="text-3xl font-semibold text-emerald-300">{completionPercentage}%</p>
+                <p className="text-sm text-slate-400">Completion is calculated from mandatory canon policy documents.</p>
+              </div>
+            </SectionCard>
           </div>
-        </SectionCard>
+        </>
+      ) : (
+        <div className="space-y-6">
+          <SectionCard title="Onboarding" icon={FileCheck}>
+            <div className="space-y-3">
+              <p className="text-sm leading-relaxed text-slate-300">
+                Upload deal documents to execute the first ATLAS intelligence pipeline and surface the live decision.
+              </p>
+              <p className="text-sm text-slate-400">
+                You will see document completion, executive recommendation, uploaded documents, missing documents, and review readiness here.
+              </p>
+            </div>
+          </SectionCard>
+        </div>
+      )}
 
-        <EvidencePanel evidence={evidence} />
-
-        <FindingsPanel findings={findings} />
-      </div>
+      {orchestratedDecision && (
+        <div className="space-y-6">
+          <EvidencePanel evidence={evidence} />
+          <FindingsPanel findings={findings} />
+        </div>
+      )}
     </IntelligenceLayout>
   );
 }

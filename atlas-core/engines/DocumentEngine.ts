@@ -1,4 +1,9 @@
 import {
+	DocumentStatus,
+	type Deal,
+	type UploadedDocument,
+} from '../deals/Deal';
+import {
 	FindingCategory,
 	FindingSeverity,
 	RecommendationPriority,
@@ -12,86 +17,28 @@ import {
 	type TrustScore,
 } from '../intelligence/types';
 
-type InputSeverity = 'low' | 'medium' | 'high' | undefined;
-
-interface DocumentEngineFindingInput {
-	id: string;
-	text: string;
-	severity?: InputSeverity;
-	impact?: string;
-}
-
-interface DocumentEngineRecommendationInput {
-	id: string;
-	label: string;
-	confidence: number;
-	riskFactors?: string[];
-}
-
-interface DocumentEngineEvidenceInput {
-	id: string;
-	source: string;
-	title: string;
-	confidence: number;
-}
-
-interface DocumentEngineInput {
-	metadata?: {
-		analysisDuration?: number;
-		analyzedAt?: string;
-		[key: string]: unknown;
-	};
-	executiveSummary?: {
-		summary?: string;
-		score?: number;
-		timestamp?: string;
-	};
-	confidence?: {
-		overall?: number;
-		documentAnalysis?: number;
-		legalCompliance?: number;
-		fraudDetection?: number;
-	};
-	trustScore?: number;
-	evidence?: DocumentEngineEvidenceInput[];
-	findings?: {
-		strengths?: DocumentEngineFindingInput[];
-		observations?: DocumentEngineFindingInput[];
-		risks?: DocumentEngineFindingInput[];
-	};
-	recommendations?: DocumentEngineRecommendationInput[];
-}
-
 export class DocumentEngine {
-	public run(documentIntelligence: DocumentEngineInput): IntelligenceResult {
+	public run(deal: Deal): IntelligenceResult {
 		const startedAt = Date.now();
+		const uploadedDocuments = deal.documents;
 
-		// Future: OCR pipeline will normalize and validate extracted document text.
-		// Future: AI Extraction will derive structured entities and clause intelligence.
-		// Future: Fraud Analysis will add anomaly and tampering detection outputs.
-		// Future: Legal Analysis will map legal obligations and enforceability signals.
-		// Future: Constitution Compliance will validate governance and policy alignment.
-		// Future: Confidence Calculation will combine model quality and evidence strength.
+		// TODO: OCR will normalize and validate extracted document text.
+		// TODO: AI extraction will derive structured entities and clause intelligence.
+		// TODO: Document validation will enforce required fields and quality thresholds.
+		// TODO: Fraud detection will add tampering and anomaly checks.
+		// TODO: Constitutional compliance will validate governance and policy alignment.
 
-		const findings = this.buildFindings(documentIntelligence);
-		const recommendations = this.buildRecommendations(documentIntelligence);
-		const evidence = this.buildEvidence(documentIntelligence);
-		const risks = this.buildRisks(documentIntelligence);
-		const trustScore = this.buildTrustScore(documentIntelligence);
+		const findings = this.buildFindings(uploadedDocuments);
+		const recommendations = this.buildRecommendations(uploadedDocuments);
+		const evidence = this.buildEvidence(uploadedDocuments);
+		const risks = this.buildRisks(uploadedDocuments);
+		const trustScore = this.buildTrustScore(uploadedDocuments);
 
-		const completedAt =
-			documentIntelligence.metadata?.analyzedAt ??
-			documentIntelligence.executiveSummary?.timestamp ??
-			new Date().toISOString();
+ 		const completedAt = new Date().toISOString();
 
-		const executionTime =
-			documentIntelligence.metadata?.analysisDuration ?? (Date.now() - startedAt);
+ 		const executionTime = Date.now() - startedAt;
 
-		const confidence =
-			documentIntelligence.confidence?.overall ??
-			documentIntelligence.executiveSummary?.score ??
-			documentIntelligence.trustScore ??
-			0;
+		const confidence = trustScore.overall;
 
 		return {
 			engineId: 'document-intelligence',
@@ -101,154 +48,143 @@ export class DocumentEngine {
 			executionTime,
 			confidence,
 			trustScore,
-			summary:
-				documentIntelligence.executiveSummary?.summary ??
-				'Document intelligence analysis completed.',
+			summary: this.buildSummary(uploadedDocuments),
 			findings,
 			recommendations,
 			evidence,
 			risks,
 			metadata: {
-				...(documentIntelligence.metadata ?? {}),
+				dealId: deal.dealId,
+				dealType: deal.dealType,
+				product: deal.product,
 			},
 		};
 	}
 
-	private buildFindings(documentIntelligence: DocumentEngineInput): Finding[] {
-		const findings = documentIntelligence.findings;
+	private buildFindings(uploadedDocuments: UploadedDocument[]): Finding[] {
+		const availableFindings = uploadedDocuments
+			.filter((document) => document.status !== DocumentStatus.Missing)
+			.map((document) => ({
+				id: `finding-available-${document.documentId}`,
+				title: 'Document Available',
+				description: `${document.title} is available in the uploaded set.`,
+				severity: FindingSeverity.Low,
+				category: FindingCategory.Document,
+			}));
 
-		const strengths = (findings?.strengths ?? []).map((item) => ({
-			id: item.id,
-			title: 'Strength',
-			description: item.text,
-			severity: this.toFindingSeverity(item.severity),
-			category: FindingCategory.Document,
-		}));
+		const missingFindings = uploadedDocuments
+			.filter((document) => document.status === DocumentStatus.Missing)
+			.map((document) => ({
+				id: `finding-missing-${document.documentId}`,
+				title: 'Missing Document',
+				description: `${document.title} is marked missing and requires upload.`,
+				severity: FindingSeverity.High,
+				category: FindingCategory.Fraud,
+			}));
 
-		const observations = (findings?.observations ?? []).map((item) => ({
-			id: item.id,
-			title: 'Observation',
-			description: item.text,
-			severity: this.toFindingSeverity(item.severity),
-			category: FindingCategory.General,
-		}));
-
-		const riskFindings = (findings?.risks ?? []).map((item) => ({
-			id: item.id,
-			title: 'Risk Finding',
-			description: item.text,
-			severity: this.toFindingSeverity(item.severity),
-			category: FindingCategory.Fraud,
-		}));
-
-		return [...strengths, ...observations, ...riskFindings];
+		return [...availableFindings, ...missingFindings];
 	}
 
-	private buildRecommendations(documentIntelligence: DocumentEngineInput): Recommendation[] {
-		return (documentIntelligence.recommendations ?? []).map((item) => ({
-			id: item.id,
-			title: item.label,
-			description: item.label,
-			priority: this.toRecommendationPriority(item.confidence),
-		}));
-	}
-
-	private buildEvidence(documentIntelligence: DocumentEngineInput): Evidence[] {
-		return (documentIntelligence.evidence ?? []).map((item) => ({
-			id: item.id,
-			source: item.source,
-			title: item.title,
-			confidence: item.confidence,
-		}));
-	}
-
-	private buildRisks(documentIntelligence: DocumentEngineInput): Risk[] {
-		const findingRisks = (documentIntelligence.findings?.risks ?? []).map((item) => ({
-			id: item.id,
-			title: 'Document Risk',
-			description: item.impact ?? item.text,
-			probability: this.toRiskProbability(item.severity),
-			impact: this.toRiskImpact(item.severity),
-		}));
-
-		const recommendationRisks = (documentIntelligence.recommendations ?? []).flatMap((rec) =>
-			(rec.riskFactors ?? []).map((riskFactor, index) => ({
-				id: `${rec.id}-risk-${index + 1}`,
-				title: 'Recommendation Risk Factor',
-				description: riskFactor,
-				probability: RiskProbability.Medium,
-				impact: RiskImpact.Moderate,
-			}))
+	private buildRecommendations(uploadedDocuments: UploadedDocument[]): Recommendation[] {
+		const hasMissingDocuments = uploadedDocuments.some(
+			(document) => document.status === DocumentStatus.Missing,
 		);
 
-		return [...findingRisks, ...recommendationRisks];
+		return [
+			{
+				id: 'rec-document-completeness',
+				title: hasMissingDocuments
+					? 'Complete Required Document Uploads'
+					: 'Proceed with Document Package Review',
+				description: hasMissingDocuments
+					? 'One or more documents are missing and should be uploaded before progression.'
+					: 'Current document package is available for downstream review.',
+				priority: hasMissingDocuments
+					? RecommendationPriority.High
+					: RecommendationPriority.Low,
+			},
+		];
 	}
 
-	private buildTrustScore(documentIntelligence: DocumentEngineInput): TrustScore {
+	private buildEvidence(uploadedDocuments: UploadedDocument[]): Evidence[] {
+		return uploadedDocuments.map((document) => ({
+			id: `evidence-${document.documentId}`,
+			source: document.source ?? 'Uploaded Document Registry',
+			title: document.title,
+			confidence: this.toEvidenceConfidence(document.status),
+		}));
+	}
+
+	private buildRisks(uploadedDocuments: UploadedDocument[]): Risk[] {
+		const missingDocumentRisks = uploadedDocuments
+			.filter((document) => document.status === DocumentStatus.Missing)
+			.map((document) => ({
+				id: `risk-missing-${document.documentId}`,
+				title: 'Missing Document Risk',
+				description: `${document.title} is missing and may delay progression.`,
+				probability: RiskProbability.High,
+				impact: RiskImpact.Major,
+			}));
+
+		if (missingDocumentRisks.length > 0) {
+			return missingDocumentRisks;
+		}
+
+		return [
+			{
+				id: 'risk-placeholder-none',
+				title: 'No Immediate Document Risk',
+				description: 'No missing documents were detected in placeholder analysis.',
+				probability: RiskProbability.Low,
+				impact: RiskImpact.Minor,
+			},
+		];
+	}
+
+	private buildTrustScore(uploadedDocuments: UploadedDocument[]): TrustScore {
+		const totalDocuments = uploadedDocuments.length;
+		const availableDocuments = uploadedDocuments.filter(
+			(document) => document.status !== DocumentStatus.Missing,
+		).length;
+
 		const overall =
-			documentIntelligence.trustScore ??
-			documentIntelligence.confidence?.overall ??
-			documentIntelligence.executiveSummary?.score ??
-			0;
+			totalDocuments === 0 ? 0 : Math.round((availableDocuments / totalDocuments) * 100);
 
 		return {
 			overall,
-			document: documentIntelligence.confidence?.documentAnalysis ?? overall,
-			legal: documentIntelligence.confidence?.legalCompliance ?? overall,
-			fraud: documentIntelligence.confidence?.fraudDetection ?? overall,
+			document: overall,
+			legal: overall,
+			fraud: overall,
 			collateral: overall,
 			promoter: overall,
 			counterparty: overall,
 		};
 	}
 
-	private toFindingSeverity(severity: InputSeverity): FindingSeverity {
-		switch (severity) {
-			case 'high':
-				return FindingSeverity.High;
-			case 'medium':
-				return FindingSeverity.Medium;
-			case 'low':
+	private toEvidenceConfidence(status: DocumentStatus): number {
+		switch (status) {
+			case DocumentStatus.Verified:
+				return 95;
+			case DocumentStatus.Uploaded:
+				return 85;
+			case DocumentStatus.PendingReview:
+				return 60;
+			case DocumentStatus.Rejected:
+				return 20;
+			case DocumentStatus.Missing:
 			default:
-				return FindingSeverity.Low;
+				return 0;
 		}
 	}
 
-	private toRecommendationPriority(confidence: number): RecommendationPriority {
-		if (confidence >= 90) {
-			return RecommendationPriority.Low;
-		}
-		if (confidence >= 70) {
-			return RecommendationPriority.Medium;
-		}
-		if (confidence >= 50) {
-			return RecommendationPriority.High;
-		}
-		return RecommendationPriority.Critical;
-	}
+	private buildSummary(uploadedDocuments: UploadedDocument[]): string {
+		const missingCount = uploadedDocuments.filter(
+			(document) => document.status === DocumentStatus.Missing,
+		).length;
 
-	private toRiskProbability(severity: InputSeverity): RiskProbability {
-		switch (severity) {
-			case 'high':
-				return RiskProbability.High;
-			case 'medium':
-				return RiskProbability.Medium;
-			case 'low':
-			default:
-				return RiskProbability.Low;
-		}
-	}
+		const availableCount = uploadedDocuments.length - missingCount;
 
-	private toRiskImpact(severity: InputSeverity): RiskImpact {
-		switch (severity) {
-			case 'high':
-				return RiskImpact.Severe;
-			case 'medium':
-				return RiskImpact.Major;
-			case 'low':
-			default:
-				return RiskImpact.Moderate;
-		}
+		return `Document engine analyzed ${uploadedDocuments.length} document(s): ${availableCount} available and ${missingCount} missing.`;
 	}
 }
 
