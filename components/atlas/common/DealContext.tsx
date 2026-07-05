@@ -1,77 +1,84 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { Deal } from "../../../atlas-core/models/Deal";
+import {
+  createEmptyDeal,
+  type ApprovalState,
+  type ClientInfo,
+  type CommercialTerms,
+  type CounterpartyInfo,
+  type DealInfo,
+  type DealModel,
+  type DocumentState,
+  type IntelligenceState,
+  type WorkflowState,
+} from "@/atlas-core/deals/DealModel";
 
 type DealContextValue = {
-  deal: Deal;
-  setDeal: React.Dispatch<React.SetStateAction<Deal>>;
-};
-
-const initialDeal: Deal = {
-  id: "DNX-2026-000001",
-  title: "Emirates Steel Receivables Purchase",
-  status: "Under Credit Review",
-  createdAt: "29 Jun 2026",
-  seller: {
-    name: "FinQy Financial Brokers LLC",
-    relationship: "Preferred",
-    previousDeals: 48,
-    outstanding: "AED 4.2M",
-    defaults: 0,
-  },
-  counterparty: {
-    name: "Mashreq Bank",
-    country: "UAE",
-    industry: "Banking",
-    internalRating: "AAA",
-    averagePaymentDays: 26,
-  },
-  invoice: {
-    currency: "AED",
-    invoiceValue: 2500000,
-    description: "Emirates Steel Receivables Purchase",
-    referenceNumber: "INV-2026-001",
-    maturityDate: "2026-09-30",
-  },
-  financial: {
-    fundingRequired: 2250000,
-    advanceRate: 90,
-    fundingAmount: 2250000,
-    tenureDays: 90,
-    discountRate: 1.65,
-    grossReturn: 18.2,
-    netReturn: 16.9,
-    brokerCommission: 2.0,
-    expectedReturn: 18.2,
-    riskRating: "AA",
-  },
-  pricing: {
-    invoiceValue: 2500000,
-    advanceRate: 90,
-    discountRate: 1.65,
-    brokerCommission: 2.0,
-    tenureDays: 90,
-    fundingAmount: 2250000,
-    discountFee: 11475,
-    netDisbursement: 2238525,
-  },
-  risk: {
-    rating: "AA",
-    score: 88,
-    dealSizePass: true,
-    minimumReturnPass: true,
-    documentationPass: true,
-  },
+  deal: DealModel;
+  setDeal: React.Dispatch<React.SetStateAction<DealModel>>;
+  updateDeal: (payload: Partial<DealInfo>) => void;
+  updateClient: (payload: Partial<ClientInfo>) => void;
+  updateCounterparty: (payload: Partial<CounterpartyInfo>) => void;
+  updateCommercialTerms: (payload: Partial<CommercialTerms>) => void;
+  updateDocuments: (payload: Partial<DocumentState>) => void;
+  updateIntelligence: (payload: Partial<IntelligenceState>) => void;
+  updateApproval: (payload: Partial<ApprovalState>) => void;
+  updateWorkflow: (payload: Partial<WorkflowState>) => void;
 };
 
 const DealContext = createContext<DealContextValue | undefined>(undefined);
 
 export function DealProvider({ children }: { children: ReactNode }) {
-  const [deal, setDeal] = useState<Deal>(initialDeal);
+  const [deal, setDeal] = useState<DealModel>(createEmptyDeal());
+
+  const updateDeal = (payload: Partial<DealInfo>) => {
+    setDeal((prev) => ({ ...prev, deal: { ...prev.deal, ...payload } }));
+  };
+
+  const updateClient = (payload: Partial<ClientInfo>) => {
+    setDeal((prev) => ({ ...prev, client: { ...prev.client, ...payload } }));
+  };
+
+  const updateCounterparty = (payload: Partial<CounterpartyInfo>) => {
+    setDeal((prev) => ({ ...prev, counterparty: { ...prev.counterparty, ...payload } }));
+  };
+
+  const updateCommercialTerms = (payload: Partial<CommercialTerms>) => {
+    setDeal((prev) => ({ ...prev, commercialTerms: { ...prev.commercialTerms, ...payload } }));
+  };
+
+  const updateDocuments = (payload: Partial<DocumentState>) => {
+    setDeal((prev) => ({ ...prev, documents: { ...prev.documents, ...payload } }));
+  };
+
+  const updateIntelligence = (payload: Partial<IntelligenceState>) => {
+    setDeal((prev) => ({ ...prev, intelligence: { ...prev.intelligence, ...payload } }));
+  };
+
+  const updateApproval = (payload: Partial<ApprovalState>) => {
+    setDeal((prev) => ({ ...prev, approval: { ...prev.approval, ...payload } }));
+  };
+
+  const updateWorkflow = (payload: Partial<WorkflowState>) => {
+    setDeal((prev) => ({ ...prev, workflow: { ...prev.workflow, ...payload } }));
+  };
 
   return (
-    <DealContext.Provider value={{ deal, setDeal }}>
+    <DealContext.Provider
+      value={{
+        deal,
+        setDeal,
+        updateDeal,
+        updateClient,
+        updateCounterparty,
+        updateCommercialTerms,
+        updateDocuments,
+        updateIntelligence,
+        updateApproval,
+        updateWorkflow,
+      }}
+    >
       {children}
     </DealContext.Provider>
   );

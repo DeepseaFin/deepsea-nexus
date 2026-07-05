@@ -25,10 +25,10 @@ export default function DealKPIs() {
   const { deal } = useDeal();
 
   const cardValues = {
-    invoiceValue: `AED ${new Intl.NumberFormat("en-AE").format(deal.invoice.invoiceValue)}`,
-    fundingAmount: `AED ${new Intl.NumberFormat("en-AE").format(deal.financial.fundingAmount)}`,
-    expectedReturn: `${deal.financial.expectedReturn?.toFixed(2)}%`,
-    riskRating: deal.risk.rating,
+    invoiceValue: `AED ${new Intl.NumberFormat("en-AE").format(deal.deal.amount)}`,
+    fundingAmount: `AED ${new Intl.NumberFormat("en-AE").format(deal.deal.fundingRequired)}`,
+    expectedReturn: `${deal.deal.expectedReturnPercent.toFixed(2)}%`,
+    riskRating: deal.intelligence.creditRating,
   };
 
   return (

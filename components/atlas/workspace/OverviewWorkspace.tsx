@@ -102,11 +102,11 @@ export default function OverviewWorkspace() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Stage</p>
-            <p className="mt-2 text-sm font-semibold text-slate-100">{deal.status}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-100">{deal.deal.status}</p>
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Client</p>
-            <p className="mt-2 text-sm font-semibold text-slate-100">{deal.seller.name}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-100">{deal.client.legalName}</p>
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Product</p>
@@ -121,7 +121,7 @@ export default function OverviewWorkspace() {
 
       <div className="space-y-6">
         <DealCommandCenter
-          dealTitle={deal.title}
+          dealTitle={deal.deal.dealName}
           dealConfidenceIndex={{
             score: dealConfidenceIndex,
             band: "Strong",

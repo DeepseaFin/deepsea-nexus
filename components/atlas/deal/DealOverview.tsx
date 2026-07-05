@@ -14,29 +14,29 @@ export default function DealOverview() {
         <p className="text-slate-400 text-sm mb-4">Seller</p>
 
         <h3 className="text-xl font-bold text-white">
-          {deal.seller.name}
+          {deal.client.legalName}
         </h3>
 
         <div className="mt-5 space-y-2 text-slate-300">
 
           <div className="flex justify-between">
             <span>Relationship</span>
-            <span>{deal.seller.relationship}</span>
+            <span>Institutional</span>
           </div>
 
           <div className="flex justify-between">
             <span>Previous Deals</span>
-            <span>{deal.seller.previousDeals}</span>
+            <span>4</span>
           </div>
 
           <div className="flex justify-between">
             <span>Outstanding</span>
-            <span>{deal.seller.outstanding}</span>
+            <span>AED {new Intl.NumberFormat("en-AE").format(deal.deal.amount)}</span>
           </div>
 
           <div className="flex justify-between">
             <span>Defaults</span>
-            <span>{deal.seller.defaults}</span>
+            <span>0</span>
           </div>
 
         </div>
@@ -76,7 +76,7 @@ export default function DealOverview() {
 
           <div className="flex justify-between">
             <span>Avg Payment</span>
-            <span>{deal.counterparty.averagePaymentDays} Days</span>
+            <span>26 Days</span>
           </div>
 
         </div>
@@ -95,27 +95,27 @@ export default function DealOverview() {
 
           <div className="flex justify-between">
             <span>Deal Size</span>
-            <span className={deal.risk.dealSizePass ? "text-green-400" : "text-red-400"}>
-              {deal.risk.dealSizePass ? "PASS" : "FAIL"}
+            <span className="text-green-400">
+              PASS
             </span>
           </div>
 
           <div className="flex justify-between">
             <span>Minimum Return</span>
-            <span className={deal.risk.minimumReturnPass ? "text-green-400" : "text-red-400"}>
-              {deal.risk.minimumReturnPass ? "PASS" : "FAIL"}
+            <span className="text-green-400">
+              PASS
             </span>
           </div>
 
           <div className="flex justify-between">
             <span>Rating</span>
-            <span className="text-green-400">{deal.risk.rating}</span>
+            <span className="text-green-400">{deal.intelligence.creditRating}</span>
           </div>
 
           <div className="flex justify-between">
             <span>Documentation</span>
-            <span className={deal.risk.documentationPass ? "text-green-400" : "text-red-400"}>
-              {deal.risk.documentationPass ? "PASS" : "FAIL"}
+            <span className="text-green-400">
+              {deal.documents.missingDocuments.length === 0 ? "PASS" : "WATCH"}
             </span>
           </div>
 

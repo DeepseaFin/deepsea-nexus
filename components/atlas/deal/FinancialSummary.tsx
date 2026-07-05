@@ -6,11 +6,11 @@ import { calculatePricing } from "@/components/lib/engines/pricing";
 export default function FinancialSummary() {
   const { deal } = useDeal();
   const pricing = calculatePricing({
-    invoiceValue: deal.pricing.invoiceValue,
-    advanceRate: deal.pricing.advanceRate,
-    tenure: deal.pricing.tenureDays,
-    discountRate: deal.pricing.discountRate,
-    brokerCommission: deal.pricing.brokerCommission,
+    invoiceValue: deal.deal.amount,
+    advanceRate: deal.commercialTerms.advancePercent,
+    tenure: deal.deal.tenureDays,
+    discountRate: deal.commercialTerms.discountRatePercent,
+    brokerCommission: deal.commercialTerms.processingFeePercent,
   });
 
   const formatMoney = (value: number) =>
@@ -27,12 +27,12 @@ export default function FinancialSummary() {
 
         <Metric
           title="Invoice Value"
-          value={formatMoney(deal.invoice.invoiceValue)}
+          value={formatMoney(deal.deal.amount)}
         />
 
         <Metric
           title="Advance"
-          value={`${deal.pricing.advanceRate}%`}
+          value={`${deal.commercialTerms.advancePercent}%`}
         />
 
         <Metric
@@ -42,7 +42,7 @@ export default function FinancialSummary() {
 
         <Metric
           title="Tenure"
-          value={`${deal.pricing.tenureDays} Days`}
+          value={`${deal.deal.tenureDays} Days`}
         />
 
         <Metric
@@ -52,7 +52,7 @@ export default function FinancialSummary() {
 
         <Metric
           title="Gross Return"
-          value={`${deal.financial.grossReturn}%`}
+          value={`${deal.deal.expectedReturnPercent}%`}
         />
 
         <Metric

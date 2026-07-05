@@ -1,8 +1,16 @@
 import { calculatePricing } from "../../components/lib/engines/pricing";
-import type { Deal } from "../models/Deal";
+import type { DealModel } from "../deals/DealModel";
+
+type PricingInput = {
+  invoiceValue: number;
+  advanceRate: number;
+  discountRate: number;
+  brokerCommission: number;
+  tenureDays: number;
+};
 
 export class DealService {
-  static updatePricing(deal: Deal, pricingInput: Deal["pricing"]): Deal {
+  static updatePricing(deal: DealModel, pricingInput: PricingInput): DealModel {
     const pricing = calculatePricing({
       invoiceValue: pricingInput.invoiceValue,
       advanceRate: pricingInput.advanceRate,
@@ -13,25 +21,28 @@ export class DealService {
 
     return {
       ...deal,
-      pricing: {
-        ...pricingInput,
-        fundingAmount: pricing.fundingAmount,
-        discountFee: pricing.discountFee,
-        netDisbursement: pricing.netDisbursement,
-      },
-      invoice: {
-        ...deal.invoice,
-        invoiceValue: pricingInput.invoiceValue,
-      },
-      financial: {
-        ...deal.financial,
-        fundingAmount: pricing.fundingAmount,
+      deal: {
+        ...deal.deal,
+        amount: pricingInput.invoiceValue,
         fundingRequired: pricing.fundingAmount,
+        tenureDays: pricingInput.tenureDays,
+      },
+      commercialTerms: {
+        ...deal.commercialTerms,
+        advancePercent: pricingInput.advanceRate,
+        discountRatePercent: pricingInput.discountRate,
+        processingFeePercent: pricingInput.brokerCommission,
       },
     };
   }
 
-  static calculateDeal(deal: Deal): Deal {
-    return this.updatePricing(deal, deal.pricing);
+  static calculateDeal(deal: DealModel): DealModel {
+    return this.updatePricing(deal, {
+      invoiceValue: deal.deal.amount,
+      advanceRate: deal.commercialTerms.advancePercent,
+      discountRate: deal.commercialTerms.discountRatePercent,
+      brokerCommission: deal.commercialTerms.processingFeePercent,
+      tenureDays: deal.deal.tenureDays,
+    });
   }
 }

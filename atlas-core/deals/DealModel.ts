@@ -1,0 +1,198 @@
+export type DealWorkflowStep =
+  | 'Client'
+  | 'Counterparty'
+  | 'Commercial Terms'
+  | 'Documents'
+  | 'Intelligence'
+  | 'Recommendation'
+  | 'Term Sheet'
+  | 'Approval';
+
+export interface DealInfo {
+  dealId: string;
+  dealName: string;
+  status: string;
+  stage: string;
+  product: string;
+  currency: string;
+  amount: number;
+  fundingRequired: number;
+  tenureDays: number;
+  expectedReturnPercent: number;
+}
+
+export interface ClientInfo {
+  clientId: string;
+  legalName: string;
+  tradingName: string;
+  country: string;
+  industry: string;
+  registrationNumber: string;
+  tradeLicense: string;
+  website: string;
+  relationshipManager: string;
+  primaryContact: string;
+  email: string;
+  phone: string;
+  relationshipStatus: string;
+  internalRating: string;
+}
+
+export interface CounterpartyInfo {
+  name: string;
+  country: string;
+  industry: string;
+  relationshipType: string;
+  paymentTerms: string;
+  internalRating: string;
+  creditLimit: string;
+  existingExposure: string;
+  website: string;
+  primaryContact: string;
+}
+
+export interface CommercialTerms {
+  advancePercent: number;
+  discountRatePercent: number;
+  processingFeePercent: number;
+  recourse: string;
+  security: string;
+}
+
+export interface DocumentState {
+  uploadedDocuments: string[];
+  missingDocuments: string[];
+  completionPercent: number;
+}
+
+export interface IntelligenceState {
+  dealConfidenceIndex: number;
+  trustScore: number;
+  creditRating: string;
+  legalRating: string;
+  fraudRating: string;
+  recommendation: string;
+}
+
+export interface ApprovalState {
+  status: string;
+  approver: string;
+  conditions: string[];
+  comments: string;
+}
+
+export interface FundingState {
+  fundingStatus: string;
+  scheduledFundingDate: string;
+  disbursementAccount: string;
+  trancheAmount: number;
+}
+
+export interface WorkflowState {
+  currentStep: DealWorkflowStep;
+  completedSteps: DealWorkflowStep[];
+  lastUpdated: string;
+}
+
+export interface DealModel {
+  deal: DealInfo;
+  client: ClientInfo;
+  counterparty: CounterpartyInfo;
+  commercialTerms: CommercialTerms;
+  documents: DocumentState;
+  intelligence: IntelligenceState;
+  approval: ApprovalState;
+  funding: FundingState;
+  workflow: WorkflowState;
+}
+
+export function createEmptyDeal(): DealModel {
+  return {
+    deal: {
+      dealId: 'DNX-2026-000301',
+      dealName: 'ABC Ltd Receivables Facility',
+      status: 'Draft',
+      stage: 'Client',
+      product: 'Receivables Financing',
+      currency: 'AED',
+      amount: 2500000,
+      fundingRequired: 2250000,
+      tenureDays: 90,
+      expectedReturnPercent: 16.4,
+    },
+    client: {
+      clientId: 'CL-000301',
+      legalName: 'ABC Limited',
+      tradingName: 'ABC Trading',
+      country: 'United Arab Emirates',
+      industry: 'Industrial Trading',
+      registrationNumber: 'REG-2026-00128',
+      tradeLicense: 'TL-778231',
+      website: 'https://abc.example.com',
+      relationshipManager: 'Deepak Menon',
+      primaryContact: 'Rashid Al Mansoor',
+      email: 'rashid@abc.example.com',
+      phone: '+971 50 123 4567',
+      relationshipStatus: 'Active',
+      internalRating: 'A-',
+    },
+    counterparty: {
+      name: 'Mashreq Bank PJSC',
+      country: 'United Arab Emirates',
+      industry: 'Banking',
+      relationshipType: 'Primary Buyer Bank',
+      paymentTerms: 'Net 45',
+      internalRating: 'A',
+      creditLimit: '4500000',
+      existingExposure: '1800000',
+      website: 'https://www.mashreq.com',
+      primaryContact: 'Fatima Al Nuaimi',
+    },
+    commercialTerms: {
+      advancePercent: 90,
+      discountRatePercent: 8.2,
+      processingFeePercent: 0.75,
+      recourse: 'Limited Recourse',
+      security: 'Assignment of receivables with controlled account',
+    },
+    documents: {
+      uploadedDocuments: [
+        'Invoice Pack - June 2026',
+        'Trade License Copy',
+      ],
+      missingDocuments: [
+        'Audited Financial Statements',
+        'Board Resolution',
+      ],
+      completionPercent: 68,
+    },
+    intelligence: {
+      dealConfidenceIndex: 78,
+      trustScore: 82,
+      creditRating: 'A-',
+      legalRating: 'Medium',
+      fraudRating: 'Low',
+      recommendation: 'Approve with Conditions',
+    },
+    approval: {
+      status: 'Pending Review',
+      approver: 'Credit Committee Chair',
+      conditions: [
+        'Close legal rider confirmation',
+        'Submit updated board resolution',
+      ],
+      comments: 'Ready for conditional committee consideration after documentation closure.',
+    },
+    funding: {
+      fundingStatus: 'Not Scheduled',
+      scheduledFundingDate: '2026-07-12',
+      disbursementAccount: 'Controlled Collection Account',
+      trancheAmount: 2250000,
+    },
+    workflow: {
+      currentStep: 'Client',
+      completedSteps: [],
+      lastUpdated: '2026-07-05T09:30:00.000Z',
+    },
+  };
+}

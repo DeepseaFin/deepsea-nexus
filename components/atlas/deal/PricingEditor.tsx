@@ -4,46 +4,43 @@ import { useDeal } from "@/components/atlas/common/DealContext";
 import { calculatePricing } from "@/components/lib/engines/pricing";
 
 export default function PricingEditor() {
-  const { deal, setDeal } = useDeal();
+  const { deal, updateDeal, updateCommercialTerms } = useDeal();
 
   const handleInputChange = (
-    field: keyof typeof deal.pricing,
+    field: "invoiceValue" | "advanceRate" | "discountRate" | "processingFee" | "tenureDays",
     value: number
   ) => {
-    setDeal((prevDeal) => {
-      const updatedPricing = {
-        ...prevDeal.pricing,
-        [field]: value,
-      };
+    if (field === "invoiceValue") {
+      updateDeal({ amount: value, fundingRequired: Math.round(value * (deal.commercialTerms.advancePercent / 100)) });
+      return;
+    }
 
-      const pricing = calculatePricing({
-        invoiceValue: updatedPricing.invoiceValue,
-        advanceRate: updatedPricing.advanceRate,
-        tenure: updatedPricing.tenureDays,
-        discountRate: updatedPricing.discountRate,
-        brokerCommission: updatedPricing.brokerCommission,
-      });
+    if (field === "tenureDays") {
+      updateDeal({ tenureDays: value });
+      return;
+    }
 
-      return {
-        ...prevDeal,
-        pricing: {
-          ...updatedPricing,
-          fundingAmount: pricing.fundingAmount,
-          discountFee: pricing.discountFee,
-          netDisbursement: pricing.netDisbursement,
-        },
-        financial: {
-          ...prevDeal.financial,
-          fundingAmount: pricing.fundingAmount,
-          fundingRequired: pricing.fundingAmount,
-        },
-        invoice: {
-          ...prevDeal.invoice,
-          invoiceValue: updatedPricing.invoiceValue,
-        },
-      };
-    });
+    if (field === "advanceRate") {
+      updateCommercialTerms({ advancePercent: value });
+      updateDeal({ fundingRequired: Math.round(deal.deal.amount * (value / 100)) });
+      return;
+    }
+
+    if (field === "discountRate") {
+      updateCommercialTerms({ discountRatePercent: value });
+      return;
+    }
+
+    updateCommercialTerms({ processingFeePercent: value });
   };
+
+  const pricing = calculatePricing({
+    invoiceValue: deal.deal.amount,
+    advanceRate: deal.commercialTerms.advancePercent,
+    tenure: deal.deal.tenureDays,
+    discountRate: deal.commercialTerms.discountRatePercent,
+    brokerCommission: deal.commercialTerms.processingFeePercent,
+  });
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-xl">
@@ -57,7 +54,7 @@ export default function PricingEditor() {
           <input
             id="invoiceValue"
             type="number"
-            value={deal.pricing.invoiceValue}
+            value={deal.deal.amount}
             onChange={(event) => handleInputChange("invoiceValue", Number(event.target.value))}
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
           />
@@ -70,7 +67,7 @@ export default function PricingEditor() {
           <input
             id="advanceRate"
             type="number"
-            value={deal.pricing.advanceRate}
+            value={deal.commercialTerms.advancePercent}
             onChange={(event) => handleInputChange("advanceRate", Number(event.target.value))}
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
           />
@@ -84,7 +81,7 @@ export default function PricingEditor() {
             id="discountRate"
             type="number"
             step="0.01"
-            value={deal.pricing.discountRate}
+            value={deal.commercialTerms.discountRatePercent}
             onChange={(event) => handleInputChange("discountRate", Number(event.target.value))}
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
           />
@@ -97,8 +94,8 @@ export default function PricingEditor() {
           <input
             id="brokerCommission"
             type="number"
-            value={deal.pricing.brokerCommission}
-            onChange={(event) => handleInputChange("brokerCommission", Number(event.target.value))}
+            value={deal.commercialTerms.processingFeePercent}
+            onChange={(event) => handleInputChange("processingFee", Number(event.target.value))}
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
           />
         </div>
@@ -110,10 +107,25 @@ export default function PricingEditor() {
           <input
             id="tenureDays"
             type="number"
-            value={deal.pricing.tenureDays}
+            value={deal.deal.tenureDays}
             onChange={(event) => handleInputChange("tenureDays", Number(event.target.value))}
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
           />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <p className="text-xs text-slate-400">Funding Amount</p>
+          <p className="mt-1 text-sm font-semibold text-slate-100">AED {new Intl.NumberFormat("en-AE").format(pricing.fundingAmount)}</p>
+        </div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <p className="text-xs text-slate-400">Discount Fee</p>
+          <p className="mt-1 text-sm font-semibold text-slate-100">AED {new Intl.NumberFormat("en-AE").format(pricing.discountFee)}</p>
+        </div>
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <p className="text-xs text-slate-400">Net Disbursement</p>
+          <p className="mt-1 text-sm font-semibold text-slate-100">AED {new Intl.NumberFormat("en-AE").format(pricing.netDisbursement)}</p>
         </div>
       </div>
     </div>

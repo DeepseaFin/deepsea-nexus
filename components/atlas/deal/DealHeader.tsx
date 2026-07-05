@@ -16,11 +16,11 @@ export default function DealHeader() {
           </p>
 
           <h1 className="text-4xl font-bold text-white mt-2">
-            {deal.id}
+            {deal.deal.dealId}
           </h1>
 
           <p className="text-slate-400 mt-4">
-            {deal.title}
+            {deal.deal.dealName}
           </p>
 
         </div>
@@ -28,11 +28,11 @@ export default function DealHeader() {
         <div className="text-right">
 
           <div className="inline-block bg-amber-500 text-black px-5 py-2 rounded-full font-semibold">
-            {deal.status}
+            {deal.deal.status}
           </div>
 
           <p className="text-slate-400 mt-4">
-            Created: {deal.createdAt}
+            Last Updated: {new Date(deal.workflow.lastUpdated).toLocaleDateString("en-AE")}
           </p>
 
         </div>

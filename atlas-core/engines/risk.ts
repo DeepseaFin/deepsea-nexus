@@ -1,4 +1,4 @@
-import type { Pricing } from "../models/Deal";
+import type { DealModel } from "../deals/DealModel";
 
 export interface RiskResult {
   rating: string;
@@ -8,12 +8,12 @@ export interface RiskResult {
   documentationPass: boolean;
 }
 
-export function calculateRisk(pricing: Pricing): RiskResult {
+export function calculateRisk(deal: DealModel): RiskResult {
   return {
     rating: "AA",
     score: 88,
-    dealSizePass: pricing.invoiceValue <= 5000000,
-    minimumReturnPass: pricing.discountRate >= 1.5,
+    dealSizePass: deal.deal.amount <= 5000000,
+    minimumReturnPass: deal.commercialTerms.discountRatePercent >= 1.5,
     documentationPass: true,
   };
 }
