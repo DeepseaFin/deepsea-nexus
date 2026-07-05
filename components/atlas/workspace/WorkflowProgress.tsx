@@ -1,25 +1,19 @@
 "use client";
 
-const stages = [
-  "Opportunity",
-  "Credit Review",
-  "Risk Review",
-  "Investment Committee",
-  "Documentation",
-  "Funding",
-  "Collections",
-  "Closed",
-];
-
-const currentStage = "Credit Review";
+import { useDeal } from '@/components/atlas/common/DealContext';
+import { ATLAS_WORKFLOW_SEQUENCE, getWorkflowDefinition } from '@/atlas-core/workflow/ATLASWorkflowEngine';
 
 export default function WorkflowProgress() {
+  const { deal } = useDeal();
+  const currentStage = deal.workflow.currentState;
+
   return (
     <div className="w-full rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6 shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        {stages.map((stage, index) => {
-          const isCompleted = index < stages.indexOf(currentStage);
+        {ATLAS_WORKFLOW_SEQUENCE.map((stage, index) => {
+          const isCompleted = index < ATLAS_WORKFLOW_SEQUENCE.indexOf(currentStage);
           const isCurrent = stage === currentStage;
+          const definition = getWorkflowDefinition(stage);
           
 
           return (
@@ -37,7 +31,7 @@ export default function WorkflowProgress() {
                   >
                     {index + 1}
                   </div>
-                  {index < stages.length - 1 ? (
+                  {index < ATLAS_WORKFLOW_SEQUENCE.length - 1 ? (
                     <div className="hidden h-[2px] w-6 bg-slate-700 sm:block" />
                   ) : null}
                 </div>
@@ -47,6 +41,9 @@ export default function WorkflowProgress() {
                   }`}
                 >
                   {stage}
+                </p>
+                <p className="mt-1 text-center text-[10px] uppercase tracking-wide text-slate-500">
+                  {definition.owner}
                 </p>
               </div>
             </div>

@@ -1,3 +1,5 @@
+import { createWorkflowState, type AtlasWorkflowState, type AtlasWorkflowStateName } from '@/atlas-core/workflow/ATLASWorkflowEngine';
+
 export type DealWorkflowStep =
   | 'Client'
   | 'Counterparty'
@@ -7,6 +9,17 @@ export type DealWorkflowStep =
   | 'Recommendation'
   | 'Term Sheet'
   | 'Approval';
+
+export const DEAL_WORKFLOW_STEPS: DealWorkflowStep[] = [
+  'Client',
+  'Counterparty',
+  'Commercial Terms',
+  'Documents',
+  'Intelligence',
+  'Recommendation',
+  'Term Sheet',
+  'Approval',
+];
 
 export interface DealInfo {
   dealId: string;
@@ -88,10 +101,26 @@ export interface FundingState {
   trancheAmount: number;
 }
 
-export interface WorkflowState {
+export interface TimelineEntry {
+  time: string;
+  title: string;
+  description: string;
+  status: 'completed' | 'current' | 'future';
+}
+
+export interface TaskItem {
+  title: string;
+  description: string;
+  owner: string;
+  status: 'pending' | 'in-progress' | 'completed';
+}
+
+export interface WorkflowState extends AtlasWorkflowState {
   currentStep: DealWorkflowStep;
   completedSteps: DealWorkflowStep[];
-  lastUpdated: string;
+  currentState: AtlasWorkflowStateName;
+  completedStates: AtlasWorkflowStateName[];
+  progress: number;
 }
 
 export interface DealModel {
@@ -103,6 +132,8 @@ export interface DealModel {
   intelligence: IntelligenceState;
   approval: ApprovalState;
   funding: FundingState;
+  timeline: TimelineEntry[];
+  tasks: TaskItem[];
   workflow: WorkflowState;
 }
 
@@ -189,10 +220,44 @@ export function createEmptyDeal(): DealModel {
       disbursementAccount: 'Controlled Collection Account',
       trancheAmount: 2250000,
     },
+    timeline: [
+      {
+        time: '09:00',
+        title: 'Case Created',
+        description: 'New receivables financing case initialized from origination.',
+        status: 'completed',
+      },
+      {
+        time: '09:05',
+        title: 'Workflow Started',
+        description: 'Case entered the Opportunity stage.',
+        status: 'current',
+      },
+      {
+        time: '09:20',
+        title: 'Documents Pending',
+        description: 'Awaiting supporting evidence and intake checklist closure.',
+        status: 'future',
+      },
+    ],
+    tasks: [
+      {
+        title: 'Confirm company details',
+        description: 'Validate legal name and country capture.',
+        owner: 'Relationship Manager',
+        status: 'in-progress',
+      },
+      {
+        title: 'Review submitted documents',
+        description: 'Check initial upload package for completeness.',
+        owner: 'Operations',
+        status: 'pending',
+      },
+    ],
     workflow: {
+      ...createWorkflowState('Lead'),
       currentStep: 'Client',
       completedSteps: [],
-      lastUpdated: '2026-07-05T09:30:00.000Z',
     },
   };
 }

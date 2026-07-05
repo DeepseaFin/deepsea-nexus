@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Sparkles,
   Briefcase,
+  ListTodo,
   Building2,
   Landmark,
   Users,
@@ -20,9 +22,19 @@ const menu = [
     icon: LayoutDashboard,
   },
   {
+    title: "Origination",
+    href: "/atlas/origination",
+    icon: Sparkles,
+  },
+  {
     title: "Deals",
     href: "/atlas/deals",
     icon: Briefcase,
+  },
+  {
+    title: "Work Queue",
+    href: "/atlas/work-queue",
+    icon: ListTodo,
   },
   {
     title: "Clients",
