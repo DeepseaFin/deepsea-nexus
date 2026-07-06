@@ -3,6 +3,7 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import SectionCard from './SectionCard';
+import { formatDateTime } from '@/lib/utils/formatters';
 
 interface ExecutiveSummaryProps {
   summary: string;
@@ -89,7 +90,7 @@ const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
         {/* Timestamp */}
         {timestamp && (
           <p className="text-xs text-slate-500">
-            Generated: {new Date(timestamp).toLocaleString()}
+            Generated: {formatDateTime(timestamp)}
           </p>
         )}
       </div>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { DocumentType, classifyDocument } from '@/atlas-core/engines/DocumentClassifier';
+import { formatDateTime } from '@/lib/utils/formatters';
 
 type UploadStage = 'uploading' | 'uploaded';
 
@@ -385,7 +386,7 @@ export default function DocumentUploadZone({
 
 													<div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
 														<span>Size: {file.size}</span>
-														<span>Uploaded: {new Date(file.uploadedAt).toLocaleString()}</span>
+														<span>Uploaded: {formatDateTime(file.uploadedAt)}</span>
 													</div>
 
 													<div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-300">

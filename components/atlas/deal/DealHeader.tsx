@@ -1,5 +1,6 @@
 "use client";
 import { useDeal } from "@/components/atlas/common/DealContext";
+import { formatDate } from "@/lib/utils/formatters";
 
 export default function DealHeader() {
   const { deal } = useDeal();
@@ -32,7 +33,7 @@ export default function DealHeader() {
           </div>
 
           <p className="text-slate-400 mt-4">
-            Last Updated: {new Date(deal.workflow.lastUpdated).toLocaleDateString("en-AE")}
+            Last Updated: {formatDate(deal.workflow.lastUpdated, { locale: "en-AE" })}
           </p>
 
         </div>

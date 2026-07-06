@@ -1,6 +1,7 @@
 "use client";
 
 import { sampleApprovals } from "../../../atlas-core/approvals/sampleApprovals";
+import { formatDateTime } from "@/lib/utils/formatters";
 
 const statusStyles: Record<string, string> = {
   approved: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
@@ -19,9 +20,12 @@ const statusIcons: Record<string, string> = {
 function formatTimestamp(value?: string) {
   if (!value) return "Pending";
 
-  return new Date(value).toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
+  return formatDateTime(value, {
+    locale: "en-US",
+    options: {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
   });
 }
 

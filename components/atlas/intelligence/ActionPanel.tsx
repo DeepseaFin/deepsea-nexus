@@ -3,6 +3,7 @@
 import React from 'react';
 import { CheckCircle2, Clock, User, AlertCircle } from 'lucide-react';
 import SectionCard from './SectionCard';
+import { formatDate } from '@/lib/utils/formatters';
 
 interface Action {
   id: string;
@@ -118,7 +119,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                         <div className={`flex items-center gap-1 ${overdue ? 'text-rose-400' : ''}`}>
                           <Clock className="h-3 w-3" />
                           <span>
-                            {new Date(action.dueDate).toLocaleDateString()}
+                            {formatDate(action.dueDate)}
                             {overdue && ' (Overdue)'}
                           </span>
                         </div>

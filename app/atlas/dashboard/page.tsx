@@ -18,6 +18,7 @@ import {
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import TrustScore from '@/components/atlas/intelligence/TrustScore';
+import { formatDate } from '@/lib/utils/formatters';
 
 const executiveKpis = [
   { label: 'Active Financing Transactions', value: '286', note: 'Across all active desks' },
@@ -122,10 +123,13 @@ const taskSummary = [
 ];
 
 export default function DashboardPage() {
-  const currentDate = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+  const currentDate = formatDate(new Date(), {
+    locale: 'en-GB',
+    options: {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    },
   });
 
   return (
