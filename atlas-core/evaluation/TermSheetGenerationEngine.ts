@@ -5,6 +5,7 @@ import { ParticipantEngine } from '@/atlas-core/participants/ParticipantEngine';
 import { evaluateDealPolicy } from '@/atlas-core/policy/PolicyEngine';
 import { EvidenceEngine } from '@/atlas-core/evidence/EvidenceEngine';
 import { CreditMemoEngine } from '@/atlas-core/evaluation/CreditMemoEngine';
+import { calculateRisk } from '@/atlas-core/engines/risk';
 
 export interface TermSheetLineItem {
   label: string;
@@ -16,32 +17,60 @@ export interface TermSheetSection {
   items: TermSheetLineItem[];
 }
 
-export interface TermSheetSignatureBlock {
-  party: string;
-  signatoryRole: string;
-  status: 'Pending Signature';
+export type ExecutiveDecisionStatus =
+  | 'Ready for Negotiation'
+  | 'Requires Internal Review'
+  | 'Commercially Agreed'
+  | 'Rejected';
+
+export interface OpenCommercialItem {
+  item: string;
+  deepseaPosition: string;
+  negotiationStatus: 'Open' | 'Under Discussion' | 'Agreed';
 }
 
-export interface TermSheetDocument {
-  memoReference: string;
+export interface NegotiationMatrixRow {
+  clause: string;
+  deepseaProposal: string;
+  counterpartyProposal: string;
+  agreedValue: string;
+  status: 'Open' | 'Countered' | 'Agreed' | 'Pending Review';
+}
+
+export interface NegotiationTimelineItem {
+  step: 'Version 1' | 'Client Counter Offer' | 'Internal Review' | 'Revised Proposal' | 'Commercially Agreed';
+  status: 'completed' | 'current' | 'upcoming';
+  detail: string;
+}
+
+export interface RoleComment {
+  role: 'Relationship Manager' | 'Credit' | 'Legal' | 'Management';
+  comment: string;
+}
+
+export interface IndicativeTermSheetDocument {
+  title: 'INDICATIVE TERM SHEET';
+  prejudiceNotice: 'WITHOUT PREJUDICE';
+  discussionNotice: 'FOR DISCUSSION PURPOSES ONLY';
+  bindingNotice: 'NON-BINDING';
+  bindingException: 'except Confidentiality and Governing Law where applicable.';
+  facilityReference: string;
   recommendation: 'Proceed' | 'Proceed with Conditions' | 'Do Not Proceed';
-  sections: {
-    facilityDetails: TermSheetSection;
-    parties: TermSheetSection;
-    commercialTerms: TermSheetSection;
-    pricing: TermSheetSection;
-    fundingStructure: TermSheetSection;
-    conditionsPrecedent: TermSheetSection;
-    covenants: TermSheetSection;
-    eventsOfDefault: TermSheetSection;
-    representationsAndWarranties: TermSheetSection;
-    securityPackage: TermSheetSection;
-    collectionsMechanism: TermSheetSection;
-    feesAndCharges: TermSheetSection;
-    governingLaw: TermSheetSection;
-    specialConditions: TermSheetSection;
+  executiveSummary: TermSheetSection;
+  commercialTerms: TermSheetSection;
+  pricingSummary: TermSheetSection;
+  securityPackage: TermSheetSection;
+  conditionsPrecedent: TermSheetSection;
+  commercialAssumptions: TermSheetSection;
+  openCommercialItems: OpenCommercialItem[];
+  negotiationMatrix: NegotiationMatrixRow[];
+  negotiationTimeline: NegotiationTimelineItem[];
+  comments: RoleComment[];
+  executiveDecision: {
+    currentStatus: ExecutiveDecisionStatus;
+    availableStatuses: ExecutiveDecisionStatus[];
+    rationale: string;
   };
-  signatureBlocks: TermSheetSignatureBlock[];
 }
 
 function unique(values: string[]): string[] {
@@ -52,6 +81,10 @@ function formatMoney(value: number, currency: string): string {
   return `${currency} ${Math.round(value).toLocaleString('en-US')}`;
 }
 
+function formatPercent(value: number): string {
+  return `${Number(value).toFixed(2)}%`;
+}
+
 function toEvidenceUploads(deal: DealModel): Array<{ name: string; confidence: number }> {
   return deal.documents.uploadedDocuments.map((name) => ({
     name,
@@ -59,7 +92,19 @@ function toEvidenceUploads(deal: DealModel): Array<{ name: string; confidence: n
   }));
 }
 
-export function generateTermSheet(deal: DealModel): TermSheetDocument {
+function toDecisionStatus(recommendation: 'Proceed' | 'Proceed with Conditions' | 'Do Not Proceed'): ExecutiveDecisionStatus {
+  if (recommendation === 'Proceed') {
+    return 'Ready for Negotiation';
+  }
+
+  if (recommendation === 'Proceed with Conditions') {
+    return 'Requires Internal Review';
+  }
+
+  return 'Rejected';
+}
+
+export function generateTermSheet(deal: DealModel): IndicativeTermSheetDocument {
   const commercial = evaluateCommercial({
     invoiceAmount: deal.commercialStructure.invoiceAmount,
     requestedFunding: deal.commercialStructure.requestedFunding,
@@ -77,6 +122,7 @@ export function generateTermSheet(deal: DealModel): TermSheetDocument {
   const pricing = evaluatePricing(deal);
 
   const risk = ParticipantEngine.evaluateParticipants(deal);
+  const legacyRisk = calculateRisk(deal);
   const policy = evaluateDealPolicy(deal);
   const evidence = EvidenceEngine.evaluateEvidence({
     deal,
@@ -90,166 +136,237 @@ export function generateTermSheet(deal: DealModel): TermSheetDocument {
     ...evidence.requiredActions.map((action) => action.action),
   ]);
 
-  const covenantItems = unique([
-    ...policy.sections.concentration.checks
-      .filter((checkResult) => checkResult.status !== 'pass')
-      .map((checkResult) => checkResult.recommendedAction),
-    ...policy.sections.counterparty.checks
-      .filter((checkResult) => checkResult.status !== 'pass')
-      .map((checkResult) => checkResult.recommendedAction),
-  ]);
-
-  const eventsOfDefaultItems = unique([
-    ...commercial.evaluationFindings.blockers.map((blocker) => blocker.message),
-    ...risk.blockers.map((blocker) => blocker.message),
-    ...policy.evaluation.blockers.map((blocker) => blocker.message),
-    ...evidence.criticalBlockers.map((blocker) => blocker.message),
-  ]);
-
   const specialConditionItems = unique([
     ...creditMemo.investmentCommitteeDecision.conditions,
     ...creditMemo.investmentCommitteeDecision.requiredActions,
   ]);
 
-  return {
-    memoReference: deal.deal.dealId,
-    recommendation: creditMemo.executiveDecisionSummary.overallRecommendation,
-    sections: {
-      facilityDetails: {
-        title: 'Facility Details',
-        items: [
-          { label: 'Facility Name', value: deal.deal.dealName },
-          { label: 'Facility Type', value: deal.deal.product },
-          { label: 'Facility Currency', value: deal.deal.currency },
-          { label: 'Facility Limit', value: formatMoney(deal.commercialStructure.facilityLimit, deal.deal.currency) },
-          { label: 'Tenor', value: `${deal.commercialStructure.tenorDays} days` },
-        ],
-      },
-      parties: {
-        title: 'Parties',
-        items: [
-          { label: 'Financier', value: 'Deepsea Nexus' },
-          { label: 'Client', value: deal.client.legalName },
-          { label: 'Counterparty', value: deal.counterparty.name },
-          { label: 'Relationship Manager', value: deal.client.relationshipManager },
-        ],
-      },
-      commercialTerms: {
-        title: 'Commercial Terms',
-        items: [
-          { label: 'Approved Funding', value: formatMoney(pricing.approvedFunding, deal.deal.currency) },
-          { label: 'Advance Rate', value: `${pricing.advancePercent}%` },
-          { label: 'Recourse Type', value: pricing.recourse },
-          { label: 'Commercial Recommendation', value: commercial.evaluationFindings.recommendation },
-          { label: 'Commercial Summary', value: commercial.evaluationFindings.summary.narrative },
-        ],
-      },
-      pricing: {
-        title: 'Pricing',
-        items: [
-          { label: 'Discount Rate', value: `${pricing.discountRatePercent}%` },
-          { label: 'Expected Yield', value: `${commercial.calculatedValues.expectedYieldPercent.toFixed(2)}%` },
-          { label: 'Expected Profit', value: formatMoney(commercial.calculatedValues.expectedProfit, deal.deal.currency) },
-          { label: 'Processing Fee %', value: `${pricing.processingFeePercent}%` },
-        ],
-      },
-      fundingStructure: {
-        title: 'Funding Structure',
-        items: [
-          { label: 'Invoice Value', value: formatMoney(deal.commercialStructure.invoiceAmount, deal.deal.currency) },
-          { label: 'Requested Funding', value: formatMoney(pricing.requestedFunding, deal.deal.currency) },
-          { label: 'Approved Funding', value: formatMoney(pricing.approvedFunding, deal.deal.currency) },
-          { label: 'Net Disbursement', value: formatMoney(commercial.calculatedValues.netDisbursement, deal.deal.currency) },
-          { label: 'Funding Source', value: deal.commercialStructure.fundingSource },
-        ],
-      },
-      conditionsPrecedent: {
-        title: 'Conditions Precedent',
-        items: (conditionsPrecedentItems.length > 0 ? conditionsPrecedentItems : ['No additional conditions precedent identified.']).map((value, index) => ({
-          label: `Condition ${index + 1}`,
-          value,
-        })),
-      },
-      covenants: {
-        title: 'Covenants',
-        items: (covenantItems.length > 0 ? covenantItems : ['Maintain compliance with concentration and counterparty policy controls.']).map((value, index) => ({
-          label: `Covenant ${index + 1}`,
-          value,
-        })),
-      },
-      eventsOfDefault: {
-        title: 'Events of Default',
-        items: (eventsOfDefaultItems.length > 0 ? eventsOfDefaultItems : ['Material breach of agreed commercial, policy, or documentary obligations.']).map((value, index) => ({
-          label: `Default Trigger ${index + 1}`,
-          value,
-        })),
-      },
-      representationsAndWarranties: {
-        title: 'Representations & Warranties',
-        items: [
-          { label: 'Corporate Authority', value: 'Client confirms full authority to enter into the financing facility.' },
-          { label: 'Information Accuracy', value: 'All submitted information and supporting evidence are complete and accurate in all material respects.' },
-          { label: 'No Material Adverse Change', value: 'No undisclosed material adverse change has occurred since submission.' },
-        ],
-      },
-      securityPackage: {
-        title: 'Security Package',
-        items: [
-          { label: 'Primary Security', value: pricing.security },
-          { label: 'Recourse Structure', value: pricing.recourse },
-          { label: 'Additional Security', value: 'As required by policy and committee conditions.' },
-        ],
-      },
-      collectionsMechanism: {
-        title: 'Collections Mechanism',
-        items: [
-          { label: 'Settlement Method', value: deal.commercialStructure.settlementMethod },
-          { label: 'Disbursement Account', value: deal.funding.disbursementAccount },
-          { label: 'Monitoring Control', value: 'Collections routed through controlled account with periodic reconciliation.' },
-        ],
-      },
-      feesAndCharges: {
-        title: 'Fees & Charges',
-        items: [
-          { label: 'Processing Fee', value: formatMoney(deal.commercialStructure.processingFee, deal.deal.currency) },
-          { label: 'Legal Fee', value: formatMoney(deal.commercialStructure.legalFee, deal.deal.currency) },
-          { label: 'Other Charges', value: formatMoney(deal.commercialStructure.otherCharges, deal.deal.currency) },
-          { label: 'Total Fees', value: formatMoney(commercial.calculatedValues.totalFees, deal.deal.currency) },
-        ],
-      },
-      governingLaw: {
-        title: 'Governing Law',
-        items: [
-          { label: 'Jurisdiction', value: deal.client.country },
-          { label: 'Policy Basis', value: policy.policySummary.headline },
-          { label: 'Evidence Basis', value: evidence.summary.headline },
-        ],
-      },
-      specialConditions: {
-        title: 'Special Conditions',
-        items: (specialConditionItems.length > 0 ? specialConditionItems : ['No additional special conditions identified.']).map((value, index) => ({
-          label: `Special Condition ${index + 1}`,
-          value,
-        })),
-      },
+  const pricingSummaryItems = [
+    { label: 'Discount', value: formatPercent(pricing.discountRatePercent) },
+    {
+      label: 'Fees',
+      value: formatMoney(
+        deal.commercialStructure.processingFee + deal.commercialStructure.legalFee + deal.commercialStructure.otherCharges,
+        deal.deal.currency,
+      ),
     },
-    signatureBlocks: [
+    { label: 'Brokerage', value: formatMoney(deal.commercialStructure.otherCharges, deal.deal.currency) },
+    { label: 'Taxes', value: formatMoney(0, deal.deal.currency) },
+    { label: 'Net Disbursement', value: formatMoney(commercial.calculatedValues.netDisbursement, deal.deal.currency) },
+  ];
+
+  const conditionsRows = (conditionsPrecedentItems.length > 0
+    ? conditionsPrecedentItems
+    : ['No additional conditions precedent identified from current risk, policy, and evidence checks.'])
+    .map((value, index) => ({
+      label: `Condition ${index + 1}`,
+      value,
+    }));
+
+  const commercialAssumptions = unique([
+    `Availability assumes documentary closure of ${evidence.criticalDocumentsPending} critical document(s).`,
+    `Commercial structure based on ${formatPercent(pricing.advancePercent)} advance and ${deal.commercialStructure.tenorDays} day tenor.`,
+    `Pricing assumes discount rate at ${formatPercent(pricing.discountRatePercent)} and processing fee at ${formatPercent(pricing.processingFeePercent)}.`,
+    `Policy posture currently ${policy.executiveSummary.recommendationLabel}.`,
+    `Risk posture currently ${risk.recommendation} with readiness ${risk.readiness.score}%.`,
+  ]);
+
+  const openCommercialItems: OpenCommercialItem[] = [
+    { item: 'Pricing', deepseaPosition: formatPercent(pricing.discountRatePercent), negotiationStatus: 'Open' },
+    { item: 'Advance %', deepseaPosition: formatPercent(pricing.advancePercent), negotiationStatus: 'Open' },
+    {
+      item: 'FLDG',
+      deepseaPosition: deal.commercialStructure.recourseType.includes('Limited') ? 'Applicable' : 'Not Applicable',
+      negotiationStatus: 'Under Discussion',
+    },
+    { item: 'Tenor', deepseaPosition: `${deal.commercialStructure.tenorDays} days`, negotiationStatus: 'Open' },
+    { item: 'Collection Waterfall', deepseaPosition: deal.commercialStructure.settlementMethod, negotiationStatus: 'Under Discussion' },
+    { item: 'Guarantees', deepseaPosition: 'Corporate guarantee requested', negotiationStatus: 'Open' },
+    { item: 'Security', deepseaPosition: pricing.security, negotiationStatus: 'Open' },
+  ];
+
+  const negotiationMatrix: NegotiationMatrixRow[] = [
+    {
+      clause: 'Facility Amount',
+      deepseaProposal: formatMoney(deal.commercialStructure.approvedFunding, deal.deal.currency),
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+    {
+      clause: 'Advance %',
+      deepseaProposal: formatPercent(pricing.advancePercent),
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+    {
+      clause: 'Discount Rate',
+      deepseaProposal: formatPercent(pricing.discountRatePercent),
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+    {
+      clause: 'FLDG',
+      deepseaProposal: deal.commercialStructure.recourseType.includes('Limited') ? 'Required' : 'Not Required',
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Pending Review',
+    },
+    {
+      clause: 'Tenor',
+      deepseaProposal: `${deal.commercialStructure.tenorDays} days`,
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+    {
+      clause: 'Guarantees',
+      deepseaProposal: 'Corporate guarantee from client group',
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Pending Review',
+    },
+    {
+      clause: 'Collection Account',
+      deepseaProposal: deal.funding.disbursementAccount,
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+    {
+      clause: 'Conditions',
+      deepseaProposal: `${conditionsRows.length} condition(s) precedent`,
+      counterpartyProposal: 'Pending counterparty response',
+      agreedValue: 'Pending',
+      status: 'Open',
+    },
+  ];
+
+  const decisionStatus = toDecisionStatus(creditMemo.executiveDecisionSummary.overallRecommendation);
+
+  return {
+    title: 'INDICATIVE TERM SHEET',
+    prejudiceNotice: 'WITHOUT PREJUDICE',
+    discussionNotice: 'FOR DISCUSSION PURPOSES ONLY',
+    bindingNotice: 'NON-BINDING',
+    bindingException: 'except Confidentiality and Governing Law where applicable.',
+    facilityReference: deal.deal.dealId,
+    recommendation: creditMemo.executiveDecisionSummary.overallRecommendation,
+    executiveSummary: {
+      title: 'Executive Summary',
+      items: [
+        { label: 'Facility Name', value: deal.deal.dealName },
+        { label: 'Facility Reference', value: deal.deal.dealId },
+        { label: 'Client', value: deal.client.legalName },
+        { label: 'Counterparty', value: deal.counterparty.name },
+        { label: 'Product', value: deal.deal.product },
+        { label: 'Currency', value: deal.deal.currency },
+        { label: 'Overall Recommendation', value: creditMemo.executiveDecisionSummary.overallRecommendation },
+        { label: 'Commercial Readiness', value: `${creditMemo.executiveDecisionSummary.commercialReadiness}%` },
+        { label: 'Risk Readiness', value: `${creditMemo.executiveDecisionSummary.riskReadiness}%` },
+        { label: 'Policy Readiness', value: `${creditMemo.executiveDecisionSummary.policyReadiness}%` },
+        { label: 'Evidence Readiness', value: `${creditMemo.executiveDecisionSummary.evidenceReadiness}%` },
+      ],
+    },
+    commercialTerms: {
+      title: 'Commercial Terms',
+      items: [
+        { label: 'Facility Amount', value: formatMoney(deal.commercialStructure.facilityLimit, deal.deal.currency) },
+        { label: 'Advance %', value: formatPercent(pricing.advancePercent) },
+        { label: 'Tenor', value: `${deal.commercialStructure.tenorDays} days` },
+        { label: 'Discount Rate', value: formatPercent(pricing.discountRatePercent) },
+        { label: 'Yield', value: formatPercent(commercial.calculatedValues.expectedYieldPercent) },
+        { label: 'Funding Amount', value: formatMoney(pricing.approvedFunding, deal.deal.currency) },
+        { label: 'Availability', value: `${Math.max(0, deal.commercialStructure.facilityLimit - pricing.approvedFunding).toLocaleString('en-US')} ${deal.deal.currency} headroom` },
+        { label: 'Drawdown', value: formatMoney(deal.funding.trancheAmount || pricing.requestedFunding, deal.deal.currency) },
+      ],
+    },
+    pricingSummary: {
+      title: 'Pricing Summary',
+      items: pricingSummaryItems,
+    },
+    securityPackage: {
+      title: 'Security Package',
+      items: [
+        { label: 'Assignment', value: pricing.security || 'Assignment of receivables' },
+        { label: 'FLDG', value: deal.commercialStructure.recourseType.includes('Limited') ? 'Required' : 'Not Required' },
+        { label: 'Corporate Guarantee', value: 'Required from client entity' },
+        { label: 'Personal Guarantee', value: 'Not requested at this stage' },
+        { label: 'Collection Account', value: deal.funding.disbursementAccount },
+        { label: 'Virtual IBAN', value: 'To be allocated post commercial agreement' },
+        { label: 'Security Documents', value: `${Math.max(1, specialConditionItems.length)} document package item(s) to be finalized` },
+      ],
+    },
+    conditionsPrecedent: {
+      title: 'Conditions Precedent',
+      items: conditionsRows,
+    },
+    commercialAssumptions: {
+      title: 'Commercial Assumptions',
+      items: commercialAssumptions.map((value, index) => ({
+        label: `Assumption ${index + 1}`,
+        value,
+      })),
+    },
+    openCommercialItems,
+    negotiationMatrix,
+    negotiationTimeline: [
       {
-        party: deal.client.legalName,
-        signatoryRole: 'Authorized Signatory (Client)',
-        status: 'Pending Signature',
+        step: 'Version 1',
+        status: 'completed',
+        detail: 'Initial indicative term sheet issued by Deepsea Nexus.',
       },
       {
-        party: 'Deepsea Nexus',
-        signatoryRole: 'Authorized Signatory (Financier)',
-        status: 'Pending Signature',
+        step: 'Client Counter Offer',
+        status: 'current',
+        detail: 'Awaiting commercial counter positions from client/counterparty.',
       },
       {
-        party: deal.counterparty.name,
-        signatoryRole: 'Acknowledgement Signatory (Counterparty)',
-        status: 'Pending Signature',
+        step: 'Internal Review',
+        status: 'upcoming',
+        detail: 'Credit, policy, and legal review of negotiated deltas.',
+      },
+      {
+        step: 'Revised Proposal',
+        status: 'upcoming',
+        detail: 'Deepsea revised proposal to be released after internal alignment.',
+      },
+      {
+        step: 'Commercially Agreed',
+        status: 'upcoming',
+        detail: 'Finalize negotiated economics for approval and definitive documents.',
       },
     ],
+    comments: [
+      {
+        role: 'Relationship Manager',
+        comment: `Client engagement active; current posture is ${creditMemo.executiveDecisionSummary.overallRecommendation}.`,
+      },
+      {
+        role: 'Credit',
+        comment: `Risk readiness ${risk.readiness.score}% with legacy risk score ${legacyRisk.score} (${legacyRisk.rating}).`,
+      },
+      {
+        role: 'Legal',
+        comment: `${conditionsRows.length} condition(s) precedent to be reflected in legal documentation pack.`,
+      },
+      {
+        role: 'Management',
+        comment: `Policy recommendation is ${policy.executiveSummary.recommendationLabel}; escalation based on negotiation outcomes.`,
+      },
+    ],
+    executiveDecision: {
+      currentStatus: decisionStatus,
+      availableStatuses: [
+        'Ready for Negotiation',
+        'Requires Internal Review',
+        'Commercially Agreed',
+        'Rejected',
+      ],
+      rationale: creditMemo.investmentCommitteeDecision.keyRisks[0] || 'No critical risk escalations identified at this stage.',
+    },
   };
 }
 
