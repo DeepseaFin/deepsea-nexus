@@ -13,6 +13,24 @@ export interface EvidenceBlocker {
   message: string;
 }
 
+export type EvidenceDocumentStatus = 'verified' | 'pending' | 'missing';
+
+export interface EvidenceDocumentItem {
+  id: string;
+  category: string;
+  name: string;
+  mandatory: boolean;
+  status: EvidenceDocumentStatus;
+  verification: 'verified' | 'pending';
+  confidence?: number;
+  isCritical: boolean;
+}
+
+export type EvidenceRecommendation =
+  | 'Proceed'
+  | 'Proceed with Conditions'
+  | 'Do Not Proceed';
+
 export interface EvidenceRequiredAction {
   id: string;
   action: string;
@@ -27,6 +45,11 @@ export interface EvidenceSummary {
 export interface EvidenceResult {
   readiness: number;
   categories: EvidenceCategoryState[];
+  requiredDocuments: EvidenceDocumentItem[];
+  missingMandatoryDocuments: EvidenceDocumentItem[];
+  verifiedDocuments: EvidenceDocumentItem[];
+  recommendation: EvidenceRecommendation;
+  criticalDocumentsPending: number;
   missingEvidence: string[];
   warnings: EvidenceWarning[];
   criticalBlockers: EvidenceBlocker[];

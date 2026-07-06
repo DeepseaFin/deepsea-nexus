@@ -1,5 +1,12 @@
 import type { EvidenceCategoryDefinition, EvidenceCategoryState, EvidenceModel, EvidenceUpload } from '@/atlas-core/evidence/EvidenceModel';
-import type { EvidenceBlocker, EvidenceRequiredAction, EvidenceResult, EvidenceWarning } from '@/atlas-core/evidence/EvidenceResult';
+import type {
+  EvidenceBlocker,
+  EvidenceDocumentItem,
+  EvidenceRecommendation,
+  EvidenceRequiredAction,
+  EvidenceResult,
+  EvidenceWarning,
+} from '@/atlas-core/evidence/EvidenceResult';
 
 const EVIDENCE_CATEGORIES: EvidenceCategoryDefinition[] = [
   {
@@ -53,6 +60,19 @@ function hasEvidence(uploads: EvidenceUpload[], expectedDocument: string): boole
   });
 }
 
+function getMatchingUpload(
+  uploads: EvidenceUpload[],
+  expectedDocument: string,
+): EvidenceUpload | undefined {
+  const expected = normalize(expectedDocument);
+
+  return uploads.find((upload) => {
+    const byType = normalize(upload.documentType ?? '') === expected;
+    const byName = normalize(upload.name).includes(expected);
+    return byType || byName;
+  });
+}
+
 function buildCategoryStates(model: EvidenceModel): EvidenceCategoryState[] {
   return EVIDENCE_CATEGORIES.map((definition) => {
     const uploaded = definition.required
@@ -78,32 +98,78 @@ function listMissingRequired(states: EvidenceCategoryState[]): string[] {
   );
 }
 
-function calculateReadiness(states: EvidenceCategoryState[]): number {
-  const totalRequired = states.reduce((sum, state) => sum + state.required.length, 0);
-  const uploadedRequired = states.reduce(
-    (sum, state) => sum + state.required.filter((doc) => state.uploaded.includes(doc)).length,
-    0,
-  );
+function buildRequiredDocumentRows(model: EvidenceModel): EvidenceDocumentItem[] {
+  return EVIDENCE_CATEGORIES.flatMap((categoryDef) => {
+    const rowsFrom = (documents: string[], mandatory: boolean): EvidenceDocumentItem[] =>
+      documents.map((documentName, index) => {
+        const match = getMatchingUpload(model.uploads, documentName);
+        const confidence = match?.confidence ?? 0;
+        const status: EvidenceDocumentItem['status'] =
+          !match ? 'missing' : confidence >= 80 ? 'verified' : 'pending';
 
-  if (totalRequired === 0) {
+        return {
+          id: `${categoryDef.category}-${documentName}-${index}`,
+          category: categoryDef.category,
+          name: documentName,
+          mandatory,
+          status,
+          verification: status === 'verified' ? 'verified' : 'pending',
+          confidence: match?.confidence,
+          isCritical: mandatory,
+        };
+      });
+
+    return [
+      ...rowsFrom(categoryDef.required, true),
+      ...rowsFrom(categoryDef.optional, false),
+    ];
+  });
+}
+
+function buildReadinessFromDocuments(requiredDocuments: EvidenceDocumentItem[]): number {
+  const mandatory = requiredDocuments.filter((document) => document.mandatory);
+
+  if (mandatory.length === 0) {
     return 0;
   }
 
-  return Math.round((uploadedRequired / totalRequired) * 100);
+  const completedMandatory = mandatory.filter((document) => document.status !== 'missing').length;
+  const verifiedMandatory = mandatory.filter((document) => document.status === 'verified').length;
+
+  const completionScore = (completedMandatory / mandatory.length) * 70;
+  const verificationScore = (verifiedMandatory / mandatory.length) * 30;
+
+  return Math.round(completionScore + verificationScore);
 }
 
-function buildWarnings(states: EvidenceCategoryState[]): EvidenceWarning[] {
+function buildWarnings(requiredDocuments: EvidenceDocumentItem[]): EvidenceWarning[] {
   const warnings: EvidenceWarning[] = [];
 
-  if (states.some((state) => state.verified.length === 0 && state.uploaded.length > 0)) {
+  const mandatoryPending = requiredDocuments.filter(
+    (document) => document.mandatory && document.status === 'pending',
+  );
+  const optionalMissing = requiredDocuments.filter(
+    (document) => !document.mandatory && document.status === 'missing',
+  );
+
+  if (mandatoryPending.length > 0) {
     warnings.push({
-      code: 'VERIFICATION_PLACEHOLDER',
-      severity: 'medium',
-      message: 'Verification state is placeholder and will be supplied by future connectors.',
+      code: 'MANDATORY_VERIFICATION_PENDING',
+      severity: 'high',
+      message:
+        'One or more mandatory documents are uploaded but pending verification and require analyst validation.',
     });
   }
 
-  if (states.some((state) => state.expired.length === 0 && state.uploaded.length > 0)) {
+  if (optionalMissing.length > 0) {
+    warnings.push({
+      code: 'OPTIONAL_DOCUMENTS_MISSING',
+      severity: 'low',
+      message: 'Optional supporting documents are pending upload.',
+    });
+  }
+
+  if (requiredDocuments.some((document) => document.status !== 'missing')) {
     warnings.push({
       code: 'EXPIRY_PLACEHOLDER',
       severity: 'low',
@@ -114,27 +180,38 @@ function buildWarnings(states: EvidenceCategoryState[]): EvidenceWarning[] {
   return warnings;
 }
 
-function buildCriticalBlockers(missingEvidence: string[]): EvidenceBlocker[] {
-  return missingEvidence.slice(0, 4).map((missing, index) => ({
+function buildCriticalBlockers(
+  missingMandatoryDocuments: EvidenceDocumentItem[],
+): EvidenceBlocker[] {
+  return missingMandatoryDocuments.slice(0, 5).map((missing, index) => ({
     code: `BLOCKER_${index + 1}`,
-    message: `${missing} is required for financing evaluation readiness.`,
+    message: `${missing.category}: ${missing.name} is mandatory and pending before funding decision can proceed.`,
   }));
 }
 
 function buildRequiredActions(
-  missingEvidence: string[],
+  missingMandatoryDocuments: EvidenceDocumentItem[],
+  pendingMandatoryDocuments: EvidenceDocumentItem[],
   warnings: EvidenceWarning[],
 ): EvidenceRequiredAction[] {
-  const actions: EvidenceRequiredAction[] = missingEvidence.slice(0, 3).map((missing, index) => ({
+  const actions: EvidenceRequiredAction[] = missingMandatoryDocuments.slice(0, 4).map((missing, index) => ({
     id: `evidence-action-${index + 1}`,
-    action: `Upload missing document: ${missing}`,
+    action: `Upload missing mandatory document: ${missing.category} - ${missing.name}`,
     owner: 'Relationship Manager',
   }));
 
-  if (warnings.some((warning) => warning.code === 'VERIFICATION_PLACEHOLDER')) {
+  pendingMandatoryDocuments.slice(0, 2).forEach((document, index) => {
     actions.push({
-      id: 'evidence-action-verification-placeholder',
-      action: 'Mark uploaded documents for manual verification until connector integration is enabled.',
+      id: `evidence-action-verify-${index + 1}`,
+      action: `Verify uploaded mandatory document: ${document.category} - ${document.name}`,
+      owner: 'Credit Operations',
+    });
+  });
+
+  if (warnings.some((warning) => warning.code === 'EXPIRY_PLACEHOLDER')) {
+    actions.push({
+      id: 'evidence-action-expiry-review',
+      action: 'Perform manual expiry review of uploaded evidence until connector checks are enabled.',
       owner: 'Operations Analyst',
     });
   }
@@ -142,24 +219,88 @@ function buildRequiredActions(
   return actions;
 }
 
+function buildRecommendation(
+  missingMandatoryDocuments: EvidenceDocumentItem[],
+  pendingMandatoryDocuments: EvidenceDocumentItem[],
+): EvidenceRecommendation {
+  if (missingMandatoryDocuments.length > 0) {
+    return 'Do Not Proceed';
+  }
+
+  if (pendingMandatoryDocuments.length > 0) {
+    return 'Proceed with Conditions';
+  }
+
+  return 'Proceed';
+}
+
+function buildExecutiveNarrative(
+  recommendation: EvidenceRecommendation,
+  missingMandatoryDocuments: EvidenceDocumentItem[],
+  verifiedDocuments: EvidenceDocumentItem[],
+  pendingMandatoryDocuments: EvidenceDocumentItem[],
+): string {
+  if (recommendation === 'Proceed') {
+    return `Yes. Documentary evidence is currently sufficient to proceed with funding, with ${verifiedDocuments.length} verified document(s) and no missing mandatory requirements.`;
+  }
+
+  if (recommendation === 'Proceed with Conditions') {
+    return `Conditionally. Mandatory evidence is uploaded, but ${pendingMandatoryDocuments.length} mandatory document(s) remain pending verification before final funding release.`;
+  }
+
+  return `No. Documentary evidence is not yet sufficient to proceed; ${missingMandatoryDocuments.length} mandatory document(s) are still missing.`;
+}
+
 export function evaluateEvidence(model: EvidenceModel): EvidenceResult {
   const categories = buildCategoryStates(model);
+  const requiredDocuments = buildRequiredDocumentRows(model);
+  const missingMandatoryDocuments = requiredDocuments.filter(
+    (document) => document.mandatory && document.status === 'missing',
+  );
+  const verifiedDocuments = requiredDocuments.filter(
+    (document) => document.status === 'verified',
+  );
+  const pendingMandatoryDocuments = requiredDocuments.filter(
+    (document) => document.mandatory && document.status === 'pending',
+  );
   const missingEvidence = listMissingRequired(categories);
-  const readiness = calculateReadiness(categories);
-  const warnings = buildWarnings(categories);
-  const criticalBlockers = buildCriticalBlockers(missingEvidence);
-  const requiredActions = buildRequiredActions(missingEvidence, warnings);
+  const readiness = buildReadinessFromDocuments(requiredDocuments);
+  const warnings = buildWarnings(requiredDocuments);
+  const criticalBlockers = buildCriticalBlockers(missingMandatoryDocuments);
+  const requiredActions = buildRequiredActions(
+    missingMandatoryDocuments,
+    pendingMandatoryDocuments,
+    warnings,
+  );
+  const recommendation = buildRecommendation(
+    missingMandatoryDocuments,
+    pendingMandatoryDocuments,
+  );
+  const executiveNarrative = buildExecutiveNarrative(
+    recommendation,
+    missingMandatoryDocuments,
+    verifiedDocuments,
+    pendingMandatoryDocuments,
+  );
+  const criticalDocumentsPending = missingMandatoryDocuments.filter(
+    (document) => document.isCritical,
+  ).length;
 
   return {
     readiness,
     categories,
+    requiredDocuments,
+    missingMandatoryDocuments,
+    verifiedDocuments,
+    recommendation,
+    criticalDocumentsPending,
     missingEvidence,
     warnings,
     criticalBlockers,
     requiredActions,
     summary: {
-      headline: `Evidence Readiness ${readiness}%`,
-      narrative: `Detected ${missingEvidence.length} missing required evidence item(s) across ${categories.length} categories.`,
+      headline: `${recommendation} | Evidence Readiness ${readiness}%`,
+      narrative: executiveNarrative,
     },
   };
 }
