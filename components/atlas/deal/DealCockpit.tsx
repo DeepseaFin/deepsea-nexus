@@ -4,17 +4,30 @@ import { useState } from "react";
 import { PlusCircle } from "lucide-react";
 import DealHeader from "./DealHeader";
 import DealKPIs from "./DealKPIs";
-import DealTabs from "./DealTabs";
 import DealStudio from "./DealStudio";
 import OverviewWorkspace from "@/components/atlas/workspace/OverviewWorkspace";
 import PricingWorkspace from "@/components/atlas/workspace/PricingWorkspace";
 import RiskWorkspace from "@/components/atlas/workspace/RiskWorkspace";
 import DocumentsWorkspace from "@/components/atlas/workspace/DocumentsWorkspace";
+import CreditMemoWorkspace from "@/components/atlas/workspace/CreditMemoWorkspace";
 import TermSheetWorkspace from "@/components/atlas/workspace/TermSheetWorkspace";
 import FundingWorkspace from "@/components/atlas/workspace/FundingWorkspace";
 import PaymentsWorkspace from "@/components/atlas/workspace/PaymentsWorkspace";
 import NotesWorkspace from "@/components/atlas/workspace/NotesWorkspace";
 import AuditWorkspace from "@/components/atlas/workspace/AuditWorkspace";
+
+const TAB_LIST = [
+  "Overview",
+  "Pricing",
+  "Risk",
+  "Documents",
+  "Credit Memo",
+  "Term Sheet",
+  "Funding",
+  "Payments",
+  "Notes",
+  "Audit",
+];
 
 export default function DealCockpit() {
   const [activeTab, setActiveTab] = useState<string>("Overview");
@@ -34,6 +47,9 @@ export default function DealCockpit() {
 
       case "Documents":
         return <DocumentsWorkspace />;
+
+      case "Credit Memo":
+        return <CreditMemoWorkspace />;
 
       case "Risk":
         return <RiskWorkspace />;
@@ -79,7 +95,23 @@ export default function DealCockpit() {
 
       <DealKPIs />
 
-      <DealTabs activeTab={activeTab} onTabChange={handleTabChange} />
+      <div className="bg-slate-900 rounded-2xl border border-slate-800">
+        <div className="flex overflow-x-auto">
+          {TAB_LIST.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              className={`px-6 py-4 whitespace-nowrap font-medium transition-all ${
+                activeTab === tab
+                  ? "text-cyan-400 border-b-2 border-cyan-400 bg-slate-800/50"
+                  : "text-slate-400 border-b-2 border-transparent hover:text-cyan-300 hover:border-cyan-400/50"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {renderContent()}
         </>
