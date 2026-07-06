@@ -35,13 +35,6 @@ const TrustScore: React.FC<TrustScoreProps> = ({
     lg: { circle: 'h-40 w-40', text: 'text-4xl', label: 'text-base' },
   };
 
-  const colorClasses = {
-    emerald: 'from-emerald-900 to-emerald-800 text-emerald-200 border-emerald-700',
-    cyan: 'from-cyan-900 to-cyan-800 text-cyan-200 border-cyan-700',
-    amber: 'from-amber-900 to-amber-800 text-amber-200 border-amber-700',
-    rose: 'from-rose-900 to-rose-800 text-rose-200 border-rose-700',
-  };
-
   const circumference = 2 * Math.PI * 45;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 

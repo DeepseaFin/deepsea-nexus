@@ -5,6 +5,7 @@ import {
   createEmptyDeal,
   type ApprovalState,
   type ClientInfo,
+  type CommercialStructure,
   type CommercialTerms,
   type CounterpartyInfo,
   type DealInfo,
@@ -20,6 +21,7 @@ type DealContextValue = {
   updateDeal: (payload: Partial<DealInfo>) => void;
   updateClient: (payload: Partial<ClientInfo>) => void;
   updateCounterparty: (payload: Partial<CounterpartyInfo>) => void;
+  updateCommercialStructure: (payload: Partial<CommercialStructure>) => void;
   updateCommercialTerms: (payload: Partial<CommercialTerms>) => void;
   updateDocuments: (payload: Partial<DocumentState>) => void;
   updateIntelligence: (payload: Partial<IntelligenceState>) => void;
@@ -42,6 +44,10 @@ export function DealProvider({ children }: { children: ReactNode }) {
 
   const updateCounterparty = (payload: Partial<CounterpartyInfo>) => {
     setDeal((prev) => ({ ...prev, counterparty: { ...prev.counterparty, ...payload } }));
+  };
+
+  const updateCommercialStructure = (payload: Partial<CommercialStructure>) => {
+    setDeal((prev) => ({ ...prev, commercialStructure: { ...prev.commercialStructure, ...payload } }));
   };
 
   const updateCommercialTerms = (payload: Partial<CommercialTerms>) => {
@@ -72,6 +78,7 @@ export function DealProvider({ children }: { children: ReactNode }) {
         updateDeal,
         updateClient,
         updateCounterparty,
+        updateCommercialStructure,
         updateCommercialTerms,
         updateDocuments,
         updateIntelligence,

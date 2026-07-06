@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   CircleDollarSign,
   FileSearch,
-  Gavel,
   Globe2,
   Scale,
   Search,

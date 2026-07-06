@@ -92,6 +92,20 @@ const toneClasses: Record<HealthTone, string> = {
 	risk: 'border-rose-800/60 bg-rose-950/20 text-rose-300',
 };
 
+const executiveVerdictTimestampFormatter = new Intl.DateTimeFormat('en-AE', {
+	timeZone: 'UTC',
+	year: 'numeric',
+	month: 'short',
+	day: '2-digit',
+	hour: '2-digit',
+	minute: '2-digit',
+	hour12: true,
+});
+
+function formatExecutiveVerdictIssuedAt(value: string): string {
+	return executiveVerdictTimestampFormatter.format(new Date(value));
+}
+
 /**
  * Presentation-only executive dashboard for a single deal.
  * All values are supplied through props and can later be bound to Decision Orchestrator outputs.
@@ -140,7 +154,7 @@ export default function DealCommandCenter({
 							<p className="text-sm leading-relaxed text-slate-300">{executiveVerdict.summary}</p>
 							{executiveVerdict.issuedAt && (
 								<p className="text-xs text-slate-500">
-									Issued {new Date(executiveVerdict.issuedAt).toLocaleString()}
+									Issued {formatExecutiveVerdictIssuedAt(executiveVerdict.issuedAt)}
 								</p>
 							)}
 						</div>

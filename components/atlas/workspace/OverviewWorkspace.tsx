@@ -20,6 +20,11 @@ export default function OverviewWorkspace() {
   const dealConfidenceIndex = 88;
   const trustScore = 91;
   const readinessScore = 86;
+  const actionDueDates = {
+    treasury: "2026-07-07T09:00:00.000Z",
+    legal: "2026-07-08T09:00:00.000Z",
+    memo: "2026-07-09T09:00:00.000Z",
+  };
 
   const findings = {
     strengths: [
@@ -61,7 +66,7 @@ export default function OverviewWorkspace() {
       title: "Confirm treasury allocation",
       description: "Secure final allocation window for disbursement readiness.",
       owner: "Treasury Desk",
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      dueDate: actionDueDates.treasury,
       priority: "critical" as const,
       status: "in-progress" as const,
     },
@@ -70,7 +75,7 @@ export default function OverviewWorkspace() {
       title: "Close outstanding legal pack",
       description: "Validate legal completion and attach closing evidence.",
       owner: "Legal Team",
-      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      dueDate: actionDueDates.legal,
       priority: "high" as const,
       status: "pending" as const,
     },
@@ -79,7 +84,7 @@ export default function OverviewWorkspace() {
       title: "Prepare funding execution memo",
       description: "Issue final execution note for operations and payments handoff.",
       owner: "Deal Manager",
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      dueDate: actionDueDates.memo,
       priority: "medium" as const,
       status: "pending" as const,
     },

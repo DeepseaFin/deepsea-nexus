@@ -72,6 +72,26 @@ export interface CommercialTerms {
   security: string;
 }
 
+export interface CommercialStructure {
+  invoiceAmount: number;
+  requestedFunding: number;
+  approvedFunding: number;
+  advanceRate: number;
+  tenorDays: number;
+  discountRatePercent: number;
+  processingFee: number;
+  legalFee: number;
+  otherCharges: number;
+  expectedYield: number;
+  expectedProfit: number;
+  expectedIRR: string;
+  fundingSource: string;
+  facilityLimit: number;
+  recourseType: string;
+  currency: string;
+  settlementMethod: string;
+}
+
 export interface DocumentState {
   uploadedDocuments: string[];
   missingDocuments: string[];
@@ -127,6 +147,7 @@ export interface DealModel {
   deal: DealInfo;
   client: ClientInfo;
   counterparty: CounterpartyInfo;
+  commercialStructure: CommercialStructure;
   commercialTerms: CommercialTerms;
   documents: DocumentState;
   intelligence: IntelligenceState;
@@ -178,6 +199,25 @@ export function createEmptyDeal(): DealModel {
       existingExposure: '1800000',
       website: 'https://www.mashreq.com',
       primaryContact: 'Fatima Al Nuaimi',
+    },
+    commercialStructure: {
+      invoiceAmount: 2500000,
+      requestedFunding: 2250000,
+      approvedFunding: 2200000,
+      advanceRate: 88,
+      tenorDays: 90,
+      discountRatePercent: 8.2,
+      processingFee: 12000,
+      legalFee: 4500,
+      otherCharges: 2500,
+      expectedYield: 16.4,
+      expectedProfit: 158000,
+      expectedIRR: 'Placeholder',
+      fundingSource: 'Institutional Pool A',
+      facilityLimit: 4500000,
+      recourseType: 'Limited Recourse',
+      currency: 'AED',
+      settlementMethod: 'Controlled Account',
     },
     commercialTerms: {
       advancePercent: 90,

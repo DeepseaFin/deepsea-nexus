@@ -6,7 +6,20 @@ import { createEmptyDeal, type DealModel } from '@/atlas-core/deals/DealModel';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
 const mockedCases: DealModel[] = [
-  createEmptyDeal(),
+  {
+    ...createEmptyDeal(),
+    deal: {
+      ...createEmptyDeal().deal,
+      dealId: 'DNX-2026-000304',
+      dealName: 'Alpha Trading Receivables Facility',
+      stage: 'Client',
+    },
+    workflow: {
+      ...createEmptyDeal().workflow,
+      currentState: 'Lead',
+      progress: 15,
+    },
+  },
   {
     ...createEmptyDeal(),
     deal: {
@@ -67,8 +80,8 @@ export default function RMWorkQueue() {
                   </span>
                 </div>
                 <div className="mt-3 space-y-2">
-                  {cases.map((item) => (
-                    <div key={item.deal.dealId} className="rounded-lg border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-300">
+                  {cases.map((item, index) => (
+                    <div key={`${state}-${item.deal.dealId}-${index}`} className="rounded-lg border border-slate-800 bg-slate-900/70 p-3 text-sm text-slate-300">
                       <p className="font-semibold text-white">{item.deal.dealName}</p>
                       <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">{item.deal.dealId}</p>
                     </div>

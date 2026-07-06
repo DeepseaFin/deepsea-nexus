@@ -8,7 +8,13 @@ import DealTabs from "./DealTabs";
 import DealStudio from "./DealStudio";
 import OverviewWorkspace from "@/components/atlas/workspace/OverviewWorkspace";
 import PricingWorkspace from "@/components/atlas/workspace/PricingWorkspace";
+import RiskWorkspace from "@/components/atlas/workspace/RiskWorkspace";
 import DocumentsWorkspace from "@/components/atlas/workspace/DocumentsWorkspace";
+import TermSheetWorkspace from "@/components/atlas/workspace/TermSheetWorkspace";
+import FundingWorkspace from "@/components/atlas/workspace/FundingWorkspace";
+import PaymentsWorkspace from "@/components/atlas/workspace/PaymentsWorkspace";
+import NotesWorkspace from "@/components/atlas/workspace/NotesWorkspace";
+import AuditWorkspace from "@/components/atlas/workspace/AuditWorkspace";
 
 export default function DealCockpit() {
   const [activeTab, setActiveTab] = useState<string>("Overview");
@@ -30,19 +36,22 @@ export default function DealCockpit() {
         return <DocumentsWorkspace />;
 
       case "Risk":
+        return <RiskWorkspace />;
+
       case "Funding":
+        return <FundingWorkspace />;
+
       case "Payments":
+        return <PaymentsWorkspace />;
+
       case "Notes":
+        return <NotesWorkspace />;
+
       case "Audit":
+        return <AuditWorkspace />;
+
       case "Term Sheet":
-        return (
-          <div className="flex items-center justify-center min-h-96">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-12 text-center shadow-xl">
-              <h3 className="text-2xl font-semibold text-white">{activeTab}</h3>
-              <p className="mt-2 text-slate-400">Workspace under construction</p>
-            </div>
-          </div>
-        );
+        return <TermSheetWorkspace />;
 
       default:
         return <OverviewWorkspace />;
@@ -63,7 +72,7 @@ export default function DealCockpit() {
       </div>
 
       {showDealStudio ? (
-        <DealStudio onCancel={() => setShowDealStudio(false)} />
+        <DealStudio />
       ) : (
         <>
       <DealHeader />

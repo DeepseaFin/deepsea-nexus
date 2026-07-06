@@ -17,6 +17,7 @@ import type { UploadedFileView } from '@/components/atlas/documents/DocumentUplo
 
 export default function DocumentsWorkspace() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileView[]>([]);
+  const actionDueDate = '2026-07-08T09:00:00.000Z';
 
   const orchestratedDecision = useMemo(() => {
     if (uploadedFiles.length === 0) {
@@ -33,7 +34,7 @@ export default function DocumentsWorkspace() {
       title: 'Upload Board Resolution',
       description: 'Critical document required for legal compliance and constitutional review',
       owner: 'Deal Manager',
-      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      dueDate: actionDueDate,
       priority: 'critical' as const,
       status: 'pending' as const,
       assignee: 'Sarah Chen',
@@ -156,9 +157,9 @@ export default function DocumentsWorkspace() {
           <div className="grid gap-6 xl:grid-cols-2">
             <SectionCard title="Uploaded Documents" icon={FileCheck}>
               <div className="space-y-3">
-                {uploadedDocumentCards.map((document) => (
+                {uploadedDocumentCards.map((document, index) => (
                   <div
-                    key={document.filename}
+                    key={`${document.filename}-${index}`}
                     className="rounded-lg border border-slate-800 bg-slate-950/60 p-3"
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -176,9 +177,9 @@ export default function DocumentsWorkspace() {
                 {missingDocuments.length === 0 ? (
                   <p className="text-sm text-slate-400">No mandatory documents are missing.</p>
                 ) : (
-                  missingDocuments.map((documentType) => (
+                  missingDocuments.map((documentType, index) => (
                     <div
-                      key={documentType}
+                      key={`${documentType}-${index}`}
                       className="rounded-lg border border-rose-900/50 bg-rose-950/20 p-3 text-sm text-rose-100"
                     >
                       {documentType}

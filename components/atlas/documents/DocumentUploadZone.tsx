@@ -8,7 +8,6 @@ import {
 	HardDriveUpload,
 	Image as ImageIcon,
 	ShieldCheck,
-	Sparkles,
 	Table2,
 	X,
 } from 'lucide-react';
@@ -165,8 +164,9 @@ export default function DocumentUploadZone({
 	}, [onFilesChange, uploadedFiles]);
 
 	useEffect(() => {
+		const timerIds = timersRef.current;
 		return () => {
-			timersRef.current.forEach((timerId) => window.clearInterval(timerId));
+			timerIds.forEach((timerId) => window.clearInterval(timerId));
 		};
 	}, []);
 

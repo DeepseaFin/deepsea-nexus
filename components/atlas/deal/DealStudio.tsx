@@ -26,11 +26,7 @@ import PricingEditor from './PricingEditor';
 
 const workflowSteps: DealWorkflowStep[] = DEAL_WORKFLOW_STEPS;
 
-interface DealStudioProps {
-  onCancel?: () => void;
-}
-
-export default function DealStudio({ onCancel }: DealStudioProps) {
+export default function DealStudio() {
   const {
     deal,
     updateDeal,
