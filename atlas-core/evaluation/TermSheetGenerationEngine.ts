@@ -17,6 +17,8 @@ export interface TermSheetSection {
   items: TermSheetLineItem[];
 }
 
+export type CommercialStatus = 'Draft' | 'Under Negotiation' | 'Commercially Agreed';
+
 export type ExecutiveDecisionStatus =
   | 'Ready for Negotiation'
   | 'Requires Internal Review'
@@ -54,6 +56,7 @@ export interface IndicativeTermSheetDocument {
   discussionNotice: 'FOR DISCUSSION PURPOSES ONLY';
   bindingNotice: 'NON-BINDING';
   bindingException: 'except Confidentiality and Governing Law where applicable.';
+  commercialStatus: CommercialStatus;
   facilityReference: string;
   recommendation: 'Proceed' | 'Proceed with Conditions' | 'Do Not Proceed';
   executiveSummary: TermSheetSection;
@@ -102,6 +105,26 @@ function toDecisionStatus(recommendation: 'Proceed' | 'Proceed with Conditions' 
   }
 
   return 'Rejected';
+}
+
+function toCommercialStatus(matrix: NegotiationMatrixRow[]): CommercialStatus {
+  if (matrix.length > 0 && matrix.every((row) => row.status === 'Agreed')) {
+    return 'Commercially Agreed';
+  }
+
+  if (
+    matrix.some(
+      (row) =>
+        row.counterpartyProposal !== 'Pending counterparty response' ||
+        row.status === 'Countered' ||
+        row.status === 'Pending Review' ||
+        row.agreedValue !== 'Pending',
+    )
+  ) {
+    return 'Under Negotiation';
+  }
+
+  return 'Draft';
 }
 
 export function generateTermSheet(deal: DealModel): IndicativeTermSheetDocument {
@@ -245,6 +268,7 @@ export function generateTermSheet(deal: DealModel): IndicativeTermSheetDocument 
   ];
 
   const decisionStatus = toDecisionStatus(creditMemo.executiveDecisionSummary.overallRecommendation);
+  const commercialStatus = toCommercialStatus(negotiationMatrix);
 
   return {
     title: 'INDICATIVE TERM SHEET',
@@ -252,6 +276,7 @@ export function generateTermSheet(deal: DealModel): IndicativeTermSheetDocument 
     discussionNotice: 'FOR DISCUSSION PURPOSES ONLY',
     bindingNotice: 'NON-BINDING',
     bindingException: 'except Confidentiality and Governing Law where applicable.',
+    commercialStatus,
     facilityReference: deal.deal.dealId,
     recommendation: creditMemo.executiveDecisionSummary.overallRecommendation,
     executiveSummary: {
