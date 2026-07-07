@@ -4,10 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  BrainCircuit,
+  GitBranch,
+  ShieldCheck,
+  Gavel,
+  BellRing,
   Sparkles,
   Briefcase,
+  Files,
   ListTodo,
   Wallet,
+  HandCoins,
   Building2,
   Landmark,
   Users,
@@ -17,6 +24,11 @@ import {
 } from "lucide-react";
 
 const menu = [
+  {
+    title: "Intelligence",
+    href: "/atlas/intelligence",
+    icon: BrainCircuit,
+  },
   {
     title: "Dashboard",
     href: "/atlas/dashboard",
@@ -33,6 +45,36 @@ const menu = [
     icon: Briefcase,
   },
   {
+    title: "Documents",
+    href: "/atlas/documents",
+    icon: Files,
+  },
+  {
+    title: "Relationship Graph",
+    href: "/atlas/relationship-graph",
+    icon: GitBranch,
+  },
+  {
+    title: "Relationship Intelligence",
+    href: "/atlas/relationship-intelligence",
+    icon: GitBranch,
+  },
+  {
+    title: "Identity & Access",
+    href: "/atlas/identity-access",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Approval Center",
+    href: "/atlas/approval-center",
+    icon: Gavel,
+  },
+  {
+    title: "Notification Center",
+    href: "/atlas/notification-center",
+    icon: BellRing,
+  },
+  {
     title: "Work Queue",
     href: "/atlas/work-queue",
     icon: ListTodo,
@@ -41,6 +83,11 @@ const menu = [
     title: "Treasury",
     href: "/atlas/treasury",
     icon: Wallet,
+  },
+  {
+    title: "Collections",
+    href: "/atlas/collections",
+    icon: HandCoins,
   },
   {
     title: "Clients",

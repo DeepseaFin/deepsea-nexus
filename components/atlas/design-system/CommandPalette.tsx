@@ -13,12 +13,20 @@ export type PaletteCommand = {
 };
 
 const defaultCommands: PaletteCommand[] = [
+  { id: 'go-intelligence', title: 'Go to Intelligence', href: '/atlas/intelligence' },
   { id: 'go-dashboard', title: 'Go to Dashboard', href: '/atlas/dashboard' },
   { id: 'go-deals', title: 'Go to Deals', href: '/atlas/deals' },
+  { id: 'go-documents', title: 'Go to Documents', href: '/atlas/documents' },
+  { id: 'go-relationship-graph', title: 'Go to Relationship Graph', href: '/atlas/relationship-graph' },
+  { id: 'go-relationship-intelligence', title: 'Go to Relationship Intelligence', href: '/atlas/relationship-intelligence' },
+  { id: 'go-identity-access', title: 'Go to Identity & Access', href: '/atlas/identity-access' },
+  { id: 'go-approval-center', title: 'Go to Approval Center', href: '/atlas/approval-center' },
+  { id: 'go-notification-center', title: 'Go to Notification Center', href: '/atlas/notification-center' },
   { id: 'go-clients', title: 'Go to Clients', href: '/atlas/clients' },
   { id: 'go-counterparties', title: 'Go to Counterparties', href: '/atlas/counterparties' },
   { id: 'go-work-queue', title: 'Go to Work Queue', href: '/atlas/work-queue' },
   { id: 'go-treasury', title: 'Go to Treasury', href: '/atlas/treasury' },
+  { id: 'go-collections', title: 'Go to Collections', href: '/atlas/collections' },
   { id: 'create-deal', title: 'Create New Deal', href: '/atlas/deals/new' },
   { id: 'create-client', title: 'Create Client', href: '/atlas/clients' },
   { id: 'generate-term-sheet', title: 'Generate Term Sheet', href: '/atlas/term-sheets' },

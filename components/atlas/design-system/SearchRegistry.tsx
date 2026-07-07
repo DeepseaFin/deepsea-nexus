@@ -21,12 +21,20 @@ type SearchRegistryContextValue = {
 const SearchRegistryContext = createContext<SearchRegistryContextValue | null>(null);
 
 const seedEntities: SearchEntity[] = [
+  { id: 'intelligence', type: 'Workspace', title: 'Intelligence', href: '/atlas/intelligence', keywords: ['ai', 'decision engine', 'executive'] },
   { id: 'dashboard', type: 'Workspace', title: 'Dashboard', href: '/atlas/dashboard', keywords: ['overview', 'executive'] },
+  { id: 'documents', type: 'Workspace', title: 'Documents', href: '/atlas/documents', keywords: ['vault', 'repository', 'knowledge'] },
+  { id: 'relationship-graph', type: 'Workspace', title: 'Relationship Graph', href: '/atlas/relationship-graph', keywords: ['network', 'entities', 'graph'] },
+  { id: 'relationship-intelligence', type: 'Workspace', title: 'Relationship Intelligence', href: '/atlas/relationship-intelligence', keywords: ['network intelligence', 'exposure', 'graph', 'due diligence'] },
+  { id: 'identity-access', type: 'Workspace', title: 'Identity & Access', href: '/atlas/identity-access', keywords: ['iam', 'roles', 'permissions', 'security'] },
+  { id: 'approval-center', type: 'Workspace', title: 'Approval Center', href: '/atlas/approval-center', keywords: ['workflow', 'committee', 'decisions', 'escalations'] },
+  { id: 'notification-center', type: 'Workspace', title: 'Notification Center', href: '/atlas/notification-center', keywords: ['inbox', 'tasks', 'alerts', 'reminders'] },
   { id: 'deals', type: 'Workspace', title: 'Deals', href: '/atlas/deals', keywords: ['transactions', 'facilities'] },
   { id: 'clients', type: 'Workspace', title: 'Clients', href: '/atlas/clients', keywords: ['relationships', 'profiles'] },
   { id: 'counterparties', type: 'Workspace', title: 'Counterparties', href: '/atlas/counterparties', keywords: ['buyers', 'obligors'] },
   { id: 'work-queue', type: 'Workspace', title: 'Work Queue', href: '/atlas/work-queue', keywords: ['operations', 'pipeline'] },
   { id: 'treasury', type: 'Workspace', title: 'Treasury', href: '/atlas/treasury', keywords: ['funding', 'liquidity', 'bank lines'] },
+  { id: 'collections', type: 'Workspace', title: 'Collections', href: '/atlas/collections', keywords: ['monitoring', 'receivables', 'recovery'] },
 ];
 
 export function SearchRegistryProvider({ children }: { children: React.ReactNode }) {
