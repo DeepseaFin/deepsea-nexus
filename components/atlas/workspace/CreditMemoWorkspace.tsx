@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDeal } from "@/components/atlas/common/DealContext";
 import { CreditMemoEngine } from "@/atlas-core/evaluation/CreditMemoEngine";
+import WorkspaceTabs from "@/components/atlas/workspace/WorkspaceTabs";
 import { formatCurrency, formatPercentage } from "@/lib/utils/formatters";
+
+type CreditMemoTab = "Executive Summary" | "Commercial" | "Risk" | "Policy" | "Evidence" | "Recommendation";
+
+const CREDIT_MEMO_TABS: CreditMemoTab[] = ["Executive Summary", "Commercial", "Risk", "Policy", "Evidence", "Recommendation"];
 
 const recommendationStyles: Record<string, string> = {
   Proceed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
@@ -37,6 +42,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 export default function CreditMemoWorkspace() {
+  const [activeTab, setActiveTab] = useState<CreditMemoTab>("Executive Summary");
   const { deal } = useDeal();
   const memo = useMemo(() => CreditMemoEngine.buildCreditMemo(deal), [deal]);
 
@@ -45,8 +51,10 @@ export default function CreditMemoWorkspace() {
       <h2 className="text-2xl font-semibold text-white">Credit Memo Workstation</h2>
       <p className="mt-2 text-slate-400">Investment Committee Memorandum (Read-Only)</p>
 
+      <WorkspaceTabs tabs={CREDIT_MEMO_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
       <div className="mt-6 space-y-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Executive Summary" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 1 | Executive Decision Summary" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 lg:col-span-2">
@@ -61,9 +69,9 @@ export default function CreditMemoWorkspace() {
             <Metric label="Evidence Readiness" value={`${memo.executiveDecisionSummary.evidenceReadiness}%`} />
             <Metric label="Overall Readiness" value={`${memo.executiveDecisionSummary.overallReadiness}%`} />
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Executive Summary" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 2 | Transaction Overview" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric label="Client" value={deal.client.legalName} />
@@ -75,9 +83,9 @@ export default function CreditMemoWorkspace() {
             <Metric label="Currency" value={deal.deal.currency} />
             <Metric label="Relationship Manager" value={deal.client.relationshipManager} />
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Commercial" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 3 | Commercial Evaluation" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Metric label="Expected Yield" value={formatPercentage(memo.commercial.calculatedValues.expectedYieldPercent, { maximumFractionDigits: 2 })} />
@@ -90,9 +98,9 @@ export default function CreditMemoWorkspace() {
             <p className="text-xs uppercase tracking-wide text-slate-500">Commercial Summary</p>
             <p className="mt-1 text-sm text-slate-300">{memo.commercial.evaluationFindings.summary.narrative}</p>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Risk" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 4 | Risk Evaluation" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Metric label="Participant Assessment" value={`${memo.risk.clientAssessment.riskLevel} / ${memo.risk.counterpartyAssessment.riskLevel}`} />
@@ -106,9 +114,9 @@ export default function CreditMemoWorkspace() {
             <p className="text-xs uppercase tracking-wide text-slate-500">Executive Risk Summary</p>
             <p className="mt-1 text-sm text-slate-300">{memo.risk.summary.narrative}</p>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Policy" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 5 | Policy Evaluation" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
             <Metric label="Policy Readiness" value={`${memo.policy.executiveSummary.policyReadiness}%`} />
@@ -148,9 +156,9 @@ export default function CreditMemoWorkspace() {
             <p className="text-xs uppercase tracking-wide text-slate-500">Executive Policy Narrative</p>
             <p className="mt-1 text-sm text-slate-300">{memo.policy.executiveNarrative.narrative}</p>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Evidence" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 6 | Evidence Evaluation" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Metric label="Evidence Readiness" value={`${memo.evidence.readiness}%`} />
@@ -163,9 +171,9 @@ export default function CreditMemoWorkspace() {
             <p className="text-xs uppercase tracking-wide text-slate-500">Executive Evidence Narrative</p>
             <p className="mt-1 text-sm text-slate-300">{memo.evidence.summary.narrative}</p>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Recommendation" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 7 | Investment Committee Decision" />
           <div className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${recommendationStyles[memo.investmentCommitteeDecision.recommendation]}`}>
             {memo.investmentCommitteeDecision.recommendation}
@@ -196,9 +204,9 @@ export default function CreditMemoWorkspace() {
               </ul>
             </div>
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Recommendation" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 8 | Approval Matrix" />
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {memo.approvalMatrix.map((item) => (
@@ -209,9 +217,9 @@ export default function CreditMemoWorkspace() {
               </div>
             ))}
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Recommendation" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Section 9 | Decision History" />
           <div className="mt-3 space-y-2">
             {memo.decisionHistory.map((entry) => (
@@ -221,9 +229,9 @@ export default function CreditMemoWorkspace() {
               </div>
             ))}
           </div>
-        </div>
+        </div> : null}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        {activeTab === "Policy" ? <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
           <SectionTitle title="Policy Detail Snapshot" />
           <div className="mt-3 grid gap-3 lg:grid-cols-3">
             {memo.policy.sections.product.checks.map((checkResult) => (
@@ -236,7 +244,7 @@ export default function CreditMemoWorkspace() {
               </div>
             ))}
           </div>
-        </div>
+        </div> : null}
       </div>
     </div>
   );

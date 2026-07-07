@@ -7,6 +7,7 @@ import {
   Sparkles,
   Briefcase,
   ListTodo,
+  Wallet,
   Building2,
   Landmark,
   Users,
@@ -35,6 +36,11 @@ const menu = [
     title: "Work Queue",
     href: "/atlas/work-queue",
     icon: ListTodo,
+  },
+  {
+    title: "Treasury",
+    href: "/atlas/treasury",
+    icon: Wallet,
   },
   {
     title: "Clients",

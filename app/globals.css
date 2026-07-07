@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --atlas-surface: #020916;
+  --atlas-surface-soft: #0b1220;
+  --atlas-border: #1f2a3b;
+  --atlas-title: #e6edf7;
+  --atlas-muted: #8ea0ba;
 }
 
 @theme inline {
@@ -22,8 +27,29 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
 }
 html {
   scroll-behavior: smooth;
+}
+
+.atlas-workspace {
+  background:
+    radial-gradient(circle at 15% 5%, rgba(34, 211, 238, 0.08), transparent 38%),
+    radial-gradient(circle at 85% 10%, rgba(14, 116, 144, 0.08), transparent 42%),
+    var(--atlas-surface);
+}
+
+.atlas-card {
+  border: 1px solid var(--atlas-border);
+  background: color-mix(in srgb, var(--atlas-surface-soft) 80%, black 20%);
+  border-radius: 0.75rem;
+  min-height: 7rem;
+}
+
+.atlas-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--atlas-muted);
 }

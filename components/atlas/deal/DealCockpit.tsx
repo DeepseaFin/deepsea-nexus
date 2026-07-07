@@ -13,6 +13,7 @@ import CreditMemoWorkspace from "@/components/atlas/workspace/CreditMemoWorkspac
 import TermSheetWorkspace from "@/components/atlas/workspace/TermSheetWorkspace";
 import FundingWorkspace from "@/components/atlas/workspace/FundingWorkspace";
 import PaymentsWorkspace from "@/components/atlas/workspace/PaymentsWorkspace";
+import LegalWorkspace from "@/components/atlas/workspace/LegalWorkspace";
 import NotesWorkspace from "@/components/atlas/workspace/NotesWorkspace";
 import AuditWorkspace from "@/components/atlas/workspace/AuditWorkspace";
 
@@ -23,6 +24,7 @@ const TAB_LIST = [
   "Documents",
   "Credit Memo",
   "Term Sheet",
+  "Legal",
   "Funding",
   "Payments",
   "Notes",
@@ -68,6 +70,9 @@ export default function DealCockpit() {
 
       case "Term Sheet":
         return <TermSheetWorkspace />;
+
+      case "Legal":
+        return <LegalWorkspace />;
 
       default:
         return <OverviewWorkspace />;

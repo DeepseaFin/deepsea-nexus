@@ -2,10 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { useDeal } from "@/components/atlas/common/DealContext";
+import WorkspaceTabs from "@/components/atlas/workspace/WorkspaceTabs";
 import { TermSheetGenerationEngine } from "@/atlas-core/evaluation/TermSheetGenerationEngine";
 import { FinalTermSheetGenerationEngine } from "@/atlas-core/evaluation/FinalTermSheetGenerationEngine";
 
 type TermSheetMode = "indicative" | "final";
+type TermSheetSecondaryTab = "Overview" | "Indicative" | "Negotiation" | "Final Executable" | "Versions";
+
+const TERM_SHEET_TABS: TermSheetSecondaryTab[] = [
+  "Overview",
+  "Indicative",
+  "Negotiation",
+  "Final Executable",
+  "Versions",
+];
 
 const negotiationStatusStyles: Record<string, string> = {
   Draft: "border-slate-500/40 bg-slate-500/10 text-slate-200",
@@ -495,6 +505,7 @@ function FinalExecutableTermSheetView({
 export default function TermSheetWorkspace() {
   const { deal } = useDeal();
   const [mode, setMode] = useState<TermSheetMode>("indicative");
+  const [activeTab, setActiveTab] = useState<TermSheetSecondaryTab>("Overview");
 
   const termSheet = useMemo(() => TermSheetGenerationEngine.generateTermSheet(deal), [deal]);
   const finalTermSheet = useMemo(() => FinalTermSheetGenerationEngine.generateFinalTermSheet(deal), [deal]);
@@ -519,6 +530,10 @@ export default function TermSheetWorkspace() {
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl sm:p-8">
+      <WorkspaceTabs tabs={TERM_SHEET_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {activeTab === "Overview" ? (
+        <>
       <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
         <SectionTitle title="Term Sheet Mode" />
         <div className="mt-3 flex flex-wrap gap-2">
@@ -555,14 +570,68 @@ export default function TermSheetWorkspace() {
           ))}
         </div>
       </div>
+      </>
+      ) : null}
 
-      <div className="mt-6">
-        {mode === "indicative" ? (
-          <IndicativeTermSheetView termSheet={termSheet} negotiationStatus={negotiationStatus} />
-        ) : (
-          <FinalExecutableTermSheetView finalTermSheet={finalTermSheet} />
-        )}
-      </div>
+      {activeTab === "Indicative" ? <div className="mt-6"><IndicativeTermSheetView termSheet={termSheet} negotiationStatus={negotiationStatus} /></div> : null}
+
+      {activeTab === "Negotiation" ? <div className="mt-6"><IndicativeTermSheetView termSheet={termSheet} negotiationStatus={negotiationStatus} /></div> : null}
+
+      {activeTab === "Final Executable" ? <div className="mt-6"><FinalExecutableTermSheetView finalTermSheet={finalTermSheet} /></div> : null}
+
+      {activeTab === "Versions" ? (
+        <div className="mt-6 space-y-4">
+          <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <SectionTitle title="Version Overview" />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Facility Reference</p>
+                <p className="mt-1 text-sm font-semibold text-slate-100">{termSheet.facilityReference}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Indicative Status</p>
+                <p className="mt-1 text-sm font-semibold text-slate-100">{termSheet.commercialStatus}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Final Execution Status</p>
+                <p className="mt-1 text-sm font-semibold text-slate-100">{finalTermSheet.executionStatus.current}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Version Track</p>
+                <p className="mt-1 text-sm font-semibold text-slate-100">Indicative {"->"} Final Executable</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <SectionTitle title="Versioned Views" />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setMode("indicative")} className={`rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${mode === "indicative" ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300" : "border-slate-700 bg-slate-800 text-slate-200"}`}>
+                Indicative Version
+              </button>
+              <button type="button" onClick={() => setMode("final")} className={`rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide ${mode === "final" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-200"}`}>
+                Final Version
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <SectionTitle title="Version References" />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Indicative Version</p>
+                <p className="mt-1 text-sm text-slate-200">Commercial status: {termSheet.commercialStatus}</p>
+                <p className="mt-1 text-sm text-slate-200">Facility ref: {termSheet.facilityReference}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Final Executable Version</p>
+                <p className="mt-1 text-sm text-slate-200">Execution status: {finalTermSheet.executionStatus.current}</p>
+                <p className="mt-1 text-sm text-slate-200">Execution notice: {finalTermSheet.executionNotice}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
