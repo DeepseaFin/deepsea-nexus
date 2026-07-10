@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, Clock3, FileUp, FileWarning, ListChecks, Sparkles, UploadCloud } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import { createDocument, listDocuments, type DocumentRecord } from '@/lib/documents/documentRepository';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 const KPI_CARDS = [
   { label: 'Pending Intake Sessions', value: '24', tone: 'text-cyan-200' },
@@ -21,63 +24,74 @@ const WORK_ITEMS = [
   'Prepare handoff for future OCR enablement.',
 ];
 
-type RecentDocument = {
+type UploadQueueItem = {
   id: string;
   name: string;
-  type: 'PDF' | 'DOCX' | 'XLSX' | 'JPG' | 'PNG';
-  sizeLabel: string;
   progress: number;
-  status: 'Uploading' | 'Stored';
-  uploadedAt: string;
+  status: 'Uploading';
+};
+
+type PreparedUpload = {
+  file: File;
+  document: UploadQueueItem;
 };
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'xlsx', 'jpg', 'jpeg', 'png'] as const;
 
-const INITIAL_RECENT_DOCUMENTS: RecentDocument[] = [
-  {
-    id: 'DOC-21018',
-    name: 'Trade-License-Renewal.pdf',
-    type: 'PDF',
-    sizeLabel: '1.2 MB',
-    progress: 100,
-    status: 'Stored',
-    uploadedAt: '09:22',
-  },
-  {
-    id: 'DOC-21017',
-    name: 'Board-Resolution.docx',
-    type: 'DOCX',
-    sizeLabel: '640 KB',
-    progress: 100,
-    status: 'Stored',
-    uploadedAt: '08:40',
-  },
-];
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024 * 1024) {
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function mapExtensionToType(extension: string): RecentDocument['type'] {
-  if (extension === 'pdf') return 'PDF';
-  if (extension === 'docx') return 'DOCX';
-  if (extension === 'xlsx') return 'XLSX';
-  if (extension === 'png') return 'PNG';
-  return 'JPG';
-}
-
-function statusTone(status: RecentDocument['status']): string {
-  if (status === 'Stored') return 'border-emerald-700/40 bg-emerald-950/20 text-emerald-200';
+function statusTone(status: string): string {
+  if (status === 'UPLOADED' || status === 'Stored') return 'border-emerald-700/40 bg-emerald-950/20 text-emerald-200';
   return 'border-cyan-700/40 bg-cyan-950/20 text-cyan-200';
 }
 
+function formatUploadTime(value: string): string {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function sanitizeFileName(fileName: string): string {
+  return fileName.replace(/[\\/]/g, '_');
+}
+
+function buildStoragePath(fileName: string): string {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const safeFileName = sanitizeFileName(fileName);
+  const id = crypto.randomUUID();
+
+  return `intake/${year}/${month}/${day}/${id}-${safeFileName}`;
+}
+
+async function generateDocumentCode(): Promise<string> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('documents')
+    .select('document_code')
+    .order('document_code', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ document_code: string }>();
+
+  if (error) {
+    throw new Error(`Failed to generate document code: ${error.message}`);
+  }
+
+  const currentValue = data?.document_code?.replace('DOC-', '') ?? '000000';
+  const nextValue = Number.parseInt(currentValue, 10) + 1;
+
+  return `DOC-${String(nextValue).padStart(6, '0')}`;
+}
+
 export default function OraclePage() {
-  const [recentDocuments, setRecentDocuments] = useState<RecentDocument[]>(INITIAL_RECENT_DOCUMENTS);
+  const router = useRouter();
+  const [recentDocuments, setRecentDocuments] = useState<DocumentRecord[]>([]);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -92,8 +106,35 @@ export default function OraclePage() {
     };
   }, []);
 
-  const uploadingNow = recentDocuments.filter((doc) => doc.status === 'Uploading').length;
-  const completedToday = recentDocuments.filter((doc) => doc.status === 'Stored').length;
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecentDocuments() {
+      try {
+        const documents = await listDocuments({ limit: 10 });
+
+        if (active) {
+          setRecentDocuments(documents);
+        }
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : 'Failed to load recent documents.';
+        setValidationErrors((current) => [message, ...current].slice(0, 8));
+      }
+    }
+
+    void loadRecentDocuments();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const uploadingNow = uploadQueue.length;
+  const completedToday = recentDocuments.length;
 
   const runtimeKpis = KPI_CARDS.map((item) => {
     if (item.label === 'Uploading Now') return { ...item, value: String(uploadingNow) };
@@ -101,29 +142,16 @@ export default function OraclePage() {
     return item;
   });
 
-  function startMockUpload(documentId: string) {
+  function startVisualProgress(documentId: string) {
     const timer = setInterval(() => {
-      let done = false;
-
-      setRecentDocuments((current) =>
+      setUploadQueue((current) =>
         current.map((doc) => {
-          if (doc.id !== documentId || doc.status === 'Stored') {
+          if (doc.id !== documentId || doc.status !== 'Uploading') {
             return doc;
           }
 
-          const increment = 8 + Math.floor(Math.random() * 16);
-          const nextProgress = Math.min(100, doc.progress + increment);
-
-          if (nextProgress >= 100) {
-            done = true;
-
-            return {
-              ...doc,
-              progress: 100,
-              status: 'Stored',
-              uploadedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            };
-          }
+          const increment = 5 + Math.floor(Math.random() * 12);
+          const nextProgress = Math.min(90, doc.progress + increment);
 
           return {
             ...doc,
@@ -131,14 +159,70 @@ export default function OraclePage() {
           };
         }),
       );
-
-      if (done) {
-        clearInterval(timer);
-        delete uploadTimersRef.current[documentId];
-      }
     }, 250);
 
     uploadTimersRef.current[documentId] = timer;
+  }
+
+  function stopVisualProgress(documentId: string) {
+    const timer = uploadTimersRef.current[documentId];
+    if (!timer) {
+      return;
+    }
+
+    clearInterval(timer);
+    delete uploadTimersRef.current[documentId];
+  }
+
+  async function uploadToSupabase(file: File, documentId: string) {
+    startVisualProgress(documentId);
+    let storagePath: string | null = null;
+
+    try {
+      const supabase = getSupabaseClient();
+      storagePath = buildStoragePath(file.name);
+      const { error } = await supabase.storage.from('documents').upload(storagePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const documentCode = await generateDocumentCode();
+      const uploadedAt = new Date().toISOString();
+
+      const createdDocument = await createDocument({
+        document_code: documentCode,
+        file_name: storagePath.split('/').pop() ?? file.name,
+        original_file_name: file.name,
+        storage_bucket: 'documents',
+        storage_path: storagePath,
+        mime_type: file.type || 'application/octet-stream',
+        file_size: file.size,
+        status: 'UPLOADED',
+        uploaded_at: uploadedAt,
+        ocr_status: 'PENDING',
+        classification_status: 'PENDING',
+      });
+
+      stopVisualProgress(documentId);
+      setUploadQueue((current) => current.filter((doc) => doc.id !== documentId));
+      setRecentDocuments((current) => [createdDocument, ...current].slice(0, 10));
+    } catch (error) {
+      stopVisualProgress(documentId);
+      if (storagePath) {
+        const supabase = getSupabaseClient();
+        await supabase.storage.from('documents').remove([storagePath]);
+      }
+      setUploadQueue((current) => current.filter((doc) => doc.id !== documentId));
+      setValidationErrors((current) => {
+        const message = error instanceof Error ? error.message : 'Upload failed.';
+        return [`${file.name}: ${message}`, ...current].slice(0, 8);
+      });
+    }
   }
 
   function enqueueFiles(files: File[]) {
@@ -171,23 +255,24 @@ export default function OraclePage() {
       return;
     }
 
-    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const uploaded = accepted.map((file, index) => {
-      const extension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+    const preparedUploads: PreparedUpload[] = accepted.map((file) => {
+      const document: UploadQueueItem = {
+        id: `DOC-${crypto.randomUUID()}`,
+        name: file.name,
+        progress: 0,
+        status: 'Uploading',
+      };
 
       return {
-        id: `DOC-${Date.now()}-${index}`,
-        name: file.name,
-        type: mapExtensionToType(extension),
-        sizeLabel: formatFileSize(file.size),
-        progress: 0,
-        status: 'Uploading' as const,
-        uploadedAt: nowTime,
+        file,
+        document,
       };
     });
 
-    setRecentDocuments((current) => [...uploaded, ...current]);
-    uploaded.forEach((doc) => startMockUpload(doc.id));
+    setUploadQueue((current) => [...preparedUploads.map((item) => item.document), ...current]);
+    preparedUploads.forEach((item) => {
+      void uploadToSupabase(item.file, item.document.id);
+    });
   }
 
   function onFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -225,16 +310,19 @@ export default function OraclePage() {
             <SectionCard title="Recent Documents" icon={ListChecks}>
               <div className="space-y-2">
                 {recentDocuments.map((doc) => (
-                  <article key={doc.id} className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
-                    <p className="truncate text-sm font-semibold text-slate-100">{doc.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">{doc.type} · {doc.sizeLabel} · {doc.uploadedAt}</p>
-                    <div className="mt-2 h-1.5 rounded bg-slate-800">
-                      <div className="h-1.5 rounded bg-cyan-500" style={{ width: `${doc.progress}%` }} />
-                    </div>
+                  <button
+                    key={doc.id}
+                    type="button"
+                    onClick={() => router.push(`/atlas/oracle/document/${encodeURIComponent(doc.document_code)}`)}
+                    className="w-full rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2 text-left"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{doc.document_code}</p>
+                    <p className="truncate text-sm font-semibold text-slate-100">{doc.file_name}</p>
+                    <p className="mt-1 text-xs text-slate-400">Upload Time · {formatUploadTime(doc.uploaded_at)}</p>
                     <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] ${statusTone(doc.status)}`}>
                       {doc.status}
                     </span>
-                  </article>
+                  </button>
                 ))}
               </div>
             </SectionCard>
