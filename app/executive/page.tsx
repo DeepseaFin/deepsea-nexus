@@ -1,49 +1,197 @@
-const EXECUTIVE_KPIS = [
+import type { BusinessDNA } from "@/lib/knowledge/businessDNA";
+import type { KnowledgeAttribute } from "@/lib/knowledge/knowledgeAttribute";
+import type { FundingAssessment } from "@/lib/business/fundingAssessmentService";
+import type { RelationshipTimeline } from "@/lib/relationship/relationshipTimeline";
+import { executiveWorkspaceAssembler } from "@/lib/workspaces/executiveWorkspaceAssembler";
+
+function attribute<T>(value: T, source: string, confidence = 92, updatedAt = "2026-07-12T09:00:00Z"): KnowledgeAttribute<T> {
+  return {
+    value,
+    source,
+    confidence,
+    updatedAt,
+  };
+}
+
+const businesses: BusinessDNA[] = [
   {
-    label: "Businesses Onboarded",
-    value: "128",
-    detail: "+14 this week",
+    identity: {
+      legalName: attribute("Alpine Logistics LLC", "executive portfolio"),
+      tradingName: attribute("Alpine Logistics", "executive portfolio", 88),
+      entityType: attribute("Logistics Company", "executive portfolio"),
+      registrationNumber: attribute("TRN-10294", "executive portfolio", 86),
+      incorporationDate: attribute("2019-03-14", "executive portfolio", 84),
+      jurisdiction: attribute("Dubai, UAE", "executive portfolio"),
+      website: attribute("alpinelogistics.ae", "executive portfolio", 80),
+      headquartersLocation: attribute("Dubai South", "executive portfolio", 84),
+    },
+    business: {
+      industry: attribute("Logistics and Freight", "portfolio data"),
+      businessModel: attribute("B2B logistics services", "portfolio data"),
+      productsServices: attribute(["Freight forwarding", "Warehousing", "Last-mile delivery"], "portfolio data"),
+      customerSegments: attribute(["Importers", "Regional distributors", "Retailers"], "portfolio data"),
+      operatingMarkets: attribute(["UAE", "GCC"], "portfolio data"),
+      employeeCount: attribute(126, "portfolio data", 90),
+      operatingRegions: attribute(["Dubai", "Abu Dhabi", "Sharjah"], "portfolio data"),
+    },
+    financial: {
+      revenueRange: attribute("AED 40M - AED 50M", "portfolio data"),
+      monthlyTurnover: attribute("AED 3.8M", "portfolio data"),
+      profitability: attribute("Healthy operating margin", "portfolio data"),
+      fundingNeed: attribute("AED 10M", "portfolio data"),
+      preferredFacility: attribute("Working Capital Line", "portfolio data"),
+      bankAccountCountry: attribute("UAE", "portfolio data"),
+      cashFlowProfile: attribute("Receivables-backed cash flow with seasonal peaks", "portfolio data"),
+    },
+    behaviour: {
+      paymentBehaviour: attribute("Strong payment discipline", "portfolio data"),
+      invoicingBehaviour: attribute("Invoices issued weekly", "portfolio data"),
+      seasonality: attribute("Q4 demand surge", "portfolio data"),
+      growthTrend: attribute("Accelerating", "portfolio data"),
+      riskSignals: attribute(["Long receivables cycle"], "portfolio data"),
+      operationalDiscipline: attribute("Well documented and repeatable", "portfolio data"),
+    },
+    relationship: {
+      relationshipOwner: attribute("Executive Coverage Team", "portfolio data"),
+      relationshipStage: attribute("Discovery", "portfolio data"),
+      referralSource: attribute("Inbound pipeline", "portfolio data"),
+      engagementLevel: attribute("Warm", "portfolio data"),
+      responsiveness: attribute("Responsive", "portfolio data"),
+      trustLevel: attribute("Building", "portfolio data"),
+    },
+    intelligence: {
+      profileCompleteness: attribute(91, "portfolio scoring"),
+      documentCoverage: attribute(87, "portfolio scoring"),
+      dataFreshness: attribute("Today", "portfolio scoring"),
+      overallConfidence: attribute(91, "portfolio scoring"),
+      nextBestAction: attribute("Approve senior review and schedule an outreach sequence", "portfolio scoring"),
+      insightSummary: attribute("Large logistics relationship with strong operating discipline and active funding demand.", "portfolio scoring"),
+    },
   },
   {
-    label: "Funding Pipeline",
-    value: "AED 86.4M",
-    detail: "31 active opportunities",
+    identity: {
+      legalName: attribute("Northstar Foods Trading", "executive portfolio"),
+      entityType: attribute("Trading Company", "executive portfolio"),
+      jurisdiction: attribute("Abu Dhabi, UAE", "executive portfolio"),
+    },
+    business: {
+      industry: attribute("Food Distribution", "portfolio data"),
+      businessModel: attribute("B2B food wholesale", "portfolio data"),
+    },
+    financial: {
+      fundingNeed: attribute("AED 5M", "portfolio data"),
+      preferredFacility: attribute("Invoice Financing", "portfolio data"),
+    },
+    behaviour: {},
+    relationship: {},
+    intelligence: {
+      overallConfidence: attribute(84, "portfolio scoring"),
+    },
   },
   {
-    label: "Business Intelligence Score",
-    value: "82%",
-    detail: "Portfolio average",
-  },
-  {
-    label: "Relationships Awaiting Contact",
-    value: "19",
-    detail: "Requires senior follow-up",
-  },
-  {
-    label: "Today's Priority",
-    value: "5",
-    detail: "High-priority decisions",
+    identity: {
+      legalName: attribute("Summit Industrial Supplies", "executive portfolio"),
+      entityType: attribute("Industrial Supplier", "executive portfolio"),
+      jurisdiction: attribute("Sharjah, UAE", "executive portfolio"),
+    },
+    business: {
+      industry: attribute("Industrial Supplies", "portfolio data"),
+      businessModel: attribute("B2B supply chain", "portfolio data"),
+    },
+    financial: {
+      fundingNeed: attribute("AED 2.5M", "portfolio data"),
+      preferredFacility: attribute("Business Expansion Facility", "portfolio data"),
+    },
+    behaviour: {},
+    relationship: {},
+    intelligence: {
+      overallConfidence: attribute(79, "portfolio scoring"),
+    },
   },
 ];
 
-const QUICK_ACTIONS = [
+const fundingAssessments: FundingAssessment[] = [
   {
-    title: "View New Businesses",
-    description: "Review the latest onboarded businesses and their current readiness.",
+    recommendedFacility: "Working Capital Line",
+    confidence: 91,
+    advanceRate: "32.4",
+    riskLevel: "MEDIUM",
+    turnaround: "3-5 business days",
+    recommendation: "Proceed with a working capital line subject to standard portfolio review.",
   },
   {
-    title: "Relationship Workspace",
-    description: "Monitor relationship progress and upcoming engagement moments.",
+    recommendedFacility: "Invoice Financing",
+    confidence: 84,
+    advanceRate: "27.8",
+    riskLevel: "LOW",
+    turnaround: "24-48 hours",
+    recommendation: "Proceed with invoice financing for the food distribution relationship.",
   },
   {
-    title: "Portfolio Overview",
-    description: "Assess portfolio health, concentration, and opportunity distribution.",
-  },
-  {
-    title: "Ask ATLAS",
-    description: "Request an executive summary, risk note, or pipeline snapshot.",
+    recommendedFacility: "Business Expansion Facility",
+    confidence: 79,
+    advanceRate: "24.1",
+    riskLevel: "MEDIUM",
+    turnaround: "3-5 business days",
+    recommendation: "Advance to senior review for the industrial supply opportunity.",
   },
 ];
+
+const relationshipTimelines: RelationshipTimeline[] = [
+  {
+    businessId: "alpine-logistics-llc",
+    events: [
+      {
+        id: "alpine-intake",
+        occurredAt: "2026-07-12T07:30:00Z",
+        category: "Intake",
+        title: "Business Profile Created",
+        description: "Logistics relationship captured and qualified for executive review.",
+        confidence: 92,
+        source: "portfolio intake",
+      },
+      {
+        id: "alpine-contact",
+        occurredAt: "2026-07-12T08:10:00Z",
+        category: "Relationship",
+        title: "Senior Outreach Required",
+        description: "Customer is warm and ready for a direct executive contact sequence.",
+        confidence: 90,
+        source: "relationship management",
+      },
+    ],
+  },
+  {
+    businessId: "northstar-foods-trading",
+    events: [
+      {
+        id: "northstar-intake",
+        occurredAt: "2026-07-12T08:25:00Z",
+        category: "Funding",
+        title: "Funding Need Recorded",
+        description: "Invoice financing appetite captured for the food distribution business.",
+        confidence: 88,
+        source: "portfolio intake",
+      },
+    ],
+  },
+  {
+    businessId: "summit-industrial-supplies",
+    events: [
+      {
+        id: "summit-review",
+        occurredAt: "2026-07-12T08:50:00Z",
+        category: "Review",
+        title: "Executive Review Pending",
+        description: "Industrial supply case is ready for prioritization and follow-up.",
+        confidence: 79,
+        source: "portfolio review",
+      },
+    ],
+  },
+];
+
+const executiveWorkspaceViewModel = executiveWorkspaceAssembler.build(businesses, fundingAssessments, relationshipTimelines);
 
 export default function ExecutivePage() {
   return (
@@ -52,10 +200,10 @@ export default function ExecutivePage() {
         <header className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8">
           <p className="text-sm font-medium tracking-[0.22em] text-cyan-700 uppercase">Executive Workspace</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-            Good Morning, Deepak.
+            {executiveWorkspaceViewModel.greeting}
           </h1>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-            Today&apos;s Executive Brief
+            {executiveWorkspaceViewModel.title}
           </p>
         </header>
 
@@ -63,46 +211,37 @@ export default function ExecutivePage() {
           <h2 id="executive-kpis" className="sr-only">
             Executive KPIs
           </h2>
-          {EXECUTIVE_KPIS.map((item) => (
+          {executiveWorkspaceViewModel.kpis.map((item) => (
             <article
               key={item.label}
               className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-1"
               aria-label={item.label}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {item.label}
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                {item.value}
-              </p>
-              <p className="mt-2 text-sm text-slate-600">{item.detail}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{item.value}</p>
+              {item.detail && <p className="mt-2 text-sm text-slate-600">{item.detail}</p>}
             </article>
           ))}
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]" aria-label="Executive briefing and quick actions">
+        <section className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]" aria-label="Executive briefing and priority">
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8">
             <p className="text-sm font-semibold tracking-[0.2em] text-cyan-700 uppercase">AI Chief of Staff</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-              Executive Briefing
+              {executiveWorkspaceViewModel.aiChiefOfStaff.title}
             </h2>
             <div className="mt-5 space-y-4 text-base leading-relaxed text-slate-700 sm:text-lg">
-              <p>
-                The portfolio remains stable, with onboarding momentum above forecast and a healthy pipeline of funded opportunities moving through review.
-              </p>
-              <p>
-                Three new businesses crossed the readiness threshold today, while the highest-value opportunity remains concentrated in the mid-market segment.
-              </p>
-              <p>
-                Priority today is to contact the nineteen relationships awaiting outreach and convert the strongest funding cases before end-of-day review.
-              </p>
+              <p>{executiveWorkspaceViewModel.executiveBrief}</p>
+              <p>{executiveWorkspaceViewModel.aiChiefOfStaff.narrative}</p>
             </div>
           </article>
 
-          <aside className="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_16px_40px_rgba(15,23,42,0.16)] sm:p-8">
-            <p className="text-sm font-semibold tracking-[0.2em] text-cyan-300 uppercase">Today&apos;s Priority</p>
+          <aside className="rounded-3xl border border-slate-950 bg-slate-950 p-6 text-white shadow-[0_16px_40px_rgba(15,23,42,0.16)] sm:p-8">
+            <p className="text-sm font-semibold tracking-[0.2em] text-cyan-300 uppercase">
+              {executiveWorkspaceViewModel.todayPriority.title}
+            </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Focus on relationship follow-up and funding conversion.
+              {executiveWorkspaceViewModel.todayPriority.detail}
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base">
               Use the current intelligence score to guide which businesses receive immediate senior attention and which can progress through standard review.
@@ -110,7 +249,7 @@ export default function ExecutivePage() {
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Executive note</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-200">
-                All figures on this page are placeholder data for the executive experience.
+                All content on this page is assembled from institutional models and rendered read-only.
               </p>
             </div>
           </aside>
@@ -127,16 +266,15 @@ export default function ExecutivePage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.title}
-                type="button"
-                className="group rounded-3xl border border-slate-200 bg-slate-50 p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-cyan-300 hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
-                aria-label={action.title}
+            {executiveWorkspaceViewModel.actions.map((action) => (
+              <article
+                key={action.label}
+                className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-cyan-300 hover:bg-cyan-50"
+                aria-label={action.label}
               >
-                <p className="text-lg font-semibold text-slate-950 sm:text-xl">{action.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{action.description}</p>
-              </button>
+                <p className="text-lg font-semibold text-slate-950 sm:text-xl">{action.label}</p>
+                {action.description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{action.description}</p>}
+              </article>
             ))}
           </div>
         </section>

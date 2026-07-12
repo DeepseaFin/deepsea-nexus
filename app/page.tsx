@@ -3,6 +3,16 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { businessUnderstandingService, type BusinessUnderstandingResult } from "@/lib/business/businessUnderstandingService";
+import { fundingAssessmentService } from "@/lib/business/fundingAssessmentService";
+import type { BusinessDNA } from "@/lib/knowledge/businessDNA";
+import { businessDNAEngine } from "@/lib/knowledge/businessDNAEngine";
+import type { FundingAssessment } from "@/lib/business/fundingAssessmentService";
+import type { RelationshipTimeline } from "@/lib/relationship/relationshipTimeline";
+import { relationshipTimelineEngine } from "@/lib/relationship/relationshipTimelineEngine";
+import { businessWorkspaceAssembler } from "@/lib/workspaces/businessWorkspaceAssembler";
+import type { BusinessWorkspaceViewModel } from "@/lib/workspaces/businessWorkspaceViewModel";
+import { relationshipJourneyAssembler } from "@/lib/workspaces/relationshipJourneyAssembler";
+import type { RelationshipJourneyViewModel } from "@/lib/workspaces/relationshipJourneyViewModel";
 
 const GOAL_CARDS = [
   { icon: "💰", title: "Improve Cash Flow" },
@@ -36,6 +46,11 @@ export default function Home() {
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadConfirmation, setUploadConfirmation] = useState<BusinessUnderstandingResult | null>(null);
+  const [businessDNA, setBusinessDNA] = useState<BusinessDNA | null>(null);
+  const [fundingAssessment, setFundingAssessment] = useState<FundingAssessment | null>(null);
+  const [relationshipTimeline, setRelationshipTimeline] = useState<RelationshipTimeline | null>(null);
+  const [businessWorkspaceViewModel, setBusinessWorkspaceViewModel] = useState<BusinessWorkspaceViewModel | null>(null);
+  const [relationshipJourneyViewModel, setRelationshipJourneyViewModel] = useState<RelationshipJourneyViewModel | null>(null);
   const [conversationStep, setConversationStep] = useState<ConversationStep>("confirmation");
   const [fundingGoal, setFundingGoal] = useState<string | null>(null);
   const [workspaceCreated, setWorkspaceCreated] = useState(false);
@@ -43,10 +58,78 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isConversationStarted = selectedGoal !== null;
 
+  const buildWorkspaceViewModel = (
+    result: BusinessUnderstandingResult,
+    nextBusinessDNA: BusinessDNA,
+    nextFundingGoal: string | null,
+  ) => {
+    const updatedBusinessDNA = nextFundingGoal
+      ? {
+          ...nextBusinessDNA,
+          financial: {
+            ...nextBusinessDNA.financial,
+            fundingNeed: {
+              value: nextFundingGoal,
+              confidence: 100,
+              source: "public-homepage",
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        }
+      : nextBusinessDNA;
+
+    const initialTimeline = relationshipTimelineEngine.build({
+      businessId: result.documentId,
+      events: [
+        {
+          id: `${result.documentId}-business-profile-created`,
+          occurredAt: new Date().toISOString(),
+          category: "Business Profile",
+          title: "Business profile created",
+          description: `Initial business understanding completed for ${result.companyName}.`,
+          confidence: result.confidence,
+          source: "business-understanding-service",
+        },
+      ],
+    });
+
+    const relationshipTimeline = nextFundingGoal
+      ? relationshipTimelineEngine.append(initialTimeline, {
+          id: `${result.documentId}-funding-goal-recorded`,
+          occurredAt: new Date().toISOString(),
+          category: "Funding Requirement",
+          title: "Funding goal recorded",
+          description: `Funding goal captured: ${nextFundingGoal}.`,
+          confidence: 100,
+          source: "public-homepage",
+        })
+      : initialTimeline;
+
+    const nextFundingAssessment = fundingAssessmentService.assess({
+      documentType: result.documentType,
+      jurisdiction: result.jurisdiction,
+      fundingGoal: nextFundingGoal ?? updatedBusinessDNA.financial.fundingNeed?.value,
+      readinessProgress: updatedBusinessDNA.intelligence.profileCompleteness?.value,
+    });
+
+    return {
+      businessDNA: updatedBusinessDNA,
+      fundingAssessment: nextFundingAssessment,
+      relationshipTimeline,
+      viewModel: businessWorkspaceAssembler.build(updatedBusinessDNA, nextFundingAssessment, relationshipTimeline),
+    };
+  };
+
   const startConversation = (goalTitle: string) => {
     setSelectedGoal(goalTitle);
     setPlaceholderMessage("");
     setUploadError("");
+    setUploadConfirmation(null);
+    setBusinessDNA(null);
+    setFundingAssessment(null);
+    setRelationshipTimeline(null);
+    setBusinessWorkspaceViewModel(null);
+    setRelationshipJourneyViewModel(null);
     setConversationStep("confirmation");
     setFundingGoal(null);
     setWorkspaceCreated(false);
@@ -62,6 +145,11 @@ export default function Home() {
     setIsUploading(true);
     setUploadError("");
     setUploadConfirmation(null);
+    setBusinessDNA(null);
+    setFundingAssessment(null);
+    setRelationshipTimeline(null);
+    setBusinessWorkspaceViewModel(null);
+    setRelationshipJourneyViewModel(null);
     setConversationStep("confirmation");
     setFundingGoal(null);
     setWorkspaceCreated(false);
@@ -70,7 +158,14 @@ export default function Home() {
 
     try {
       const result = await businessUnderstandingService.analyze(file);
+      const nextBusinessDNA = businessDNAEngine.build(result);
+      const assembledWorkspace = buildWorkspaceViewModel(result, nextBusinessDNA, null);
+
       setUploadConfirmation(result);
+      setBusinessDNA(assembledWorkspace.businessDNA);
+      setFundingAssessment(assembledWorkspace.fundingAssessment);
+      setRelationshipTimeline(assembledWorkspace.relationshipTimeline);
+      setBusinessWorkspaceViewModel(assembledWorkspace.viewModel);
       setConversationStep("confirmation");
       setWorkspaceCreated(false);
       setWorkspaceStep("workspace");
@@ -108,6 +203,11 @@ export default function Home() {
     }
 
     setUploadConfirmation(null);
+    setBusinessDNA(null);
+    setFundingAssessment(null);
+    setRelationshipTimeline(null);
+    setBusinessWorkspaceViewModel(null);
+    setRelationshipJourneyViewModel(null);
     setConversationStep("confirmation");
     setFundingGoal(null);
     setWorkspaceCreated(false);
@@ -126,6 +226,15 @@ export default function Home() {
 
   const onSelectFundingGoal = (goal: string) => {
     setFundingGoal(goal);
+
+    if (uploadConfirmation && businessDNA) {
+      const assembledWorkspace = buildWorkspaceViewModel(uploadConfirmation, businessDNA, goal);
+      setBusinessDNA(assembledWorkspace.businessDNA);
+      setFundingAssessment(assembledWorkspace.fundingAssessment);
+      setRelationshipTimeline(assembledWorkspace.relationshipTimeline);
+      setBusinessWorkspaceViewModel(assembledWorkspace.viewModel);
+    }
+
     setPlaceholderMessage(`Funding goal selected: ${goal}`);
   };
 
@@ -137,6 +246,12 @@ export default function Home() {
   };
 
   const onContinueToRelationship = () => {
+    if (businessDNA && fundingAssessment && relationshipTimeline) {
+      setRelationshipJourneyViewModel(
+        relationshipJourneyAssembler.build(businessDNA, fundingAssessment, relationshipTimeline),
+      );
+    }
+
     setWorkspaceStep("relationship");
     setPlaceholderMessage("");
     setUploadError("");
@@ -243,67 +358,103 @@ export default function Home() {
             ].join(" ")}
             aria-hidden={!isConversationStarted}
           >
-            {workspaceCreated && uploadConfirmation ? (
+            {workspaceCreated && businessWorkspaceViewModel ? (
               workspaceStep === "workspace" ? (
                 <section className="mt-2 space-y-5" aria-label="Business workspace">
                   <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                     <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                      Welcome, {uploadConfirmation.companyName}
+                      {businessWorkspaceViewModel.greeting}
                     </h1>
-                    <p className="mt-3 text-base text-slate-600 sm:text-lg">Your Business Workspace has been created.</p>
+                    <p className="mt-3 text-base text-slate-600 sm:text-lg">{businessWorkspaceViewModel.title}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">{businessWorkspaceViewModel.subtitle}</p>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Business Profile">
                       <h2 className="text-lg font-semibold text-slate-900">Business Profile</h2>
                       <div className="mt-4 space-y-2 text-sm text-slate-700 sm:text-base">
-                        <p><span className="font-semibold text-slate-900">Company Name:</span> {uploadConfirmation.companyName}</p>
-                        <p><span className="font-semibold text-slate-900">Document Type:</span> {uploadConfirmation.documentType}</p>
-                        <p><span className="font-semibold text-slate-900">Jurisdiction:</span> {uploadConfirmation.jurisdiction}</p>
+                        <p><span className="font-semibold text-slate-900">Company Name:</span> {businessWorkspaceViewModel.businessProfile.companyName}</p>
+                        <p><span className="font-semibold text-slate-900">Document Type:</span> {businessWorkspaceViewModel.businessProfile.documentType}</p>
+                        <p><span className="font-semibold text-slate-900">Jurisdiction:</span> {businessWorkspaceViewModel.businessProfile.jurisdiction}</p>
+                      </div>
+                    </article>
+
+                    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Relationship summary">
+                      <h2 className="text-lg font-semibold text-slate-900">Relationship Summary</h2>
+                      <div className="mt-4 space-y-2 text-sm text-slate-700 sm:text-base">
+                        <p><span className="font-semibold text-slate-900">Business Intelligence Score:</span> {businessWorkspaceViewModel.relationshipCard?.businessIntelligenceScore ?? "Not available"}</p>
+                        <p><span className="font-semibold text-slate-900">Funding Goal:</span> {businessWorkspaceViewModel.relationshipCard?.fundingGoal ?? "Not available"}</p>
+                        <p><span className="font-semibold text-slate-900">Next Action:</span> {businessWorkspaceViewModel.relationshipCard?.nextBestAction ?? "Not available"}</p>
+                        <p><span className="font-semibold text-slate-900">Last Activity:</span> {businessWorkspaceViewModel.relationshipCard?.lastActivity ?? "No recent activity"}</p>
                       </div>
                     </article>
 
                     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Funding Readiness workspace card">
                       <h2 className="text-lg font-semibold text-slate-900">Funding Readiness</h2>
                       <p className="mt-3 text-sm text-slate-600 sm:text-base">
-                        Funding Goal: <span className="font-semibold text-slate-900">{fundingGoal ?? "Not selected"}</span>
+                        Funding Goal: <span className="font-semibold text-slate-900">{businessWorkspaceViewModel.fundingReadiness.fundingGoal ?? "Not available"}</span>
                       </p>
                       <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
-                        <div className="h-full w-1/2 rounded-full bg-cyan-600" />
+                        <div className="h-full rounded-full bg-cyan-600" style={{ width: `${businessWorkspaceViewModel.fundingReadiness.progressValue}%` }} />
                       </div>
-                      <p className="mt-2 text-sm font-medium text-slate-600">Current Progress: 50%</p>
+                      <p className="mt-2 text-sm font-medium text-slate-600">
+                        {businessWorkspaceViewModel.fundingReadiness.progressLabel}: {businessWorkspaceViewModel.fundingReadiness.progressValue}%
+                      </p>
+                      <div className="mt-4 space-y-2">
+                        {businessWorkspaceViewModel.fundingReadiness.completedItems.map((item) => (
+                          <p key={item} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 sm:text-base">
+                            ✓ {item}
+                          </p>
+                        ))}
+                        {businessWorkspaceViewModel.fundingReadiness.pendingItems.map((item) => (
+                          <p key={item} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 sm:text-base">
+                            ⬜ {item}
+                          </p>
+                        ))}
+                      </div>
+                      <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                        {businessWorkspaceViewModel.fundingReadiness.guidance}
+                      </p>
                     </article>
 
                     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Documents">
-                      <h2 className="text-lg font-semibold text-slate-900">Documents</h2>
-                      <p className="mt-3 text-sm text-slate-600 sm:text-base">Workspace document center is ready for your next uploads.</p>
+                      <h2 className="text-lg font-semibold text-slate-900">{businessWorkspaceViewModel.documents.title}</h2>
+                      <p className="mt-3 text-sm text-slate-600 sm:text-base">{businessWorkspaceViewModel.documents.description}</p>
                     </article>
 
                     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Relationship Timeline">
-                      <h2 className="text-lg font-semibold text-slate-900">Relationship Timeline</h2>
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Today</p>
+                      <h2 className="text-lg font-semibold text-slate-900">{businessWorkspaceViewModel.relationshipTimeline.heading}</h2>
                       <ul className="mt-2 space-y-2 text-sm text-slate-700 sm:text-base">
-                        <li>Business profile created</li>
-                        <li>Funding goal recorded</li>
+                        {businessWorkspaceViewModel.relationshipTimeline.events.map((event) => (
+                          <li key={`${event.title}-${event.description}`}>
+                            <span className="font-semibold text-slate-900">{event.title}</span>
+                            <span className="text-slate-600">: {event.description}</span>
+                          </li>
+                        ))}
                       </ul>
                     </article>
 
                     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-2" aria-label="AI Advisor">
-                      <h2 className="text-lg font-semibold text-slate-900">AI Advisor</h2>
+                      <h2 className="text-lg font-semibold text-slate-900">{businessWorkspaceViewModel.aiAdvisor.title}</h2>
                       <p className="mt-3 text-sm leading-relaxed text-slate-700 sm:text-base">
-                        I&apos;ve understood your business. Uploading one recent invoice will allow me to prepare a much more accurate funding assessment.
+                        {businessWorkspaceViewModel.aiAdvisor.narrative}
                       </p>
                     </article>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={onContinueToRelationship}
-                      className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2"
-                    >
-                      Continue
-                    </button>
+                  <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+                    {businessWorkspaceViewModel.actions?.map((action) => (
+                      <button
+                        key={action.label}
+                        type="button"
+                        onClick={onContinueToRelationship}
+                        disabled={action.disabled}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <p className="text-sm font-semibold text-slate-900">{action.label}</p>
+                        {action.description && <p className="mt-2 text-sm text-slate-600">{action.description}</p>}
+                      </button>
+                    ))}
                   </div>
                 </section>
               ) : (
@@ -400,8 +551,120 @@ export default function Home() {
                     )}
                   </article>
                 </section>
-              )
-            ) : (
+              )) : (relationshipJourneyViewModel ? (
+                <section className="mt-2 space-y-5" aria-label="Relationship journey">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                    <p className="text-sm font-medium tracking-wide text-cyan-700">Relationship Journey</p>
+                    <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+                      {relationshipJourneyViewModel.welcomeMessage}
+                    </h1>
+                    <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                      A Deepsea Relationship Manager can now review your requirements and guide you through the next steps.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Business Summary">
+                      <h2 className="text-lg font-semibold text-slate-900">Business Summary</h2>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:text-base">
+                          <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Company Name</span>
+                          <span className="mt-1 block font-semibold text-slate-900">{relationshipJourneyViewModel.businessSummary.companyName}</span>
+                        </p>
+                        <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:text-base">
+                          <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Document Type</span>
+                          <span className="mt-1 block font-semibold text-slate-900">{relationshipJourneyViewModel.businessSummary.documentType}</span>
+                        </p>
+                        <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 sm:text-base">
+                          <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Jurisdiction</span>
+                          <span className="mt-1 block font-semibold text-slate-900">{relationshipJourneyViewModel.businessSummary.jurisdiction}</span>
+                        </p>
+                      </div>
+                    </article>
+
+                    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Journey metrics">
+                      <h2 className="text-lg font-semibold text-slate-900">Journey Metrics</h2>
+                      <div className="mt-4 space-y-3 text-sm text-slate-700 sm:text-base">
+                        <p><span className="font-semibold text-slate-900">Business Intelligence Score:</span> {relationshipJourneyViewModel.intelligenceScore}</p>
+                        <p><span className="font-semibold text-slate-900">Funding Goal:</span> {relationshipJourneyViewModel.fundingGoal}</p>
+                        <p><span className="font-semibold text-slate-900">Estimated Response Time:</span> {relationshipJourneyViewModel.estimatedResponseTime}</p>
+                        {relationshipJourneyViewModel.assignedRelationshipManager && (
+                          <p><span className="font-semibold text-slate-900">Assigned Relationship Manager:</span> {relationshipJourneyViewModel.assignedRelationshipManager}</p>
+                        )}
+                      </div>
+                    </article>
+                  </div>
+
+                  <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Next Steps">
+                    <h2 className="text-lg font-semibold text-slate-900">Next Steps</h2>
+                    <ul className="mt-4 space-y-2 text-sm text-slate-700 sm:text-base">
+                      {relationshipJourneyViewModel.nextSteps.map((step) => (
+                        <li key={step} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          {step}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+
+                  <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Timeline">
+                    <h2 className="text-lg font-semibold text-slate-900">Timeline</h2>
+                    <ol className="mt-4 space-y-3 text-sm text-slate-700 sm:text-base">
+                      {relationshipJourneyViewModel.timeline.map((item) => (
+                        <li key={`${item.title}-${item.description}`} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="font-semibold text-slate-900">
+                            {item.state === "complete" ? "✓" : item.state === "current" ? "→" : "⬜"} {item.title}
+                          </p>
+                          <p className="mt-1 text-slate-600">{item.description}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </article>
+
+                  <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Quick Actions">
+                    <h2 className="text-lg font-semibold text-slate-900">Quick Actions</h2>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {relationshipJourneyViewModel.actions.map((action) => {
+                        const isDisabled = Boolean(action.disabled);
+
+                        return (
+                          <button
+                            key={action.label}
+                            type="button"
+                            onClick={() => {
+                              if (isDisabled) {
+                                return;
+                              }
+
+                              onWorkspaceAction(action.description ?? action.label);
+                            }}
+                            disabled={isDisabled}
+                            aria-disabled={isDisabled}
+                            className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900 sm:text-base">{action.label}</p>
+                                {action.description && <p className="mt-2 text-sm text-slate-600">{action.description}</p>}
+                              </div>
+                              {action.badge && (
+                                <span className="rounded-full border border-slate-300 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  {action.badge}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {placeholderMessage && (
+                      <p className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-900 sm:text-base" role="status">
+                        {placeholderMessage}
+                      </p>
+                    )}
+                  </article>
+                </section>
+              ) : (
               <>
                 <div className="max-w-3xl">
                   <p className="text-sm font-medium tracking-wide text-cyan-700">ORACLE</p>
@@ -453,7 +716,7 @@ export default function Home() {
                   </p>
                 )}
               </>
-            )}
+            ))}
 
             {uploadConfirmation && conversationStep === "confirmation" && (
               <article className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7" aria-label="Business confirmation">
