@@ -7,12 +7,16 @@
  * providers without changing callers.
  */
 export class DocumentQueueService {
+  private readonly queue: string[] = [];
+
   async enqueue(documentId: string): Promise<void> {
     console.log(`[DocumentQueueService] enqueue documentId=${documentId}`);
+    this.queue.push(documentId);
   }
 
-  async dequeue(): Promise<void> {
+  async dequeue(): Promise<string | null> {
     console.log('[DocumentQueueService] dequeue');
+    return this.queue.shift() ?? null;
   }
 
   async markProcessing(documentId: string): Promise<void> {

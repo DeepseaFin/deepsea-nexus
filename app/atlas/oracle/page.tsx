@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, Clock3, FileUp, FileWarning, ListChecks, Sparkles, UploadCloud } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import { DocumentClassificationService } from '@/lib/documents/documentClassificationService';
+import { DocumentMetadataExtractionService } from '@/lib/documents/documentMetadataExtractionService';
+import { DocumentPipeline } from '@/lib/documents/documentPipeline';
+import { DocumentQueueService } from '@/lib/documents/documentQueueService';
 import { createDocument, listDocuments, type DocumentRecord } from '@/lib/documents/documentRepository';
+import { DocumentWorker } from '@/lib/documents/documentWorker';
+import { OpenAILLMProvider } from '@/lib/documents/providers/openAILLMProvider';
+import { MistralOCRProvider } from '@/lib/documents/providers/mistralOCRProvider';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 const KPI_CARDS = [
@@ -207,6 +214,16 @@ export default function OraclePage() {
         ocr_status: 'PENDING',
         classification_status: 'PENDING',
       });
+      const queue = new DocumentQueueService();
+      const ocrProvider = new MistralOCRProvider();
+      const llmProvider = new OpenAILLMProvider();
+      const classificationService = new DocumentClassificationService(llmProvider);
+      const metadataExtractionService = new DocumentMetadataExtractionService(llmProvider);
+      const worker = new DocumentWorker(queue, ocrProvider, classificationService, metadataExtractionService);
+      const documentPipeline = new DocumentPipeline(queue, worker);
+
+      await queue.enqueue(createdDocument.id);
+      await documentPipeline.run();
 
       stopVisualProgress(documentId);
       setUploadQueue((current) => current.filter((doc) => doc.id !== documentId));
