@@ -7,8 +7,25 @@ export * from "@/lib/business-passport/domain/Metadata";
 export * from "@/lib/business-passport/domain/Profiles";
 
 export * from "@/lib/business-passport/events/BusinessPassportEvent";
+export * from "@/lib/business-passport/events/BusinessPassportEventFactory";
+export * from "@/lib/business-passport/events/BusinessPassportEventType";
+export * from "@/lib/business-passport/events/EventCategory";
+export * from "@/lib/business-passport/events/EventDefinition";
+export * from "@/lib/business-passport/events/EventEnvelope";
+export * from "@/lib/business-passport/events/EventMetadata";
+export * from "@/lib/business-passport/events/EventRegistry";
+export * from "@/lib/business-passport/events/EventVersion";
 
 export * from "@/lib/business-passport/projections/BusinessPassportProjection";
+export * from "@/lib/business-passport/projections/KnowledgeIdentityProjector";
+export * from "@/lib/business-passport/projections/KnowledgeProjectionResult";
+export * from "@/lib/business-passport/projections/ProjectionContext";
+export * from "@/lib/business-passport/projections/ProjectionDefinition";
+export * from "@/lib/business-passport/projections/ProjectionMetadata";
+export * from "@/lib/business-passport/projections/ProjectionResult";
+export * from "@/lib/business-passport/projections/ProjectionRegistry";
+export * from "@/lib/business-passport/projections/ProjectionAssembler";
+export * from "@/lib/business-passport/projections/BusinessPassportProjectionService";
 
 export * from "@/lib/business-passport/repositories/BusinessPassportRepository";
 
