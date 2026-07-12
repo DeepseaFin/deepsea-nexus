@@ -1,3 +1,4 @@
+"use client";
 import { AlertTriangle, CheckCircle2, FileWarning, Sparkles } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 

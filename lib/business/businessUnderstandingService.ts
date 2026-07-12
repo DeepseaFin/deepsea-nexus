@@ -6,6 +6,7 @@ import { createDocument } from "@/lib/documents/documentRepository";
 import { DocumentWorker } from "@/lib/documents/documentWorker";
 import { OpenAILLMProvider } from "@/lib/documents/providers/openAILLMProvider";
 import { MistralOCRProvider } from "@/lib/documents/providers/mistralOCRProvider";
+import { evidenceFactory } from "@/lib/evidence/services/EvidenceFactory";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
@@ -35,6 +36,14 @@ function buildStoragePath(fileName: string): string {
   const id = crypto.randomUUID();
 
   return `intake/${year}/${month}/${day}/${id}-${safeFileName}`;
+}
+
+async function computeChecksum(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  const bytes = new Uint8Array(digest);
+
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function generateDocumentCode(): Promise<string> {
@@ -77,6 +86,7 @@ export class BusinessUnderstandingService {
     try {
       const supabase = getSupabaseClient();
       storagePath = buildStoragePath(file.name);
+      const checksum = await computeChecksum(file);
       const { error } = await supabase.storage.from("documents").upload(storagePath, file, {
         cacheControl: "3600",
         upsert: false,
@@ -98,10 +108,20 @@ export class BusinessUnderstandingService {
         storage_path: storagePath,
         mime_type: file.type || "application/octet-stream",
         file_size: file.size,
+        checksum,
         status: "UPLOADED",
         uploaded_at: uploadedAt,
         ocr_status: "PENDING",
         classification_status: "PENDING",
+      });
+
+      evidenceFactory.createFromOracleDocument({
+        documentId: createdDocument.id,
+        documentCode: createdDocument.document_code,
+        mimeType: createdDocument.mime_type,
+        checksum: createdDocument.checksum ?? checksum,
+        uploadedAt: createdDocument.uploaded_at,
+        uploadedBy: createdDocument.uploaded_by ?? "oracle_workflow",
       });
 
       const queue = new DocumentQueueService();

@@ -12,15 +12,12 @@ import type {
 } from "@/lib/knowledge/services/TradeLicenseKnowledgeExtractor";
 import { tradeLicenseKnowledgeExtractor } from "@/lib/knowledge/services/TradeLicenseKnowledgeExtractor";
 
-const TRADE_LICENSE_FIELD_SECTIONS = [
-  "legalname",
-  "registrationnumber",
-  "jurisdiction",
-  "entitytype",
-  "expirydate",
-] as const;
-
-type TradeLicenseFieldName = (typeof TRADE_LICENSE_FIELD_SECTIONS)[number];
+type TradeLicenseFieldName =
+  | "legalname"
+  | "registrationnumber"
+  | "jurisdiction"
+  | "entitytype"
+  | "expirydate";
 
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");

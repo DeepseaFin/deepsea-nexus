@@ -12,8 +12,10 @@ export interface BusinessPassportEventPayload {
   readonly passportId: PassportId;
 }
 
-export interface BusinessPassportEvent
-  extends EventEnvelope<BusinessPassportEventType, BusinessPassportEventPayload> {}
+export type BusinessPassportEvent = EventEnvelope<
+  BusinessPassportEventType,
+  BusinessPassportEventPayload
+>;
 
 export function createBusinessPassportEvent(
   metadata: EventMetadata,
