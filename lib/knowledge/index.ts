@@ -16,6 +16,9 @@ export * from "@/lib/knowledge/services/KnowledgeService";
 export * from "@/lib/knowledge/services/KnowledgeExtractionResult";
 export * from "@/lib/knowledge/services/KnowledgeExtractionRule";
 export * from "@/lib/knowledge/services/KnowledgeExtractionValidator";
+export * from "@/lib/knowledge/services/EvidenceKnowledgeMapper";
+export * from "@/lib/knowledge/services/KnowledgeFactFactory";
+export * from "@/lib/knowledge/services/KnowledgeTransformationResult";
 export * from "@/lib/knowledge/services/KnowledgeValidator";
 export * from "@/lib/knowledge/services/TradeLicenseKnowledgeExtractor";
 
