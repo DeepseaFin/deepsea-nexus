@@ -8,6 +8,8 @@ export * from "@/lib/evidence/domain/EvidenceMetadata";
 export * from "@/lib/evidence/domain/EvidenceReference";
 
 export * from "@/lib/evidence/services/EvidenceRepository";
+export * from "@/lib/evidence/services/EvidenceFactory";
+export * from "@/lib/evidence/services/EvidenceMapper";
 export * from "@/lib/evidence/services/EvidenceService";
 export * from "@/lib/evidence/services/EvidenceValidator";
 
