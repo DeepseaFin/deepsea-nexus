@@ -1,9 +1,10 @@
-import { JourneyStep } from "@/lib/journey";
+import { JourneyStatus, JourneyStep } from "@/lib/journey";
 
 type JourneySidebarProps = {
   steps: readonly JourneyStep[];
   currentStep: JourneyStep;
   completedSteps: readonly JourneyStep[];
+  status: JourneyStatus;
 };
 
 function formatStep(step: JourneyStep): string {
@@ -13,13 +14,18 @@ function formatStep(step: JourneyStep): string {
     .join(" ");
 }
 
-export default function JourneySidebar({ steps, currentStep, completedSteps }: JourneySidebarProps) {
+export default function JourneySidebar({ steps, currentStep, completedSteps, status }: JourneySidebarProps) {
   const completedSet = new Set(completedSteps);
 
   return (
     <aside className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Journey Steps</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Journey Steps</h2>
+          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-[0.12em] text-slate-300">
+            {status}
+          </span>
+        </div>
         <div className="mt-3 space-y-2">
           {steps.map((step, index) => {
             const isCurrent = step === currentStep;

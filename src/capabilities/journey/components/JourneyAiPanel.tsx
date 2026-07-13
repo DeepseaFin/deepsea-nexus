@@ -1,9 +1,10 @@
-import type { JourneyRecommendation } from "@/lib/journey";
+import { type JourneyRecommendation, type JourneyStatus } from "@/lib/journey";
 
 type JourneyAiPanelProps = {
   recommendations: readonly JourneyRecommendation[];
   missingItems: readonly string[];
   nextAction: string;
+  status: JourneyStatus;
 };
 
 function priorityTone(priority: JourneyRecommendation["priority"]): string {
@@ -13,11 +14,16 @@ function priorityTone(priority: JourneyRecommendation["priority"]): string {
   return "border-slate-700/50 bg-slate-900 text-slate-300";
 }
 
-export default function JourneyAiPanel({ recommendations, missingItems, nextAction }: JourneyAiPanelProps) {
+export default function JourneyAiPanel({ recommendations, missingItems, nextAction, status }: JourneyAiPanelProps) {
   return (
     <aside className="space-y-2 xl:w-[360px]">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 className="text-lg font-semibold text-slate-100">NEXUS AI</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-100">NEXUS AI</h2>
+          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-[0.12em] text-slate-300">
+            {status}
+          </span>
+        </div>
 
         <div className="mt-3 space-y-4 text-sm">
           <div>
@@ -35,6 +41,9 @@ export default function JourneyAiPanel({ recommendations, missingItems, nextActi
           <div>
             <p className="mb-1 font-semibold text-amber-200">Missing Items</p>
             <div className="space-y-1 text-slate-300">
+              {missingItems.length === 0 && (
+                <p className="rounded border border-emerald-700/40 bg-emerald-950/20 px-2 py-1 text-emerald-200">No missing items.</p>
+              )}
               {missingItems.map((item) => (
                 <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>
               ))}
