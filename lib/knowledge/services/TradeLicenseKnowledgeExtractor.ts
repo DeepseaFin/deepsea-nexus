@@ -6,7 +6,7 @@ import type { KnowledgeMetadata } from "@/lib/knowledge/domain/KnowledgeMetadata
 import type { EvidenceReference } from "@/lib/evidence/domain/EvidenceReference";
 import type { KnowledgeExtractionResult } from "@/lib/knowledge/services/KnowledgeExtractionResult";
 import type { KnowledgeExtractionRule } from "@/lib/knowledge/services/KnowledgeExtractionRule";
-import { KnowledgeId } from "@/lib/knowledge/value-objects/KnowledgeId";
+import { knowledgeFactFactory } from "@/lib/knowledge/services/KnowledgeFactFactory";
 
 export interface StructuredTradeLicenseField {
   readonly value?: string;
@@ -80,8 +80,8 @@ function buildFact(
   factName: string,
   field: StructuredTradeLicenseField,
 ): KnowledgeFact {
-  return {
-    knowledgeId: KnowledgeId.create(`${input.documentId}:${factName}`),
+  return knowledgeFactFactory.create({
+    knowledgeId: `${input.documentId}:${factName}`,
     knowledgeType: KnowledgeType.Identity,
     status: KnowledgeStatus.Draft,
     source: KnowledgeSource.EvidenceDerived,
@@ -94,7 +94,7 @@ function buildFact(
     evidenceReferences: [field.evidenceReference],
     effectiveDate: input.createdAt,
     lastVerified: input.createdAt,
-  };
+  });
 }
 
 function averageConfidence(facts: readonly KnowledgeFact[]): number {
