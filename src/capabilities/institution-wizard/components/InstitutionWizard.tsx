@@ -8,6 +8,8 @@ import WizardFooter from "@/src/capabilities/institution-wizard/components/Wizar
 import WizardHeader from "@/src/capabilities/institution-wizard/components/WizardHeader";
 import WizardStepper from "@/src/capabilities/institution-wizard/components/WizardStepper";
 import { useInstitutionWizard } from "@/src/capabilities/institution-wizard/hooks/useInstitutionWizard";
+import { useOracleUpload } from "@/src/capabilities/institution-wizard/hooks/useOracleUpload";
+import { OracleWizardAdapter } from "@/src/capabilities/institution-wizard/services/OracleWizardAdapter";
 
 export default function InstitutionWizard() {
   const {
@@ -19,6 +21,26 @@ export default function InstitutionWizard() {
     goPrevious,
     simulateUpload,
   } = useInstitutionWizard();
+  const {
+    isProcessing,
+    result: oracleResult,
+    error: oracleError,
+    processUpload,
+  } = useOracleUpload();
+
+  const reviewedFields = oracleResult
+    ? OracleWizardAdapter.toReviewedFields(oracleResult)
+    : state.reviewedFields;
+
+  const confidenceByLabel = oracleResult
+    ? Object.fromEntries(oracleResult.extractedFields.map((field) => [field.label, field.confidence]))
+    : {};
+
+  const handleUpload = async (): Promise<void> => {
+    const fileName = "trade-license-al-noor.pdf";
+    simulateUpload();
+    await processUpload(fileName);
+  };
 
   const currentStep = state.steps.find((step) => step.id === state.currentStepId) ?? state.steps[0];
 
@@ -39,9 +61,20 @@ export default function InstitutionWizard() {
 
           <main className="space-y-2">
             {state.currentStepId === 1 && (
-              <UploadStep uploadedFiles={state.uploadedFiles} onSimulateUpload={simulateUpload} />
+              <UploadStep
+                uploadedFiles={state.uploadedFiles}
+                onSimulateUpload={handleUpload}
+                isProcessing={isProcessing}
+                oracleResult={oracleResult}
+                oracleError={oracleError}
+              />
             )}
-            {state.currentStepId === 2 && <ReviewStep reviewedFields={state.reviewedFields} />}
+            {state.currentStepId === 2 && (
+              <ReviewStep
+                reviewedFields={reviewedFields}
+                confidenceByLabel={confidenceByLabel}
+              />
+            )}
             {state.currentStepId === 3 && <BusinessProfileStep profile={state.businessProfile} />}
             {state.currentStepId === 4 && <JourneyReadyStep readinessNotes={state.journeyReadinessNotes} />}
 
