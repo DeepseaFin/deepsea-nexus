@@ -3,8 +3,10 @@ import type { BusinessReadiness } from "@/src/capabilities/institution-wizard/ty
 import type { ExplanationItem } from "@/src/capabilities/institution-wizard/types/ExplanationItem";
 import type { Recommendation } from "@/src/capabilities/institution-wizard/types/Recommendation";
 import ExplainabilityPanel from "@/src/capabilities/institution-wizard/components/ExplainabilityPanel";
+import PassportTimeline from "@/src/capabilities/institution-wizard/components/PassportTimeline";
 import ReadinessCard from "@/src/capabilities/institution-wizard/components/ReadinessCard";
 import RecommendationPanel from "@/src/capabilities/institution-wizard/components/RecommendationPanel";
+import { PassportTimelineBuilder } from "@/src/capabilities/institution-wizard/services/PassportTimelineBuilder";
 
 type BusinessPassportCardProps = {
   passport: BusinessPassportSummary;
@@ -25,6 +27,8 @@ export default function BusinessPassportCard({
   explanations,
   recommendation,
 }: BusinessPassportCardProps) {
+  const timeline = PassportTimelineBuilder.build(passport);
+
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
@@ -93,6 +97,7 @@ export default function BusinessPassportCard({
       </section>
 
       {readiness && <ReadinessCard readiness={readiness} />}
+      <PassportTimeline timeline={timeline} />
       {explanations && explanations.length > 0 && <ExplainabilityPanel items={explanations} />}
       {recommendation && <RecommendationPanel recommendation={recommendation} />}
     </div>
