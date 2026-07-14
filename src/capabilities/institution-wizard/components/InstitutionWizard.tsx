@@ -9,6 +9,7 @@ import WizardHeader from "@/src/capabilities/institution-wizard/components/Wizar
 import WizardStepper from "@/src/capabilities/institution-wizard/components/WizardStepper";
 import { useInstitutionWizard } from "@/src/capabilities/institution-wizard/hooks/useInstitutionWizard";
 import { useOracleUpload } from "@/src/capabilities/institution-wizard/hooks/useOracleUpload";
+import { InstitutionUnderstandingService } from "@/src/capabilities/institution-wizard/services/InstitutionUnderstandingService";
 import { OracleWizardAdapter } from "@/src/capabilities/institution-wizard/services/OracleWizardAdapter";
 
 export default function InstitutionWizard() {
@@ -35,6 +36,13 @@ export default function InstitutionWizard() {
   const confidenceByLabel = oracleResult
     ? Object.fromEntries(oracleResult.extractedFields.map((field) => [field.label, field.confidence]))
     : {};
+
+  const understanding = InstitutionUnderstandingService.build({
+    reviewedFields,
+    profile: state.businessProfile,
+    uploadedFiles: state.uploadedFiles,
+    confidenceByLabel,
+  });
 
   const handleUpload = async (): Promise<void> => {
     const fileName = "trade-license-al-noor.pdf";
@@ -73,9 +81,15 @@ export default function InstitutionWizard() {
               <ReviewStep
                 reviewedFields={reviewedFields}
                 confidenceByLabel={confidenceByLabel}
+                understanding={understanding}
               />
             )}
-            {state.currentStepId === 3 && <BusinessProfileStep profile={state.businessProfile} />}
+            {state.currentStepId === 3 && (
+              <BusinessProfileStep
+                profile={state.businessProfile}
+                understanding={understanding}
+              />
+            )}
             {state.currentStepId === 4 && <JourneyReadyStep readinessNotes={state.journeyReadinessNotes} />}
 
             <WizardFooter
