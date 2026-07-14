@@ -26,6 +26,16 @@ export * from "@/lib/institution/health/types/HealthScore";
 export * from "@/lib/institution/health/services/InstitutionHealthService";
 export * from "@/lib/institution/health/repositories/InstitutionHealthRepository";
 
+export * from "@/lib/institution/intelligence/domain/InstitutionIntelligence";
+export * from "@/lib/institution/intelligence/domain/InstitutionInsight";
+export * from "@/lib/institution/intelligence/domain/InstitutionExecutiveSummary";
+export * from "@/lib/institution/intelligence/domain/InstitutionAlert";
+export * from "@/lib/institution/intelligence/domain/InstitutionRecommendation";
+export * from "@/lib/institution/intelligence/types/InstitutionScore";
+export * from "@/lib/institution/intelligence/types/InstitutionRating";
+export * from "@/lib/institution/intelligence/services/InstitutionIntelligenceService";
+export * from "@/lib/institution/intelligence/repositories/InstitutionIntelligenceRepository";
+
 export * from "@/lib/institution/types/InstitutionSnapshot";
 export * from "@/lib/institution/types/InstitutionMetadata";
 
