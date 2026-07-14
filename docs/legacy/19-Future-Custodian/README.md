@@ -1,0 +1,27 @@
+# 19-Future-Custodian
+
+## Purpose
+
+Prepare structured handover material for future custodians of Deepsea Nexus and DNOS.
+
+## Scope
+
+This section contains official records and reference documents that belong strictly to the Future-Custodian domain within the Deepsea Legacy Repository.
+
+## Audience
+
+Leadership, domain owners, custodians, auditors, and authorized contributors who require durable institutional context.
+
+## Document Types
+
+- Foundational reference notes
+- Governance and policy records
+- Controlled procedures and playbooks
+- Historical decision or learning records
+- Supporting annexures where applicable
+
+## Ownership
+
+Primary ownership: Assigned custodian for Future-Custodian.
+
+Stewardship: Deepsea leadership and designated DNOS knowledge owners.
