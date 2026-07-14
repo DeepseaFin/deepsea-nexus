@@ -16,6 +16,16 @@ export * from "@/lib/institution/events/services/InstitutionEventFactory";
 export * from "@/lib/institution/events/services/InstitutionEventPublisher";
 export * from "@/lib/institution/events/repositories/InstitutionEventRepository";
 
+export * from "@/lib/institution/health/constants/InstitutionHealthStatus";
+export * from "@/lib/institution/health/constants/HealthIndicatorType";
+export * from "@/lib/institution/health/domain/InstitutionHealth";
+export * from "@/lib/institution/health/domain/HealthIndicator";
+export * from "@/lib/institution/health/domain/HealthTrend";
+export * from "@/lib/institution/health/types/InstitutionHealthSummary";
+export * from "@/lib/institution/health/types/HealthScore";
+export * from "@/lib/institution/health/services/InstitutionHealthService";
+export * from "@/lib/institution/health/repositories/InstitutionHealthRepository";
+
 export * from "@/lib/institution/types/InstitutionSnapshot";
 export * from "@/lib/institution/types/InstitutionMetadata";
 
