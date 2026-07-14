@@ -8,6 +8,7 @@ import WizardFooter from "@/src/capabilities/institution-wizard/components/Wizar
 import WizardHeader from "@/src/capabilities/institution-wizard/components/WizardHeader";
 import WizardStepper from "@/src/capabilities/institution-wizard/components/WizardStepper";
 import { useInstitutionWizard } from "@/src/capabilities/institution-wizard/hooks/useInstitutionWizard";
+import { BusinessPassportBuilder } from "@/src/capabilities/institution-wizard/services/BusinessPassportBuilder";
 import { useOracleUpload } from "@/src/capabilities/institution-wizard/hooks/useOracleUpload";
 import { InstitutionUnderstandingService } from "@/src/capabilities/institution-wizard/services/InstitutionUnderstandingService";
 import { OracleWizardAdapter } from "@/src/capabilities/institution-wizard/services/OracleWizardAdapter";
@@ -43,6 +44,7 @@ export default function InstitutionWizard() {
     uploadedFiles: state.uploadedFiles,
     confidenceByLabel,
   });
+  const passport = BusinessPassportBuilder.build(understanding);
 
   const handleUpload = async (): Promise<void> => {
     const fileName = "trade-license-al-noor.pdf";
@@ -88,9 +90,15 @@ export default function InstitutionWizard() {
               <BusinessProfileStep
                 profile={state.businessProfile}
                 understanding={understanding}
+                passport={passport}
               />
             )}
-            {state.currentStepId === 4 && <JourneyReadyStep readinessNotes={state.journeyReadinessNotes} />}
+            {state.currentStepId === 4 && (
+              <JourneyReadyStep
+                readinessNotes={state.journeyReadinessNotes}
+                passport={passport}
+              />
+            )}
 
             <WizardFooter
               currentStepId={state.currentStepId}

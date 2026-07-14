@@ -1,13 +1,16 @@
 import type { BusinessProfilePreview } from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
+import BusinessPassportCard from "@/src/capabilities/institution-wizard/components/BusinessPassportCard";
 import type { InstitutionUnderstanding } from "@/src/capabilities/institution-wizard/types/InstitutionUnderstanding";
+import type { BusinessPassportSummary } from "@/src/capabilities/institution-wizard/types/BusinessPassportSummary";
 import InstitutionSummaryCard from "@/src/capabilities/institution-wizard/components/InstitutionSummaryCard";
 
 type BusinessProfileStepProps = {
   profile: BusinessProfilePreview;
   understanding: InstitutionUnderstanding;
+  passport: BusinessPassportSummary;
 };
 
-export default function BusinessProfileStep({ profile, understanding }: BusinessProfileStepProps) {
+export default function BusinessProfileStep({ profile, understanding, passport }: BusinessProfileStepProps) {
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
@@ -39,6 +42,7 @@ export default function BusinessProfileStep({ profile, understanding }: Business
       </section>
 
       <InstitutionSummaryCard understanding={understanding} />
+      <BusinessPassportCard passport={passport} />
     </div>
   );
 }
