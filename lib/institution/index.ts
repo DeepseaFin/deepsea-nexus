@@ -5,6 +5,17 @@ export * from "@/lib/institution/domain/Institution";
 export * from "@/lib/institution/domain/InstitutionIdentity";
 export * from "@/lib/institution/domain/InstitutionProfile";
 
+export * from "@/lib/institution/events/constants/InstitutionEventType";
+export * from "@/lib/institution/events/constants/InstitutionEventCategory";
+export * from "@/lib/institution/events/domain/InstitutionEvent";
+export * from "@/lib/institution/events/domain/InstitutionEventMetadata";
+export * from "@/lib/institution/events/domain/InstitutionEventReference";
+export * from "@/lib/institution/events/types/InstitutionEventEnvelope";
+export * from "@/lib/institution/events/types/InstitutionEventSummary";
+export * from "@/lib/institution/events/services/InstitutionEventFactory";
+export * from "@/lib/institution/events/services/InstitutionEventPublisher";
+export * from "@/lib/institution/events/repositories/InstitutionEventRepository";
+
 export * from "@/lib/institution/types/InstitutionSnapshot";
 export * from "@/lib/institution/types/InstitutionMetadata";
 
