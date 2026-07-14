@@ -84,3 +84,10 @@ Tracks controlled repository-level documentation changes from Project Legacy Rel
   - docs/legacy/15-Deepsea-Dictionary/ONTOLOGY.md
   - docs/legacy/15-Deepsea-Dictionary/ENTITY-TYPES.md
   - docs/legacy/15-Deepsea-Dictionary/BUSINESS-GLOSSARY.md
+
+## 2026-07-14 - L2.0 The Charter of Deepsea
+
+### Added
+
+- Foundational charter publication:
+  - docs/legacy/00-Charter/DS-CHR-001-The-Charter-of-Deepsea.md

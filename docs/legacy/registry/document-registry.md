@@ -79,3 +79,4 @@ Planned maturity upgrades:
 | DLR-DICT-STD-0001 | Deepsea Ontology | Deepsea Dictionary | Standard | 1.0.0 | Active | Ontology Steward | 2026-07-14 | docs/legacy/15-Deepsea-Dictionary/ONTOLOGY.md |
 | DLR-DICT-STD-0002 | Entity Types | Deepsea Dictionary | Standard | 1.0.0 | Active | Ontology Steward | 2026-07-14 | docs/legacy/15-Deepsea-Dictionary/ENTITY-TYPES.md |
 | DLR-DICT-MAN-0001 | Business Glossary | Deepsea Dictionary | Manual | 1.0.0 | Active | Glossary Steward | 2026-07-14 | docs/legacy/15-Deepsea-Dictionary/BUSINESS-GLOSSARY.md |
+| DS-CHR-001 | The Charter of Deepsea | Charter | Charter | 1.0.0 | Active | Deepsea Leadership Council | 2026-07-14 | docs/legacy/00-Charter/DS-CHR-001-The-Charter-of-Deepsea.md |
