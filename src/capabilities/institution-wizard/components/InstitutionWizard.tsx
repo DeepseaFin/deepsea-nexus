@@ -9,6 +9,8 @@ import WizardHeader from "@/src/capabilities/institution-wizard/components/Wizar
 import WizardStepper from "@/src/capabilities/institution-wizard/components/WizardStepper";
 import { useInstitutionWizard } from "@/src/capabilities/institution-wizard/hooks/useInstitutionWizard";
 import { BusinessPassportBuilder } from "@/src/capabilities/institution-wizard/services/BusinessPassportBuilder";
+import { BusinessReadinessService } from "@/src/capabilities/institution-wizard/services/BusinessReadinessService";
+import { ExplainabilityService } from "@/src/capabilities/institution-wizard/services/ExplainabilityService";
 import { useOracleUpload } from "@/src/capabilities/institution-wizard/hooks/useOracleUpload";
 import { InstitutionUnderstandingService } from "@/src/capabilities/institution-wizard/services/InstitutionUnderstandingService";
 import { OracleWizardAdapter } from "@/src/capabilities/institution-wizard/services/OracleWizardAdapter";
@@ -45,6 +47,13 @@ export default function InstitutionWizard() {
     confidenceByLabel,
   });
   const passport = BusinessPassportBuilder.build(understanding);
+  const readiness = BusinessReadinessService.build(passport);
+  const explanations = ExplainabilityService.buildExplanations(understanding);
+  const recommendation = ExplainabilityService.buildRecommendation(
+    understanding,
+    readiness.manualReviewItems,
+    passport.nextAction,
+  );
 
   const handleUpload = async (): Promise<void> => {
     const fileName = "trade-license-al-noor.pdf";
@@ -97,6 +106,9 @@ export default function InstitutionWizard() {
               <JourneyReadyStep
                 readinessNotes={state.journeyReadinessNotes}
                 passport={passport}
+                readiness={readiness}
+                explanations={explanations}
+                recommendation={recommendation}
               />
             )}
 

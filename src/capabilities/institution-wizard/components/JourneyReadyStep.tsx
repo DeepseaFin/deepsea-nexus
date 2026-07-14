@@ -1,12 +1,24 @@
 import BusinessPassportCard from "@/src/capabilities/institution-wizard/components/BusinessPassportCard";
 import type { BusinessPassportSummary } from "@/src/capabilities/institution-wizard/types/BusinessPassportSummary";
+import type { BusinessReadiness } from "@/src/capabilities/institution-wizard/types/BusinessReadiness";
+import type { ExplanationItem } from "@/src/capabilities/institution-wizard/types/ExplanationItem";
+import type { Recommendation } from "@/src/capabilities/institution-wizard/types/Recommendation";
 
 type JourneyReadyStepProps = {
   readinessNotes: readonly string[];
   passport: BusinessPassportSummary;
+  readiness: BusinessReadiness;
+  explanations: readonly ExplanationItem[];
+  recommendation: Recommendation;
 };
 
-export default function JourneyReadyStep({ readinessNotes, passport }: JourneyReadyStepProps) {
+export default function JourneyReadyStep({
+  readinessNotes,
+  passport,
+  readiness,
+  explanations,
+  recommendation,
+}: JourneyReadyStepProps) {
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
@@ -22,7 +34,12 @@ export default function JourneyReadyStep({ readinessNotes, passport }: JourneyRe
         </div>
       </section>
 
-      <BusinessPassportCard passport={passport} />
+      <BusinessPassportCard
+        passport={passport}
+        readiness={readiness}
+        explanations={explanations}
+        recommendation={recommendation}
+      />
     </div>
   );
 }

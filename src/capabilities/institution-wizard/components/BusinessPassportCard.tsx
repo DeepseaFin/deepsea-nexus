@@ -1,7 +1,16 @@
 import type { BusinessPassportSummary } from "@/src/capabilities/institution-wizard/types/BusinessPassportSummary";
+import type { BusinessReadiness } from "@/src/capabilities/institution-wizard/types/BusinessReadiness";
+import type { ExplanationItem } from "@/src/capabilities/institution-wizard/types/ExplanationItem";
+import type { Recommendation } from "@/src/capabilities/institution-wizard/types/Recommendation";
+import ExplainabilityPanel from "@/src/capabilities/institution-wizard/components/ExplainabilityPanel";
+import ReadinessCard from "@/src/capabilities/institution-wizard/components/ReadinessCard";
+import RecommendationPanel from "@/src/capabilities/institution-wizard/components/RecommendationPanel";
 
 type BusinessPassportCardProps = {
   passport: BusinessPassportSummary;
+  readiness?: BusinessReadiness;
+  explanations?: readonly ExplanationItem[];
+  recommendation?: Recommendation;
 };
 
 function readinessTone(level: BusinessPassportSummary["businessReadiness"]["level"]): string {
@@ -10,15 +19,21 @@ function readinessTone(level: BusinessPassportSummary["businessReadiness"]["leve
   return "border-rose-700/40 bg-rose-950/20 text-rose-200";
 }
 
-export default function BusinessPassportCard({ passport }: BusinessPassportCardProps) {
+export default function BusinessPassportCard({
+  passport,
+  readiness,
+  explanations,
+  recommendation,
+}: BusinessPassportCardProps) {
   return (
-    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-      <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">Business Passport</h2>
-        <span className={`rounded-full border px-2 py-0.5 text-xs uppercase tracking-[0.12em] ${readinessTone(passport.businessReadiness.level)}`}>
-          {passport.businessReadiness.level}
-        </span>
-      </header>
+    <div className="space-y-2">
+      <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+        <header className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-100">Business Passport</h2>
+          <span className={`rounded-full border px-2 py-0.5 text-xs uppercase tracking-[0.12em] ${readinessTone(passport.businessReadiness.level)}`}>
+            {passport.businessReadiness.level}
+          </span>
+        </header>
 
       <div className="grid gap-2 sm:grid-cols-2">
         <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
@@ -71,10 +86,15 @@ export default function BusinessPassportCard({ passport }: BusinessPassportCardP
         </div>
       </div>
 
-      <div className="mt-4 rounded border border-cyan-700/30 bg-cyan-950/20 px-3 py-2">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Next Action</p>
-        <p className="mt-1 text-sm text-cyan-100">{passport.nextAction}</p>
-      </div>
-    </section>
+        <div className="mt-4 rounded border border-cyan-700/30 bg-cyan-950/20 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Next Action</p>
+          <p className="mt-1 text-sm text-cyan-100">{passport.nextAction}</p>
+        </div>
+      </section>
+
+      {readiness && <ReadinessCard readiness={readiness} />}
+      {explanations && explanations.length > 0 && <ExplainabilityPanel items={explanations} />}
+      {recommendation && <RecommendationPanel recommendation={recommendation} />}
+    </div>
   );
 }
