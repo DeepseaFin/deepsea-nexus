@@ -1,5 +1,6 @@
 "use client";
 
+import EmptyState from "@/components/atlas/design-system/EmptyState";
 import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
@@ -47,6 +48,19 @@ export default function JourneyWorkspace({
     initialTimeline: timeline,
     actor: "Journey Operator",
   });
+
+  if (!workspace.steps.length) {
+    return (
+      <div className="min-h-screen p-6 sm:p-8">
+        <div className="mx-auto max-w-5xl">
+          <EmptyState
+            title="Journey workflow is empty"
+            message="No journey steps are currently available. Refresh and try again."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const isPaused = workspace.journeyState.status === JourneyStatus.Paused;
   const isCompleted = workspace.journeyState.status === JourneyStatus.Completed;

@@ -18,8 +18,8 @@ export default function ReviewStep({ reviewedFields, confidenceByLabel, understa
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 className="text-lg font-semibold text-slate-100">Review Information</h2>
-        <p className="mt-1 text-sm text-slate-400">Verify ORACLE-extracted institutional details before profile preview.</p>
+        <h2 className="text-lg font-semibold text-slate-100">Institution Review</h2>
+        <p className="mt-1 text-sm text-slate-400">Verify ORACLE-extracted institutional details before completion.</p>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {reviewedFields.map((field) => (

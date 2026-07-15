@@ -14,8 +14,8 @@ export default function BusinessProfileStep({ profile, understanding, passport }
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 className="text-lg font-semibold text-slate-100">Business Profile Preview</h2>
-        <p className="mt-1 text-sm text-slate-400">Preview the institution profile before relationship activation.</p>
+        <h2 className="text-lg font-semibold text-slate-100">Business Passport Preview</h2>
+        <p className="mt-1 text-sm text-slate-400">Inspect profile and passport signals before journey preview.</p>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">

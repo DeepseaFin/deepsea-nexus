@@ -1,7 +1,21 @@
 import RMWorkQueue from '@/components/atlas/workqueue/RMWorkQueue';
 import WorkspaceScaffold from '@/components/atlas/design-system/WorkspaceScaffold';
+import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import { getOperationsCenterContexts } from '@/lib/workflows/DemoScenario';
+import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 
 export default function WorkQueuePage() {
+  const activeContexts = getOperationsCenterContexts().filter(
+    (context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED,
+  );
+
+  const groupedByLifecycle = Object.values(OpportunityLifecycle)
+    .map((lifecycle) => ({
+      lifecycle,
+      items: activeContexts.filter((context) => context.opportunityLifecycle === lifecycle),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <WorkspaceScaffold
       title="Institutional Work Queue"
@@ -25,7 +39,31 @@ export default function WorkQueuePage() {
         { key: 'pipeline', label: 'Pipeline' },
         { key: 'actions', label: 'Actions' },
       ]}
-      main={<RMWorkQueue />}
+      main={(
+        <div className="space-y-4">
+          <SectionCard title="Active Workflow Queue by Lifecycle">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {groupedByLifecycle.map((group) => (
+                <div key={group.lifecycle} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">{group.lifecycle}</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-100">{group.items.length}</p>
+                  <div className="mt-3 space-y-2">
+                    {group.items.map((item) => (
+                      <div key={item.workflowId} className="rounded-lg border border-slate-800 bg-slate-900/70 p-2">
+                        <p className="text-sm font-semibold text-slate-100">{item.opportunityId}</p>
+                        <p className="text-xs text-slate-400">Workflow {item.workflowId}</p>
+                        <p className="text-xs text-slate-400">Owner {item.currentOwner}</p>
+                        <p className="text-xs text-slate-400">Workspace {item.currentWorkspace}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+          <RMWorkQueue />
+        </div>
+      )}
       intelligence={[
         { title: 'Bottleneck Watch', detail: 'Monitor stage transitions with longest cycle durations and pending approvals.' },
         { title: 'Escalation Focus', detail: 'Prioritize high-risk or high-value transactions for committee intervention.' },

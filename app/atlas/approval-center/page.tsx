@@ -15,6 +15,8 @@ import {
   Users,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import { seedOperationsCenterRepository } from '@/lib/workflows/DemoScenario';
+import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 import {
   ApprovalRecord,
   ApprovalRule,
@@ -68,6 +70,8 @@ function priorityClass(priority: ApprovalRecord['priority']): string {
 export default function ApprovalCenterPage() {
   const [activeTab, setActiveTab] = useState<Tab>('My Approvals');
   const [search, setSearch] = useState('');
+
+  const operationsContexts = useMemo(() => seedOperationsCenterRepository(), []);
 
   const approvalRules = useMemo<ApprovalRule[]>(
     () => [
@@ -264,8 +268,72 @@ export default function ApprovalCenterPage() {
     [],
   );
 
+  const contextDrivenApprovals = useMemo<ApprovalRecord[]>(() => {
+    return operationsContexts
+      .filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.DRAFT)
+      .map((context, index) => {
+        const isExecutive =
+          context.opportunityLifecycle === OpportunityLifecycle.SUBMITTED
+          || context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW
+          || context.opportunityLifecycle === OpportunityLifecycle.APPROVED;
+
+        const lifecycleStatus = context.opportunityLifecycle;
+        const currentLevel =
+          lifecycleStatus === OpportunityLifecycle.SUBMITTED
+            ? 'Submission'
+            : lifecycleStatus === OpportunityLifecycle.UNDER_REVIEW
+              ? 'Review'
+              : lifecycleStatus === OpportunityLifecycle.APPROVED
+                ? 'Final Approval'
+                : lifecycleStatus === OpportunityLifecycle.FUNDING_ALLOCATED
+                  ? 'Funding'
+                  : 'Forfaitting';
+
+        const status: ApprovalRecord['status'] =
+          lifecycleStatus === OpportunityLifecycle.APPROVED
+          || lifecycleStatus === OpportunityLifecycle.FUNDING_ALLOCATED
+          || lifecycleStatus === OpportunityLifecycle.RELEASED_FOR_PURCHASE
+          || lifecycleStatus === OpportunityLifecycle.PURCHASED
+          || lifecycleStatus === OpportunityLifecycle.SETTLING
+          || lifecycleStatus === OpportunityLifecycle.SETTLED
+          || lifecycleStatus === OpportunityLifecycle.CLOSED
+            ? 'Approved'
+            : lifecycleStatus === OpportunityLifecycle.UNDER_REVIEW
+              ? 'Under Review'
+              : 'Pending';
+
+        return {
+          approvalId: `APR-${context.workflowId}-${String(index + 1).padStart(2, '0')}`,
+          module: isExecutive ? 'Executive' : 'Treasury',
+          deal: context.opportunityId,
+          client: context.institutionId,
+          requestedBy: 'Workflow Orchestrator',
+          approvalType: 'Lifecycle Transition',
+          priority: isExecutive ? 'High' : 'Medium',
+          requestedDate: '2026-07-15T08:00:00.000Z',
+          dueDate: '2026-07-15T18:00:00.000Z',
+          currentLevel,
+          status,
+          decisionRequired: isExecutive ? 'Approve / Reject' : 'Release / Hold',
+          amount: 6_200_000 + index * 350_000,
+          country: 'United Arab Emirates',
+          product: 'RF',
+          riskRating: isExecutive ? 'Medium' : 'Low',
+          relationshipManager: context.currentOwner,
+          department: isExecutive ? 'Credit' : 'Treasury',
+          currency: 'USD',
+          clientCategory: 'Corporate',
+        };
+      });
+  }, [operationsContexts]);
+
+  const mergedBaseApprovals = useMemo<ApprovalRecord[]>(
+    () => [...contextDrivenApprovals, ...baseApprovals],
+    [baseApprovals, contextDrivenApprovals],
+  );
+
   const approvals = useMemo(() => {
-    return baseApprovals.map((approval) => {
+    return mergedBaseApprovals.map((approval) => {
       const computedStatus = computeEscalationState(approval, escalationRule);
       return {
         ...approval,
@@ -275,7 +343,7 @@ export default function ApprovalCenterPage() {
           : approval.currentLevel,
       };
     });
-  }, [baseApprovals, escalationRule, approvalRules]);
+  }, [mergedBaseApprovals, escalationRule, approvalRules]);
 
   const filteredApprovals = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -1,164 +1,165 @@
 # DS-CHR-001 - The Charter of Deepsea
 
+## Metadata Header
+
 - Document ID: DS-CHR-001
-- Title: The Charter of Deepsea
-- Domain: Charter
-- Owner: Deepsea Leadership Council
-- Reviewers: Repository Custodian Council, Domain Custodian, Editorial Steward
-- Version: 1.0.0
-- Status: Active
-- Effective Date: 2026-07-14
-- Last Reviewed: 2026-07-14
-- Source Path: docs/legacy/00-Charter/DS-CHR-001-The-Charter-of-Deepsea.md
+- Classification: Charter
+- Version: 2.0.0
+- Status: Draft
+- Owner: Founder
+- Custodian: Chief Knowledge Architect
+- Reviewer: Repository Custodian Council; Editorial Steward
+- Approver: Founder; Chief Knowledge Architect
+- Security Classification: Internal - Constitutional Draft
+- Audience: Employees; Customers; Regulators; Investors; Future Custodians
+- Purpose: Institutional Charter Publication Skeleton
+- Scope: Charter Structure and Publication Controls Only
+- Dependencies: DOCUMENT-STANDARD.md; REVIEW-WORKFLOW.md; VERSIONING-STANDARD.md; DOCUMENT-ID-STANDARD.md
+- Related Documents: GOVERNANCE.md; WRITING-STANDARD.md; EDITORIAL-STANDARD.md
+- Keywords: charter; governance; constitution; publication; controls
+- Review Cycle: Quarterly
 
-## 1. Preamble
+## Copyright Notice
 
-This Charter records the founding intent of Deepsea as an institution.
+Copyright (c) Deepsea Nexus FZCO. All Rights Reserved.
 
-It exists to preserve continuity of purpose across generations of people, products, and decisions.
+## Document Control
 
-It is addressed to employees, customers, regulators, investors, and future custodians who must understand not only what Deepsea does, but what Deepsea must never cease to be.
+- Controlled Document: Yes
+- Record Type: Foundational Charter
+- Source of Authority: Deepsea Leadership Council
+- Distribution: Controlled Internal Distribution
+- Master Copy Location: docs/legacy/00-Charter/DS-CHR-001-The-Charter-of-Deepsea.md
+- Next Review Date: Pending
 
-This Charter is not a campaign statement.
+## Table of Contents
 
-It is a governing declaration of duty.
+- [Publication Information](#publication-information)
+- [Part I - Foundational Declaration](#part-i---foundational-declaration)
+  - [Chapter 1 - Preamble](#chapter-1---preamble)
+  - [Chapter 2 - Why Deepsea Exists](#chapter-2---why-deepsea-exists)
+  - [Chapter 3 - Our Purpose](#chapter-3---our-purpose)
+  - [Chapter 4 - Our Promise](#chapter-4---our-promise)
+- [Part II - Institutional Principles](#part-ii---institutional-principles)
+  - [Chapter 5 - Our Beliefs](#chapter-5---our-beliefs)
+  - [Chapter 6 - Our Responsibility](#chapter-6---our-responsibility)
+  - [Chapter 7 - Our View of Technology](#chapter-7---our-view-of-technology)
+  - [Chapter 8 - Our View of Capital](#chapter-8---our-view-of-capital)
+  - [Chapter 9 - Our View of People](#chapter-9---our-view-of-people)
+  - [Chapter 10 - Our View of Society](#chapter-10---our-view-of-society)
+- [Part III - Stewardship and Continuity](#part-iii---stewardship-and-continuity)
+  - [Chapter 11 - The Steward's Oath](#chapter-11---the-stewards-oath)
+  - [Chapter 12 - Closing Declaration](#chapter-12---closing-declaration)
+- [Back Matter](#back-matter)
+  - [Cross References](#cross-references)
+  - [Appendices](#appendices)
+  - [Glossary](#glossary)
+  - [References](#references)
+  - [Change Log](#change-log)
+- [Revision History](#revision-history)
+- [Approval Signatures](#approval-signatures)
 
-## 2. Why Deepsea Exists
+## Publication Information
 
-Deepsea exists because financial systems require disciplined institutions that can combine judgment, evidence, and accountability under changing market conditions.
+- Publication Format: Constitutional Publication Skeleton
+- Edition: First Framework Edition
+- Publication State: Authoring Preparation
+- Prepared For: Founder and Chief Knowledge Architect
+- Body Content Status: Not Authored
 
-Markets evolve.
+## Part I - Foundational Declaration
 
-Regulations evolve.
+### Chapter 1 - Preamble
 
-Technology evolves.
+- Section Status: Not Authored
 
-Institutional responsibility does not.
+### Chapter 2 - Why Deepsea Exists
 
-Deepsea exists to build durable systems of trust where decisions can be explained, governed, and improved over time.
+- Section Status: Not Authored
 
-## 3. Our Purpose
+### Chapter 3 - Our Purpose
 
-Our purpose is to strengthen institutional decision quality in private credit and related financial operations through governance, clarity, and auditable intelligence.
+- Section Status: Not Authored
 
-We do not measure success only by transaction volume.
+### Chapter 4 - Our Promise
 
-We measure success by the quality, integrity, and long-term consequences of decisions taken under our stewardship.
+- Section Status: Not Authored
 
-## 4. Our Promise
+## Part II - Institutional Principles
 
-We promise to act with discipline where ambiguity is high.
+### Chapter 5 - Our Beliefs
 
-We promise to preserve evidence where memory is fragile.
+- Section Status: Not Authored
 
-We promise to explain decisions where trust is required.
+### Chapter 6 - Our Responsibility
 
-We promise to improve systems where failure has taught us.
+- Section Status: Not Authored
 
-We promise that accountability will remain human, even where technology assists.
+### Chapter 7 - Our View of Technology
 
-## 5. Our Beliefs
+- Section Status: Not Authored
 
-We believe institutions endure when principles are explicit and consistently applied.
+### Chapter 8 - Our View of Capital
 
-We believe transparency is a precondition for legitimate authority.
+- Section Status: Not Authored
 
-We believe governance is a daily practice, not an annual ceremony.
+### Chapter 9 - Our View of People
 
-We believe experience without documentation decays, and documentation without practice is hollow.
+- Section Status: Not Authored
 
-We believe trust is earned through conduct, not claimed through language.
+### Chapter 10 - Our View of Society
 
-## 6. Our Responsibility
+- Section Status: Not Authored
 
-Our first responsibility is to protect the integrity of decisions that affect counterparties, capital providers, and society.
+## Part III - Stewardship and Continuity
 
-Our second responsibility is to maintain systems that can be reviewed, challenged, and corrected.
+### Chapter 11 - The Steward's Oath
 
-Our third responsibility is to leave future custodians a stronger institution than the one we inherited.
+- Section Status: Not Authored
 
-We therefore treat policy, process, and knowledge as institutional infrastructure.
+### Chapter 12 - Closing Declaration
 
-## 7. Our View of Technology
+- Section Status: Not Authored
 
-Technology is an instrument of institutional capability.
+## Back Matter
 
-It must clarify decisions, reduce preventable error, and increase the reliability of governance.
+### Cross References
 
-Technology must not conceal accountability.
+- XREF-CHR-001: Pending
+- XREF-CHR-002: Pending
+- XREF-CHR-003: Pending
 
-Technology must not be permitted to outrun policy, evidence, or control.
+### Appendices
 
-Artificial intelligence may assist analysis and synthesis, but final responsibility for consequential decisions remains with accountable humans.
+- Appendix A Placeholder
+- Appendix B Placeholder
+- Appendix C Placeholder
 
-## 8. Our View of Capital
+### Glossary
 
-Capital is entrusted responsibility.
+- Glossary Placeholder
 
-It is not merely a resource to be deployed.
+### References
 
-It is a duty to allocate with prudence, rigor, and traceable reasoning.
+- References Placeholder
 
-We regard the stewardship of capital as inseparable from the stewardship of trust.
+### Change Log
 
-Short-term gain cannot justify long-term institutional fragility.
+- Change Log Placeholder
 
-## 9. Our View of People
+## Revision History
 
-People are the custodians of judgment, ethics, and institutional memory.
+| Version | Date | Change Type | Summary | Owner | Reviewer | Approver | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2.0.0 | 2026-07-15 | Major | Publication skeleton created for constitutional authoring workflow. | Founder | Repository Custodian Council; Editorial Steward | Founder; Chief Knowledge Architect | Draft |
 
-We expect professional courage: the courage to question weak assumptions, to escalate material risks, and to document uncomfortable truths.
+## Approval Signatures
 
-We expect discipline: to follow standards, maintain evidence, and honor governance boundaries.
-
-We expect dignity in conduct: respect for colleagues, counterparties, and all persons affected by our decisions.
-
-## 10. Our View of Society
-
-Deepsea operates within society and is accountable to it.
-
-Our responsibilities include lawful conduct, responsible risk behavior, and respect for the economic systems on which communities depend.
-
-We reject the separation of financial performance from social consequence.
-
-Institutional legitimacy requires both competence and conscience.
-
-## 11. The Steward's Oath
-
-We, as stewards of Deepsea, commit:
-
-To preserve principle before convenience.
-
-To preserve evidence before opinion.
-
-To preserve governance before speed.
-
-To preserve trust before transaction.
-
-To preserve continuity for those who come after us.
-
-Where uncertainty exists, we will choose clarity.
-
-Where pressure exists, we will choose discipline.
-
-Where failure occurs, we will choose truth and correction.
-
-## 12. Closing Declaration
-
-This Charter is the first institutional declaration of Deepsea.
-
-It defines the standard against which our conduct, systems, and decisions shall be measured.
-
-Future policies, standards, and workflows may evolve, but they must remain consistent with the intent declared herein.
-
-The institution may grow in scale and complexity.
-
-Its governing character must remain constant.
-
----
-
-Adopted as First Edition
-
-Date: 2026-07-14
-
-Authority: Deepsea Leadership Council
+| Role | Name | Signature | Date |
+| --- | --- | --- | --- |
+| Owner | Founder | Pending | Pending |
+| Custodian | Chief Knowledge Architect | Pending | Pending |
+| Reviewer | Repository Custodian Council | Pending | Pending |
+| Reviewer | Editorial Steward | Pending | Pending |
+| Approver | Founder | Pending | Pending |
+| Approver | Chief Knowledge Architect | Pending | Pending |

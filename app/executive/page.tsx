@@ -1,8 +1,32 @@
+import Link from "next/link";
+import WorkflowTimelinePanel from "@/components/atlas/workflows/WorkflowTimelinePanel";
 import type { BusinessDNA } from "@/lib/knowledge/businessDNA";
 import type { KnowledgeAttribute } from "@/lib/knowledge/knowledgeAttribute";
 import type { FundingAssessment } from "@/lib/business/fundingAssessmentService";
 import type { RelationshipTimeline } from "@/lib/relationship/relationshipTimeline";
+import {
+  createBusinessContext,
+  parseBusinessContext,
+  serializeBusinessContext,
+  transitionBusinessContext,
+  workflowContextRepository,
+} from "@/lib/workflows/WorkflowContext";
+import { buildMockWorkflowEvents } from "@/lib/workflows/WorkflowTimeline";
+import {
+  OpportunityLifecycle,
+  canTransitionOpportunityLifecycle,
+  transitionOpportunityLifecycle,
+} from "@/lib/workflows/WorkflowTransition";
+import { getDemoScenario } from "@/lib/workflows/DemoScenario";
 import { executiveWorkspaceAssembler } from "@/lib/workspaces/executiveWorkspaceAssembler";
+import ExecutiveAlerts from "@/src/capabilities/executive/components/ExecutiveAlerts";
+import ExecutiveDashboard from "@/src/capabilities/executive/components/ExecutiveDashboard";
+import ExecutiveDecisions from "@/src/capabilities/executive/components/ExecutiveDecisions";
+import type {
+  ExecutiveAlertItem,
+  ExecutiveDecisionItem,
+  ExecutiveKpiItem,
+} from "@/src/capabilities/executive/types/ExecutiveWorkspaceState";
 
 function attribute<T>(value: T, source: string, confidence = 92, updatedAt = "2026-07-12T09:00:00Z"): KnowledgeAttribute<T> {
   return {
@@ -193,7 +217,264 @@ const relationshipTimelines: RelationshipTimeline[] = [
 
 const executiveWorkspaceViewModel = executiveWorkspaceAssembler.build(businesses, fundingAssessments, relationshipTimelines);
 
-export default function ExecutivePage() {
+type ExecutivePageProps = {
+  searchParams?: Promise<{
+    demoScenario?: string;
+    businessContext?: string;
+    workflowId?: string;
+    queueId?: string;
+    institutionName?: string;
+    opportunityId?: string;
+    product?: string;
+    targetAmount?: string;
+    tenor?: string;
+    currentStatus?: string;
+    submittedBy?: string;
+    submissionDate?: string;
+  }>;
+};
+
+type ApprovalQueueItem = {
+  readonly id: string;
+  readonly businessContext: ReturnType<typeof createBusinessContext>;
+  readonly institutionName: string;
+  readonly opportunityReference: string;
+  readonly requestedAmount: string;
+  readonly requestedTenor: string;
+  readonly currentStatus: OpportunityLifecycle;
+  readonly submittedBy: string;
+  readonly submissionDate: string;
+  readonly product: string;
+};
+
+function toOpportunityLifecycle(
+  value: string | undefined,
+  fallback: OpportunityLifecycle,
+): OpportunityLifecycle {
+  if (!value) {
+    return fallback;
+  }
+
+  const match = Object.values(OpportunityLifecycle).find((item) => item === value);
+  return match ?? fallback;
+}
+
+function toOpportunityLifecycleLabel(value: OpportunityLifecycle): string {
+  return value.replaceAll("_", " ");
+}
+
+export default async function ExecutivePage({ searchParams }: ExecutivePageProps) {
+  const params = (await searchParams) ?? {};
+  const demoScenario = getDemoScenario(params.demoScenario);
+  const parsedBusinessContext = parseBusinessContext(params.businessContext);
+  const workflowId = parsedBusinessContext?.workflowId
+    ?? demoScenario?.contexts.executive.workflowId
+    ?? params.workflowId
+    ?? "COM-ORIG-9001";
+
+  if (demoScenario) {
+    workflowContextRepository.save(demoScenario.contexts.executive);
+  }
+
+  const repositoryBusinessContext = workflowContextRepository.findByWorkflowId(workflowId);
+  const resolvedBusinessContext = repositoryBusinessContext ?? parsedBusinessContext;
+
+  if (!repositoryBusinessContext && parsedBusinessContext) {
+    workflowContextRepository.save(parsedBusinessContext);
+  }
+
+  const hasSubmission = Boolean(resolvedBusinessContext?.opportunityId ?? params.opportunityId);
+  const submittedInstitution = params.institutionName ?? resolvedBusinessContext?.institutionId ?? "Al Noor Trading LLC";
+  const submittedOpportunityId = resolvedBusinessContext?.opportunityId ?? params.opportunityId ?? "OPP-7712";
+  const submittedProduct = params.product ?? "Receivables Finance";
+  const submittedTargetAmount = params.targetAmount ?? "USD 6,200,000";
+  const submittedTenor = params.tenor ?? "180 days";
+  const submittedStatus = resolvedBusinessContext?.opportunityLifecycle
+    ?? toOpportunityLifecycle(params.currentStatus, OpportunityLifecycle.SUBMITTED);
+  const submittedBy = resolvedBusinessContext?.currentOwner ?? params.submittedBy ?? "Relationship Manager";
+  const submittedAt = params.submissionDate ?? "2026-07-15T10:30:00Z";
+
+  const defaultBusinessContext = createBusinessContext({
+    institutionId: "INS-AL-NOOR",
+    opportunityId: submittedOpportunityId,
+    workflowId,
+    opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
+    currentOwner: submittedBy,
+    currentWorkspace: "executive",
+  });
+
+  const mockApprovalQueue: ApprovalQueueItem[] = [
+    {
+      id: "queue-op-7712",
+      businessContext: createBusinessContext({
+        institutionId: "INS-AL-NOOR",
+        opportunityId: "OPP-7712",
+        workflowId: "COM-ORIG-9001",
+        opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
+        currentOwner: "Layla Rahman",
+        currentWorkspace: "executive",
+      }),
+      institutionName: "Al Noor Trading LLC",
+      opportunityReference: "OPP-7712",
+      requestedAmount: "USD 6,200,000",
+      requestedTenor: "180 days",
+      currentStatus: OpportunityLifecycle.UNDER_REVIEW,
+      submittedBy: "Layla Rahman",
+      submissionDate: "2026-07-14T16:00:00Z",
+      product: "Receivables Finance",
+    },
+    {
+      id: "queue-op-6640",
+      businessContext: createBusinessContext({
+        institutionId: "INS-NORTHSTAR",
+        opportunityId: "OPP-6640",
+        workflowId: "COM-ORIG-9002",
+        opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
+        currentOwner: "Executive Coverage Team",
+        currentWorkspace: "executive",
+      }),
+      institutionName: "Northstar Foods Trading",
+      opportunityReference: "OPP-6640",
+      requestedAmount: "USD 3,900,000",
+      requestedTenor: "120 days",
+      currentStatus: OpportunityLifecycle.UNDER_REVIEW,
+      submittedBy: "Executive Coverage Team",
+      submissionDate: "2026-07-13T09:15:00Z",
+      product: "Invoice Financing",
+    },
+  ];
+
+  const approvalQueue: ApprovalQueueItem[] = hasSubmission
+    ? [
+        {
+          id: `queue-${submittedOpportunityId.toLowerCase()}`,
+          businessContext: resolvedBusinessContext
+            ? canTransitionOpportunityLifecycle(
+                resolvedBusinessContext.opportunityLifecycle,
+                OpportunityLifecycle.UNDER_REVIEW,
+              )
+              ? transitionBusinessContext({
+                  context: resolvedBusinessContext,
+                  toLifecycle: OpportunityLifecycle.UNDER_REVIEW,
+                  toWorkspace: "executive",
+                  nextOwner: submittedBy,
+                })
+              : createBusinessContext({
+                  ...resolvedBusinessContext,
+                  currentWorkspace: "executive",
+                  currentOwner: submittedBy,
+                })
+            : defaultBusinessContext,
+          institutionName: submittedInstitution,
+          opportunityReference: submittedOpportunityId,
+          requestedAmount: submittedTargetAmount,
+          requestedTenor: submittedTenor,
+          currentStatus: submittedStatus,
+          submittedBy,
+          submissionDate: submittedAt,
+          product: submittedProduct,
+        },
+        ...mockApprovalQueue.filter((item) => item.opportunityReference !== submittedOpportunityId),
+      ]
+    : mockApprovalQueue;
+
+  const selectedQueueId = params.queueId ?? approvalQueue[0]?.id;
+  const selectedQueueItem = approvalQueue.find((item) => item.id === selectedQueueId) ?? approvalQueue[0];
+  const statusLabel = selectedQueueItem.currentStatus === OpportunityLifecycle.UNDER_REVIEW
+    ? "Pending Executive Decision"
+    : toOpportunityLifecycleLabel(selectedQueueItem.currentStatus);
+
+  let treasuryLifecycle = selectedQueueItem.currentStatus;
+
+  if (canTransitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.UNDER_REVIEW)) {
+    treasuryLifecycle = transitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.UNDER_REVIEW);
+  }
+
+  if (canTransitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.APPROVED)) {
+    treasuryLifecycle = transitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.APPROVED);
+  }
+
+  if (canTransitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.FUNDING_ALLOCATED)) {
+    treasuryLifecycle = transitionOpportunityLifecycle(treasuryLifecycle, OpportunityLifecycle.FUNDING_ALLOCATED);
+  }
+
+  let treasuryBusinessContext = selectedQueueItem.businessContext;
+
+  if (canTransitionOpportunityLifecycle(treasuryBusinessContext.opportunityLifecycle, OpportunityLifecycle.APPROVED)) {
+    treasuryBusinessContext = transitionBusinessContext({
+      context: treasuryBusinessContext,
+      toLifecycle: OpportunityLifecycle.APPROVED,
+      toWorkspace: "executive",
+      nextOwner: selectedQueueItem.submittedBy,
+    });
+  }
+
+  if (canTransitionOpportunityLifecycle(treasuryBusinessContext.opportunityLifecycle, OpportunityLifecycle.FUNDING_ALLOCATED)) {
+    treasuryBusinessContext = transitionBusinessContext({
+      context: treasuryBusinessContext,
+      toLifecycle: OpportunityLifecycle.FUNDING_ALLOCATED,
+      toWorkspace: "treasury",
+      nextOwner: "Treasury Desk",
+    });
+  }
+
+  workflowContextRepository.save(treasuryBusinessContext);
+
+  const approvalQueueKpis: ExecutiveKpiItem[] = [
+    {
+      id: "queue-count",
+      label: "Approval Queue",
+      value: String(approvalQueue.length),
+      note: hasSubmission ? "New submission received from Commercial Workspace" : "Using temporary mock queue",
+    },
+    {
+      id: "queue-institution",
+      label: "Institution",
+      value: selectedQueueItem.institutionName,
+      note: "Originated from Relationship Manager workflow",
+    },
+    {
+      id: "queue-opportunity",
+      label: "Opportunity",
+      value: selectedQueueItem.opportunityReference,
+      note: `${selectedQueueItem.product} · ${selectedQueueItem.requestedAmount}`,
+    },
+    {
+      id: "queue-tenor",
+      label: "Requested Tenor",
+      value: selectedQueueItem.requestedTenor,
+      note: `${statusLabel} · Submitted by ${selectedQueueItem.submittedBy}`,
+    },
+  ];
+
+  const approvalQueueDecisions: ExecutiveDecisionItem[] = [
+    {
+      id: "decision-pending-submission",
+      title: `${selectedQueueItem.institutionName} · ${selectedQueueItem.product}`,
+      committee: "Executive Credit Committee",
+      outcome: "pending",
+      decidedAt: `Submitted ${selectedQueueItem.submissionDate}`,
+      lifecycleStatus: selectedQueueItem.currentStatus,
+    },
+  ];
+
+  const approvalQueueAlerts: ExecutiveAlertItem[] = [
+    {
+      id: "alert-new-commercial-submission",
+      category: "Approval Queue",
+      message: `Submission ${selectedQueueItem.opportunityReference} is awaiting executive approval.`,
+      severity: "medium",
+      updatedAt: selectedQueueItem.submissionDate,
+    },
+  ];
+
+  const workflowEvents = buildMockWorkflowEvents({
+    institutionName: selectedQueueItem.institutionName,
+    opportunityReference: selectedQueueItem.opportunityReference,
+    fundingAmount: selectedQueueItem.requestedAmount,
+    submittedBy: selectedQueueItem.submittedBy,
+  });
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-900">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -278,6 +559,99 @@ export default function ExecutivePage() {
             ))}
           </div>
         </section>
+
+        <section className="grid gap-4 lg:grid-cols-3" aria-label="Approval queue">
+          <article className="lg:col-span-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:p-8">
+            <p className="text-sm font-semibold tracking-[0.2em] text-cyan-700 uppercase">Approval Queue</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+              Submitted Opportunities
+            </h2>
+            <div className="mt-3">
+              <Link
+                href={`/atlas/treasury?${new URLSearchParams({
+                  businessContext: serializeBusinessContext(treasuryBusinessContext),
+                  workflowId: treasuryBusinessContext.workflowId,
+                  fundingId: selectedQueueItem.id,
+                  institutionName: selectedQueueItem.institutionName,
+                  opportunityId: selectedQueueItem.opportunityReference,
+                  fundingAmount: selectedQueueItem.requestedAmount,
+                  fundingDate: selectedQueueItem.submissionDate,
+                  currency: "USD",
+                  priority: "high",
+                  status: treasuryLifecycle,
+                }).toString()}`}
+                className="inline-flex items-center rounded border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-100"
+              >
+                Approve Funding →
+              </Link>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm text-slate-700">
+                <thead>
+                  <tr className="text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <th className="px-3 py-2">Institution Name</th>
+                    <th className="px-3 py-2">Opportunity Reference</th>
+                    <th className="px-3 py-2">Requested Amount</th>
+                    <th className="px-3 py-2">Requested Tenor</th>
+                    <th className="px-3 py-2">Current Status</th>
+                    <th className="px-3 py-2">Submitted By</th>
+                    <th className="px-3 py-2">Submission Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {approvalQueue.map((item) => {
+                    const itemParams = new URLSearchParams({
+                      businessContext: serializeBusinessContext(item.businessContext),
+                      workflowId: item.businessContext.workflowId,
+                      queueId: item.id,
+                      institutionName: item.institutionName,
+                      opportunityId: item.opportunityReference,
+                      product: item.product,
+                      targetAmount: item.requestedAmount,
+                      tenor: item.requestedTenor,
+                      currentStatus: item.currentStatus,
+                      submittedBy: item.submittedBy,
+                      submissionDate: item.submissionDate,
+                    });
+
+                    const isSelected = item.id === selectedQueueItem.id;
+
+                    return (
+                      <tr key={item.id} className={isSelected ? "bg-cyan-50/70" : "bg-white"}>
+                        <td className="px-3 py-3">
+                          <Link href={`/executive?${itemParams.toString()}`} className="font-semibold text-cyan-700 hover:text-cyan-600">
+                            {item.institutionName}
+                          </Link>
+                        </td>
+                        <td className="px-3 py-3">{item.opportunityReference}</td>
+                        <td className="px-3 py-3">{item.requestedAmount}</td>
+                        <td className="px-3 py-3">{item.requestedTenor}</td>
+                        <td className="px-3 py-3 uppercase tracking-[0.08em] text-slate-600">{toOpportunityLifecycleLabel(item.currentStatus)}</td>
+                        <td className="px-3 py-3">{item.submittedBy}</td>
+                        <td className="px-3 py-3">{item.submissionDate}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <div className="lg:col-span-3">
+            <ExecutiveDashboard items={approvalQueueKpis} />
+          </div>
+          <ExecutiveDecisions items={approvalQueueDecisions} />
+          <div className="lg:col-span-2">
+            <ExecutiveAlerts items={approvalQueueAlerts} />
+          </div>
+        </section>
+
+        <WorkflowTimelinePanel
+          events={workflowEvents}
+          title="Workflow Timeline"
+          compact
+          variant="light"
+        />
       </main>
     </div>
   );

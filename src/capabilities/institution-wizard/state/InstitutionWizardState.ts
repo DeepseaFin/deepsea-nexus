@@ -2,6 +2,7 @@ export interface WizardStepDefinition {
   readonly id: number;
   readonly title: string;
   readonly subtitle: string;
+  readonly status: "pending" | "in_progress" | "completed";
 }
 
 export interface ReviewedField {

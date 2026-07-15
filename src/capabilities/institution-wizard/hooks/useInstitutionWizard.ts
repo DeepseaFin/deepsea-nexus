@@ -8,26 +8,31 @@ import type {
   WizardStepDefinition,
 } from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
 
-const STEPS: readonly WizardStepDefinition[] = [
+const STEP_BLUEPRINT: readonly Omit<WizardStepDefinition, "status">[] = [
   {
     id: 1,
     title: "Upload Trade License",
-    subtitle: "Provide the core registration document",
+    subtitle: "Upload and trigger ORACLE processing",
   },
   {
     id: 2,
-    title: "Review Information",
-    subtitle: "Validate parsed institution details",
+    title: "Business Passport Preview",
+    subtitle: "Inspect institutional passport signals",
   },
   {
     id: 3,
-    title: "Business Profile Preview",
-    subtitle: "Inspect profile before activation",
+    title: "Journey Preview",
+    subtitle: "Confirm readiness for relationship journey",
   },
   {
     id: 4,
-    title: "Relationship Journey Ready",
-    subtitle: "Confirm readiness for journey launch",
+    title: "Institution Review",
+    subtitle: "Validate reviewed institutional details",
+  },
+  {
+    id: 5,
+    title: "Completion",
+    subtitle: "Finalize onboarding handoff",
   },
 ];
 
@@ -65,25 +70,45 @@ export interface UseInstitutionWizardResult {
 
 export function useInstitutionWizard(): UseInstitutionWizardResult {
   const [currentStepId, setCurrentStepId] = useState<number>(1);
+  const [furthestStepId, setFurthestStepId] = useState<number>(1);
+  const [completedStepIds, setCompletedStepIds] = useState<readonly number[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<readonly string[]>([]);
 
   const isFirstStep = currentStepId === 1;
-  const isLastStep = currentStepId === STEPS.length;
+  const isLastStep = currentStepId === STEP_BLUEPRINT.length;
+
+  const markStepCompleted = (stepId: number): void => {
+    setCompletedStepIds((previous) => {
+      if (previous.includes(stepId)) {
+        return previous;
+      }
+
+      return [...previous, stepId];
+    });
+  };
 
   const state: InstitutionWizardState = useMemo(
     () => ({
       currentStepId,
-      steps: STEPS,
+      steps: STEP_BLUEPRINT.map((step) => ({
+        ...step,
+        status:
+          completedStepIds.includes(step.id)
+            ? "completed"
+            : step.id === currentStepId
+              ? "in_progress"
+              : "pending",
+      })),
       uploadedFiles,
       reviewedFields: REVIEWED_FIELDS,
       businessProfile: BUSINESS_PROFILE,
       journeyReadinessNotes: JOURNEY_NOTES,
     }),
-    [currentStepId, uploadedFiles],
+    [completedStepIds, currentStepId, uploadedFiles],
   );
 
   const goToStep = (stepId: number): void => {
-    if (stepId < 1 || stepId > STEPS.length) {
+    if (stepId < 1 || stepId > furthestStepId) {
       return;
     }
 
@@ -91,7 +116,17 @@ export function useInstitutionWizard(): UseInstitutionWizardResult {
   };
 
   const goNext = (): void => {
-    setCurrentStepId((previous) => (previous >= STEPS.length ? previous : previous + 1));
+    setCurrentStepId((previous) => {
+      if (previous >= STEP_BLUEPRINT.length) {
+        return previous;
+      }
+
+      const nextStepId = previous + 1;
+      markStepCompleted(previous);
+      setFurthestStepId((unlocked) => Math.max(unlocked, nextStepId));
+
+      return nextStepId;
+    });
   };
 
   const goPrevious = (): void => {

@@ -22,8 +22,8 @@ export default function JourneyReadyStep({
   return (
     <div className="space-y-2">
       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 className="text-lg font-semibold text-slate-100">Relationship Journey Ready</h2>
-        <p className="mt-1 text-sm text-slate-400">Institution profile is ready to enter the relationship journey workflow.</p>
+        <h2 className="text-lg font-semibold text-slate-100">Journey Preview</h2>
+        <p className="mt-1 text-sm text-slate-400">Confirm readiness indicators before institution review.</p>
 
         <div className="mt-4 space-y-2">
           {readinessNotes.map((note) => (

@@ -1,0 +1,662 @@
+diff --git a/src/capabilities/journey/components/JourneyActionBar.tsx b/src/capabilities/journey/components/JourneyActionBar.tsx
+index 531257e..43671a0 100644
+--- a/src/capabilities/journey/components/JourneyActionBar.tsx
++++ b/src/capabilities/journey/components/JourneyActionBar.tsx
+@@ -1,12 +1,17 @@
+ type JourneyActionBarProps = {
+   actions: readonly string[];
++  isPaused: boolean;
++  onActionSelect: () => void;
+ };
+ 
+-export default function JourneyActionBar({ actions }: JourneyActionBarProps) {
++export default function JourneyActionBar({ actions, isPaused, onActionSelect }: JourneyActionBarProps) {
+   return (
+     <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+       <header className="mb-3 flex items-center justify-between">
+         <h2 className="text-lg font-semibold text-slate-100">Actions</h2>
++        <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-slate-300">
++          {isPaused ? "Paused" : "Active"}
++        </span>
+       </header>
+ 
+       <div className="grid gap-2 sm:grid-cols-2">
+@@ -14,7 +19,9 @@ export default function JourneyActionBar({ actions }: JourneyActionBarProps) {
+           <button
+             key={action}
+             type="button"
+-            className="rounded border border-cyan-700/40 bg-cyan-950/20 px-3 py-2 text-left text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-900/30"
++            onClick={onActionSelect}
++            disabled={isPaused}
++            className="rounded border border-cyan-700/40 bg-cyan-950/20 px-3 py-2 text-left text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-900/30 disabled:opacity-50"
+           >
+             {action}
+           </button>
+diff --git a/src/capabilities/journey/components/JourneyAiPanel.tsx b/src/capabilities/journey/components/JourneyAiPanel.tsx
+index 5c4d662..766a008 100644
+--- a/src/capabilities/journey/components/JourneyAiPanel.tsx
++++ b/src/capabilities/journey/components/JourneyAiPanel.tsx
+@@ -1,9 +1,10 @@
+-import type { JourneyRecommendation } from "@/lib/journey";
++import { type JourneyRecommendation, type JourneyStatus } from "@/lib/journey";
+ 
+ type JourneyAiPanelProps = {
+   recommendations: readonly JourneyRecommendation[];
+   missingItems: readonly string[];
+   nextAction: string;
++  status: JourneyStatus;
+ };
+ 
+ function priorityTone(priority: JourneyRecommendation["priority"]): string {
+@@ -13,11 +14,16 @@ function priorityTone(priority: JourneyRecommendation["priority"]): string {
+   return "border-slate-700/50 bg-slate-900 text-slate-300";
+ }
+ 
+-export default function JourneyAiPanel({ recommendations, missingItems, nextAction }: JourneyAiPanelProps) {
++export default function JourneyAiPanel({ recommendations, missingItems, nextAction, status }: JourneyAiPanelProps) {
+   return (
+     <aside className="space-y-2 xl:w-[360px]">
+       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+-        <h2 className="text-lg font-semibold text-slate-100">NEXUS AI</h2>
++        <div className="flex items-center justify-between">
++          <h2 className="text-lg font-semibold text-slate-100">NEXUS AI</h2>
++          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-[0.12em] text-slate-300">
++            {status}
++          </span>
++        </div>
+ 
+         <div className="mt-3 space-y-4 text-sm">
+           <div>
+@@ -35,6 +41,9 @@ export default function JourneyAiPanel({ recommendations, missingItems, nextActi
+           <div>
+             <p className="mb-1 font-semibold text-amber-200">Missing Items</p>
+             <div className="space-y-1 text-slate-300">
++              {missingItems.length === 0 && (
++                <p className="rounded border border-emerald-700/40 bg-emerald-950/20 px-2 py-1 text-emerald-200">No missing items.</p>
++              )}
+               {missingItems.map((item) => (
+                 <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>
+               ))}
+diff --git a/src/capabilities/journey/components/JourneyNavigation.tsx b/src/capabilities/journey/components/JourneyNavigation.tsx
+new file mode 100644
+index 0000000..ec9c438
+--- /dev/null
++++ b/src/capabilities/journey/components/JourneyNavigation.tsx
+@@ -0,0 +1,74 @@
++type JourneyNavigationProps = {
++  isPaused: boolean;
++  isCompleted: boolean;
++  onPrevious: () => void;
++  onNext: () => void;
++  onPause: () => void;
++  onResume: () => void;
++  onCompleteStep: () => void;
++};
++
++export default function JourneyNavigation({
++  isPaused,
++  isCompleted,
++  onPrevious,
++  onNext,
++  onPause,
++  onResume,
++  onCompleteStep,
++}: JourneyNavigationProps) {
++  return (
++    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <header className="mb-3 flex items-center justify-between">
++        <h2 className="text-lg font-semibold text-slate-100">Journey Navigation</h2>
++      </header>
++
++      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
++        <button
++          type="button"
++          onClick={onPrevious}
++          disabled={isCompleted}
++          className="rounded border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-medium text-slate-200 disabled:opacity-50"
++        >
++          Previous
++        </button>
++
++        <button
++          type="button"
++          onClick={onNext}
++          disabled={isCompleted || isPaused}
++          className="rounded border border-cyan-700/40 bg-cyan-950/20 px-3 py-2 text-sm font-medium text-cyan-100 disabled:opacity-50"
++        >
++          Next
++        </button>
++
++        <button
++          type="button"
++          onClick={onCompleteStep}
++          disabled={isCompleted || isPaused}
++          className="rounded border border-emerald-700/40 bg-emerald-950/20 px-3 py-2 text-sm font-medium text-emerald-100 disabled:opacity-50"
++        >
++          Complete Step
++        </button>
++
++        <button
++          type="button"
++          onClick={onPause}
++          disabled={isPaused || isCompleted}
++          className="rounded border border-amber-700/40 bg-amber-950/20 px-3 py-2 text-sm font-medium text-amber-100 disabled:opacity-50"
++        >
++          Pause
++        </button>
++
++        <button
++          type="button"
++          onClick={onResume}
++          disabled={!isPaused || isCompleted}
++          className="rounded border border-violet-700/40 bg-violet-950/20 px-3 py-2 text-sm font-medium text-violet-100 disabled:opacity-50"
++        >
++          Resume
++        </button>
++      </div>
++    </section>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/journey/components/JourneyProgress.tsx b/src/capabilities/journey/components/JourneyProgress.tsx
+index 5634b3a..486dd22 100644
+--- a/src/capabilities/journey/components/JourneyProgress.tsx
++++ b/src/capabilities/journey/components/JourneyProgress.tsx
+@@ -1,39 +1,35 @@
+-import { JourneyStep } from "@/lib/journey";
++import type { JourneyProgress as JourneyProgressModel } from "@/lib/journey";
+ 
+ type JourneyProgressProps = {
+-  steps: readonly JourneyStep[];
+-  completedSteps: readonly JourneyStep[];
+-  completionPercentage: number;
++  progress: JourneyProgressModel;
+ };
+ 
+-function formatStep(step: JourneyStep): string {
++function formatStep(step: string): string {
+   return step
+     .split("_")
+     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+     .join(" ");
+ }
+ 
+-export default function JourneyProgress({ steps, completedSteps, completionPercentage }: JourneyProgressProps) {
+-  const remainingSteps = steps.filter((step) => !completedSteps.includes(step));
+-
++export default function JourneyProgress({ progress }: JourneyProgressProps) {
+   return (
+     <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+       <header className="mb-3 flex items-center justify-between">
+         <h2 className="text-lg font-semibold text-slate-100">Journey Progress</h2>
+         <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-cyan-200">
+-          {completionPercentage}%
++          {progress.completionPercentage}%
+         </span>
+       </header>
+ 
+       <div className="h-2 rounded-full bg-slate-800">
+-        <div className="h-2 rounded-full bg-cyan-500" style={{ width: `${completionPercentage}%` }} />
++        <div className="h-2 rounded-full bg-cyan-500" style={{ width: `${progress.completionPercentage}%` }} />
+       </div>
+ 
+       <div className="mt-4 grid gap-3 sm:grid-cols-2">
+         <div>
+           <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Completed Steps</p>
+           <div className="mt-2 space-y-1">
+-            {completedSteps.map((step) => (
++            {progress.completedSteps.map((step) => (
+               <p key={step} className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-sm text-emerald-200">
+                 {formatStep(step)}
+               </p>
+@@ -44,7 +40,7 @@ export default function JourneyProgress({ steps, completedSteps, completionPerce
+         <div>
+           <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Remaining Steps</p>
+           <div className="mt-2 space-y-1">
+-            {remainingSteps.map((step) => (
++            {progress.remainingSteps.map((step) => (
+               <p key={step} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1 text-sm text-slate-300">
+                 {formatStep(step)}
+               </p>
+@@ -52,6 +48,10 @@ export default function JourneyProgress({ steps, completedSteps, completionPerce
+           </div>
+         </div>
+       </div>
++
++      <p className="mt-3 text-xs text-slate-400">
++        {progress.isComplete ? "Journey completed." : "Journey is in progress."}
++      </p>
+     </section>
+   );
+ }
+\ No newline at end of file
+diff --git a/src/capabilities/journey/components/JourneySidebar.tsx b/src/capabilities/journey/components/JourneySidebar.tsx
+index d7a71e1..590ef2e 100644
+--- a/src/capabilities/journey/components/JourneySidebar.tsx
++++ b/src/capabilities/journey/components/JourneySidebar.tsx
+@@ -1,9 +1,10 @@
+-import { JourneyStep } from "@/lib/journey";
++import { JourneyStatus, JourneyStep } from "@/lib/journey";
+ 
+ type JourneySidebarProps = {
+   steps: readonly JourneyStep[];
+   currentStep: JourneyStep;
+   completedSteps: readonly JourneyStep[];
++  status: JourneyStatus;
+ };
+ 
+ function formatStep(step: JourneyStep): string {
+@@ -13,13 +14,18 @@ function formatStep(step: JourneyStep): string {
+     .join(" ");
+ }
+ 
+-export default function JourneySidebar({ steps, currentStep, completedSteps }: JourneySidebarProps) {
++export default function JourneySidebar({ steps, currentStep, completedSteps, status }: JourneySidebarProps) {
+   const completedSet = new Set(completedSteps);
+ 
+   return (
+     <aside className="space-y-2">
+       <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+-        <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Journey Steps</h2>
++        <div className="flex items-center justify-between">
++          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Journey Steps</h2>
++          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-[0.12em] text-slate-300">
++            {status}
++          </span>
++        </div>
+         <div className="mt-3 space-y-2">
+           {steps.map((step, index) => {
+             const isCurrent = step === currentStep;
+diff --git a/src/capabilities/journey/components/JourneyTimeline.tsx b/src/capabilities/journey/components/JourneyTimeline.tsx
+index 5802c2a..b2628d0 100644
+--- a/src/capabilities/journey/components/JourneyTimeline.tsx
++++ b/src/capabilities/journey/components/JourneyTimeline.tsx
+@@ -1,17 +1,23 @@
+-import type { JourneyTimelineEvent } from "@/lib/journey";
++import { type JourneyStatus, type JourneyTimelineEvent } from "@/lib/journey";
+ 
+ type JourneyTimelineProps = {
+   timeline: readonly JourneyTimelineEvent[];
++  currentStatus: JourneyStatus;
+ };
+ 
+-export default function JourneyTimeline({ timeline }: JourneyTimelineProps) {
++export default function JourneyTimeline({ timeline, currentStatus }: JourneyTimelineProps) {
+   return (
+     <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+       <header className="mb-3 flex items-center justify-between">
+         <h2 className="text-lg font-semibold text-slate-100">Journey Timeline</h2>
+-        <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-slate-300">
+-          {timeline.length} Events
+-        </span>
++        <div className="flex items-center gap-2">
++          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-slate-300">
++            {timeline.length} Events
++          </span>
++          <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs uppercase tracking-[0.12em] text-slate-300">
++            {currentStatus}
++          </span>
++        </div>
+       </header>
+ 
+       <div className="space-y-2">
+diff --git a/src/capabilities/journey/components/JourneyWorkspace.tsx b/src/capabilities/journey/components/JourneyWorkspace.tsx
+index 2e61fc6..e136040 100644
+--- a/src/capabilities/journey/components/JourneyWorkspace.tsx
++++ b/src/capabilities/journey/components/JourneyWorkspace.tsx
+@@ -1,7 +1,11 @@
+-import type { JourneyRecommendation, JourneyState, JourneyStep, JourneyTimelineEvent } from "@/lib/journey";
++"use client";
++
++import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
++import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
+ import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ import JourneyHeader from "@/src/capabilities/journey/components/JourneyHeader";
++import JourneyNavigation from "@/src/capabilities/journey/components/JourneyNavigation";
+ import JourneyProgress from "@/src/capabilities/journey/components/JourneyProgress";
+ import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar";
+ import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
+@@ -26,41 +30,69 @@ export default function JourneyWorkspace({
+   actions,
+   timeline,
+ }: JourneyWorkspaceProps) {
+-  const totalSteps = steps.length;
+-  const completionPercentage = totalSteps === 0
+-    ? 0
+-    : Math.round((journeyState.completedSteps.length / totalSteps) * 100);
++  const {
++    workspace,
++    goToNext,
++    goToPrevious,
++    completeCurrentStep,
++    pauseJourney,
++    resumeJourney,
++  } = useJourney({
++    initialState: journeyState,
++    steps,
++    initialRecommendations: recommendations,
++    initialMissingItems: missingItems,
++    initialNextAction: nextAction,
++    initialActions: actions,
++    initialTimeline: timeline,
++    actor: "Journey Operator",
++  });
++
++  const isPaused = workspace.journeyState.status === JourneyStatus.Paused;
++  const isCompleted = workspace.journeyState.status === JourneyStatus.Completed;
+ 
+   return (
+     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-5 sm:px-6 lg:px-8">
+       <div className="mx-auto max-w-[1920px] space-y-3 pb-8">
+-        <JourneyHeader journeyState={journeyState} completionPercentage={completionPercentage} />
++        <JourneyHeader journeyState={workspace.journeyState} completionPercentage={workspace.progress.completionPercentage} />
++
++        <JourneyNavigation
++          isPaused={isPaused}
++          isCompleted={isCompleted}
++          onPrevious={goToPrevious}
++          onNext={goToNext}
++          onPause={pauseJourney}
++          onResume={resumeJourney}
++          onCompleteStep={completeCurrentStep}
++        />
+ 
+         <div className="grid gap-2 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+           <JourneySidebar
+-            steps={steps}
+-            currentStep={journeyState.currentStep}
+-            completedSteps={journeyState.completedSteps}
++            steps={workspace.steps}
++            currentStep={workspace.journeyState.currentStep}
++            completedSteps={workspace.progress.completedSteps}
++            status={workspace.journeyState.status}
+           />
+ 
+           <main className="space-y-2">
+-            <JourneyStepCard journeyState={journeyState} />
+-            <JourneyProgress
+-              steps={steps}
+-              completedSteps={journeyState.completedSteps}
+-              completionPercentage={completionPercentage}
++            <JourneyStepCard journeyState={workspace.journeyState} />
++            <JourneyProgress progress={workspace.progress} />
++            <JourneyActionBar
++              actions={workspace.actions}
++              isPaused={isPaused}
++              onActionSelect={goToNext}
+             />
+-            <JourneyActionBar actions={actions} />
+           </main>
+ 
+           <JourneyAiPanel
+-            recommendations={recommendations}
+-            missingItems={missingItems}
+-            nextAction={nextAction}
++            recommendations={workspace.recommendations}
++            missingItems={workspace.missingItems}
++            nextAction={workspace.nextAction}
++            status={workspace.journeyState.status}
+           />
+         </div>
+ 
+-        <JourneyTimeline timeline={timeline} />
++        <JourneyTimeline timeline={workspace.timeline} currentStatus={workspace.journeyState.status} />
+       </div>
+     </div>
+   );
+diff --git a/src/capabilities/journey/hooks/useJourney.ts b/src/capabilities/journey/hooks/useJourney.ts
+new file mode 100644
+index 0000000..df8b2b6
+--- /dev/null
++++ b/src/capabilities/journey/hooks/useJourney.ts
+@@ -0,0 +1,229 @@
++"use client";
++
++import { useMemo, useState } from "react";
++import {
++  JourneyStatus,
++  JourneyStep,
++  createJourneyRecommendationEngine,
++  createJourneyStateMachine,
++  createJourneyStepResolver,
++  type JourneyRecommendation,
++  type JourneyState,
++  type JourneyStep as JourneyStepType,
++  type JourneyTimelineEvent,
++} from "@/lib/journey";
++import type { JourneyWorkspaceState } from "@/src/capabilities/journey/state/JourneyWorkspaceState";
++
++type UseJourneyInput = {
++  initialState: JourneyState;
++  steps: readonly JourneyStepType[];
++  initialRecommendations: readonly JourneyRecommendation[];
++  initialTimeline: readonly JourneyTimelineEvent[];
++  initialMissingItems: readonly string[];
++  initialNextAction: string;
++  initialActions: readonly string[];
++  actor: string;
++};
++
++export interface UseJourneyResult {
++  readonly workspace: JourneyWorkspaceState;
++  goToNext: () => void;
++  goToPrevious: () => void;
++  completeCurrentStep: () => void;
++  pauseJourney: () => void;
++  resumeJourney: () => void;
++}
++
++function nowIso(): string {
++  return new Date().toISOString();
++}
++
++function asTitle(step: JourneyStepType): string {
++  return step
++    .split("_")
++    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
++    .join(" ");
++}
++
++export function useJourney(input: UseJourneyInput): UseJourneyResult {
++  const stateMachine = useMemo(() => createJourneyStateMachine({ stepOrder: input.steps }), [input.steps]);
++  const stepResolver = useMemo(() => createJourneyStepResolver({ stepOrder: input.steps }), [input.steps]);
++  const recommendationEngine = useMemo(() => createJourneyRecommendationEngine(), []);
++
++  const [journeyState, setJourneyState] = useState<JourneyState>(input.initialState);
++  const [timeline, setTimeline] = useState<readonly JourneyTimelineEvent[]>(input.initialTimeline);
++  const [baseRecommendations] = useState<readonly JourneyRecommendation[]>(input.initialRecommendations);
++  const [missingItems, setMissingItems] = useState<readonly string[]>(input.initialMissingItems);
++  const [nextAction, setNextAction] = useState<string>(input.initialNextAction);
++  const [actions, setActions] = useState<readonly string[]>(input.initialActions);
++
++  const progress = useMemo(
++    () => stepResolver.resolveProgress(journeyState.currentStep, journeyState.completedSteps),
++    [journeyState.currentStep, journeyState.completedSteps, stepResolver],
++  );
++
++  const recommendations = useMemo(() => {
++    const generated = recommendationEngine.forState(journeyState, nowIso());
++    return [...generated, ...baseRecommendations];
++  }, [baseRecommendations, journeyState, recommendationEngine]);
++
++  const appendTimeline = (event: string, notes: string): void => {
++    setTimeline((previous) => [
++      ...previous,
++      {
++        timestamp: nowIso(),
++        event,
++        performedBy: input.actor,
++        notes,
++      },
++    ]);
++  };
++
++  const goToStep = (targetStep: JourneyStepType, directionLabel: "Next" | "Previous"): void => {
++    setJourneyState((previous) => {
++      const validation = stateMachine.validateTransition(previous, targetStep);
++      if (!validation.isValid) {
++        appendTimeline(`${directionLabel} navigation blocked`, validation.reason ?? "Transition validation failed.");
++        return previous;
++      }
++
++      const updated: JourneyState = {
++        ...previous,
++        currentStep: targetStep,
++        status: previous.status === JourneyStatus.Draft ? JourneyStatus.InProgress : previous.status,
++        lastUpdated: nowIso(),
++      };
++
++      appendTimeline(`${directionLabel} step`, `${asTitle(targetStep)} is now active.`);
++      setNextAction(`Continue working on ${asTitle(targetStep)}.`);
++      setActions([
++        `Validate ${asTitle(targetStep)}`,
++        `Prepare evidence for ${asTitle(targetStep)}`,
++        "Escalate blockers if needed",
++      ]);
++
++      return updated;
++    });
++  };
++
++  const goToNext = (): void => {
++    const next = stateMachine.getNextStep(journeyState.currentStep);
++    if (!next) {
++      appendTimeline("No next step", "Journey is already at the final step.");
++      return;
++    }
++    goToStep(next, "Next");
++  };
++
++  const goToPrevious = (): void => {
++    const previous = stateMachine.getPreviousStep(journeyState.currentStep);
++    if (!previous) {
++      appendTimeline("No previous step", "Current step is the first step.");
++      return;
++    }
++    goToStep(previous, "Previous");
++  };
++
++  const completeCurrentStep = (): void => {
++    setJourneyState((previous) => {
++      const completedSet = new Set(previous.completedSteps);
++      completedSet.add(previous.currentStep);
++      const normalizedCompleted = input.steps.filter((step) => completedSet.has(step));
++      const next = stateMachine.getNextStep(previous.currentStep);
++      const isFinal = !next || previous.currentStep === JourneyStep.Completed;
++
++      const updated: JourneyState = {
++        ...previous,
++        currentStep: isFinal ? JourneyStep.Completed : next,
++        completedSteps: normalizedCompleted,
++        status: isFinal ? JourneyStatus.Completed : JourneyStatus.InProgress,
++        lastUpdated: nowIso(),
++      };
++
++      appendTimeline(
++        "Step completed",
++        isFinal
++          ? "Journey completed successfully."
++          : `${asTitle(previous.currentStep)} completed and moved to ${asTitle(next)}.`,
++      );
++
++      setMissingItems((items) => (items.length > 0 ? items.slice(1) : items));
++      setNextAction(
++        isFinal
++          ? "Journey is complete."
++          : `Begin ${asTitle(next)} and review updated requirements.`,
++      );
++      setActions(
++        isFinal
++          ? ["Review completed journey", "Prepare executive summary"]
++          : [`Execute ${asTitle(next)}`, "Review new recommendations", "Confirm readiness"],
++      );
++
++      return updated;
++    });
++  };
++
++  const pauseJourney = (): void => {
++    setJourneyState((previous) => {
++      if (previous.status === JourneyStatus.Paused) {
++        appendTimeline("Pause ignored", "Journey is already paused.");
++        return previous;
++      }
++
++      const updated = stateMachine.pause(previous, {
++        journeyId: previous.journeyId,
++        businessId: previous.businessId,
++        actor: input.actor,
++        occurredAt: nowIso(),
++      });
++      appendTimeline("Journey paused", `Paused at ${asTitle(previous.currentStep)}.`);
++      setNextAction("Resume journey when blockers are resolved.");
++      setActions(["Resume journey", "Review blockers", "Notify stakeholders"]);
++
++      return updated;
++    });
++  };
++
++  const resumeJourney = (): void => {
++    setJourneyState((previous) => {
++      if (previous.status !== JourneyStatus.Paused) {
++        appendTimeline("Resume ignored", "Journey is not paused.");
++        return previous;
++      }
++
++      const updated = stateMachine.resume(previous, {
++        journeyId: previous.journeyId,
++        businessId: previous.businessId,
++        actor: input.actor,
++        occurredAt: nowIso(),
++      });
++      appendTimeline("Journey resumed", `Resumed at ${asTitle(updated.currentStep)}.`);
++      setNextAction(`Continue ${asTitle(updated.currentStep)}.`);
++      setActions([
++        `Complete ${asTitle(updated.currentStep)}`,
++        "Validate outputs",
++        "Prepare handoff",
++      ]);
++
++      return updated;
++    });
++  };
++
++  return {
++    workspace: {
++      journeyState,
++      steps: input.steps,
++      progress,
++      recommendations,
++      timeline,
++      missingItems,
++      nextAction,
++      actions,
++    },
++    goToNext,
++    goToPrevious,
++    completeCurrentStep,
++    pauseJourney,
++    resumeJourney,
++  };
++}
+\ No newline at end of file
+diff --git a/src/capabilities/journey/state/JourneyWorkspaceState.ts b/src/capabilities/journey/state/JourneyWorkspaceState.ts
+new file mode 100644
+index 0000000..ee3e733
+--- /dev/null
++++ b/src/capabilities/journey/state/JourneyWorkspaceState.ts
+@@ -0,0 +1,12 @@
++import type { JourneyProgress, JourneyRecommendation, JourneyState, JourneyStep, JourneyTimelineEvent } from "@/lib/journey";
++
++export interface JourneyWorkspaceState {
++  readonly journeyState: JourneyState;
++  readonly steps: readonly JourneyStep[];
++  readonly progress: JourneyProgress;
++  readonly recommendations: readonly JourneyRecommendation[];
++  readonly timeline: readonly JourneyTimelineEvent[];
++  readonly missingItems: readonly string[];
++  readonly nextAction: string;
++  readonly actions: readonly string[];
++}
+\ No newline at end of file

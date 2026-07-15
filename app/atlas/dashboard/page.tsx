@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   Activity,
   Briefcase,
@@ -19,16 +20,11 @@ import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import TrustScore from '@/components/atlas/intelligence/TrustScore';
 import { formatDate } from '@/lib/utils/formatters';
-
-const executiveKpis = [
-  { label: 'Active Financing Transactions', value: '286', note: 'Across all active desks' },
-  { label: 'Funding Pipeline', value: 'AED 418M', note: 'In credit, legal, and approval stages' },
-  { label: 'Pending Approvals', value: '41', note: 'Committee and legal sign-off pending' },
-  { label: 'Collections Due Today', value: 'AED 18.3M', note: 'Expected collection obligations' },
-  { label: 'Average Deal Confidence Index', value: '84', note: 'Weighted portfolio DCI signal' },
-  { label: 'Portfolio Yield', value: '16.8%', note: 'Net annualized yield' },
-  { label: 'Portfolio Outstanding', value: 'AED 1.92B', note: 'Current deployed and revolving base' },
-];
+import {
+  getOperationsCenterAuditEvents,
+  seedOperationsCenterRepository,
+} from '@/lib/workflows/DemoScenario';
+import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 
 const todayPriorities = [
   { label: 'Deals awaiting approval', value: '17', note: 'Priority committee stack' },
@@ -123,6 +119,60 @@ const taskSummary = [
 ];
 
 export default function DashboardPage() {
+  const operationsContexts = useMemo(() => seedOperationsCenterRepository(), []);
+  const auditEvents = useMemo(() => getOperationsCenterAuditEvents(), []);
+
+  const executiveKpis = useMemo(() => {
+    const pendingExecutiveApprovals = operationsContexts.filter(
+      (context) =>
+        context.opportunityLifecycle === OpportunityLifecycle.SUBMITTED
+        || context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW,
+    ).length;
+
+    const fundingPending = operationsContexts.filter(
+      (context) =>
+        context.opportunityLifecycle === OpportunityLifecycle.APPROVED
+        || context.opportunityLifecycle === OpportunityLifecycle.FUNDING_ALLOCATED,
+    ).length;
+
+    const purchasesPending = operationsContexts.filter(
+      (context) => context.opportunityLifecycle === OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+    ).length;
+
+    const recentlyCompletedTransactions = operationsContexts.filter(
+      (context) =>
+        context.opportunityLifecycle === OpportunityLifecycle.SETTLED
+        || context.opportunityLifecycle === OpportunityLifecycle.CLOSED,
+    ).length;
+
+    return [
+      {
+        label: 'Pending Executive Approvals',
+        value: String(pendingExecutiveApprovals),
+        note: 'Derived from OpportunityLifecycle SUBMITTED and UNDER_REVIEW',
+      },
+      {
+        label: 'Funding Pending',
+        value: String(fundingPending),
+        note: 'Derived from OpportunityLifecycle APPROVED and FUNDING_ALLOCATED',
+      },
+      {
+        label: 'Purchases Pending',
+        value: String(purchasesPending),
+        note: 'Derived from OpportunityLifecycle RELEASED_FOR_PURCHASE',
+      },
+      {
+        label: 'Recently Completed Transactions',
+        value: String(recentlyCompletedTransactions),
+        note: `Last immutable audit events ${auditEvents.length}`,
+      },
+      { label: 'Active Financing Transactions', value: String(operationsContexts.length), note: 'Across all active desks' },
+      { label: 'Average Deal Confidence Index', value: '84', note: 'Weighted portfolio DCI signal' },
+      { label: 'Portfolio Yield', value: '16.8%', note: 'Net annualized yield' },
+      { label: 'Portfolio Outstanding', value: 'AED 1.92B', note: 'Current deployed and revolving base' },
+    ];
+  }, [auditEvents.length, operationsContexts]);
+
   const currentDate = formatDate(new Date(), {
     locale: 'en-GB',
     options: {

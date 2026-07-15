@@ -91,3 +91,11 @@ Tracks controlled repository-level documentation changes from Project Legacy Rel
 
 - Foundational charter publication:
   - docs/legacy/00-Charter/DS-CHR-001-The-Charter-of-Deepsea.md
+
+### Changed
+
+- Reframed DS-CHR-001 as a publication framework for collaborative drafting:
+  - Added metadata, table of contents, part and chapter scaffolding
+  - Added cross-reference placeholders and approval workflow section
+  - Added structured revision history for future authoring cycles
+  - Removed authored charter body text for Sprint 1 framework-only publication

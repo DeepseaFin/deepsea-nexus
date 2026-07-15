@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   Archive,
@@ -17,6 +18,12 @@ import {
   UserCheck,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import {
+  getOperationsCenterAuditEvents,
+  seedOperationsCenterRepository,
+  mapLifecycleToWorkspaceHref,
+} from '@/lib/workflows/DemoScenario';
+import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 
 type Tab =
   | 'Inbox'
@@ -46,6 +53,7 @@ type NotificationRecord = {
   owner: string;
   country: string;
   rm: string;
+  targetHref: string;
 };
 
 type TaskRecord = {
@@ -95,6 +103,15 @@ export default function NotificationCenterPage() {
   const [activeTab, setActiveTab] = useState<Tab>('Inbox');
   const [search, setSearch] = useState('');
 
+  const operationsContexts = useMemo(() => seedOperationsCenterRepository(), []);
+  const auditEvents = useMemo(() => getOperationsCenterAuditEvents(), []);
+
+  const contextLookup = useMemo(() => {
+    return new Map(
+      operationsContexts.map((context) => [`${context.workflowId}:${context.opportunityLifecycle}`, context]),
+    );
+  }, [operationsContexts]);
+
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [ownerFilter, setOwnerFilter] = useState('All');
@@ -105,105 +122,59 @@ export default function NotificationCenterPage() {
   const [rmFilter, setRmFilter] = useState('All');
 
   const notifications = useMemo<NotificationRecord[]>(
-    () => [
-      {
-        id: 'NTF-2026-1101',
-        priority: 'Critical',
-        notification: 'Collection overdue above AED 1M requires immediate recovery action.',
-        module: 'Collections',
-        deal: 'DNX-2026-178',
-        client: 'Apex Trade Group',
-        created: '2026-07-07 08:12',
-        assignedTo: 'Deepak Rao',
-        status: 'Unread',
-        action: 'Escalate recovery call',
-        department: 'Collections',
-        owner: 'Deepak Rao',
-        country: 'Saudi Arabia',
-        rm: 'Riya Sinha',
-      },
-      {
-        id: 'NTF-2026-1102',
-        priority: 'High',
-        notification: 'Legal signature pending for receivables purchase agreement.',
-        module: 'Legal',
-        deal: 'DNX-2026-181',
-        client: 'Blue Horizon Procurement',
-        created: '2026-07-07 08:21',
-        assignedTo: 'Anika Khan',
-        status: 'Open',
-        action: 'Trigger signer reminder',
-        department: 'Legal',
-        owner: 'Anika Khan',
+    () => auditEvents.map((event, index) => {
+      const matchedContext = contextLookup.get(`${event.workflowId}:${event.currentLifecycle}`)
+        ?? operationsContexts.find((context) => context.workflowId === event.workflowId)
+        ?? operationsContexts[0];
+
+      const created = event.occurredAt.slice(0, 16).replace('T', ' ');
+      const isUnread = index >= Math.max(auditEvents.length - 2, 0);
+
+      const moduleName =
+        matchedContext.currentWorkspace === 'commercial'
+          ? 'Commercial'
+          : matchedContext.currentWorkspace === 'executive'
+            ? 'Executive'
+            : matchedContext.currentWorkspace === 'treasury'
+              ? 'Treasury'
+              : 'Forfaitting';
+
+      const priority: Priority =
+        event.currentLifecycle === OpportunityLifecycle.UNDER_REVIEW
+        || event.currentLifecycle === OpportunityLifecycle.FUNDING_ALLOCATED
+          ? 'High'
+          : event.currentLifecycle === OpportunityLifecycle.RELEASED_FOR_PURCHASE
+            ? 'Medium'
+            : 'Low';
+
+      const department =
+        matchedContext.currentWorkspace === 'executive'
+          ? 'Credit'
+          : matchedContext.currentWorkspace === 'treasury'
+            ? 'Treasury'
+            : matchedContext.currentWorkspace === 'forfaitting'
+              ? 'Forfaitting'
+              : 'Commercial';
+
+      return {
+        id: event.eventId,
+        priority,
+        notification: event.message ?? `Lifecycle updated to ${event.currentLifecycle}.`,
+        module: moduleName,
+        deal: matchedContext.opportunityId,
+        client: matchedContext.institutionId,
+        created,
+        assignedTo: matchedContext.currentOwner,
+        status: isUnread ? 'Unread' : 'Open',
+        action: 'Open Workspace',
+        department,
+        owner: matchedContext.currentOwner,
         country: 'United Arab Emirates',
-        rm: 'Deepak Rao',
-      },
-      {
-        id: 'NTF-2026-1103',
-        priority: 'Medium',
-        notification: 'Funding deadline within 4 hours for scheduled tranche.',
-        module: 'Treasury',
-        deal: 'DNX-2026-190',
-        client: 'Crescent Healthcare',
-        created: '2026-07-07 08:36',
-        assignedTo: 'Mohan Patel',
-        status: 'In Progress',
-        action: 'Confirm disbursement window',
-        department: 'Treasury',
-        owner: 'Mohan Patel',
-        country: 'Qatar',
-        rm: 'Mohan Patel',
-      },
-      {
-        id: 'NTF-2026-1104',
-        priority: 'High',
-        notification: 'Approval queue item approaching SLA breach in 45 minutes.',
-        module: 'Approvals',
-        deal: 'DNX-2026-201',
-        client: 'Falcon Energy Trade',
-        created: '2026-07-07 09:02',
-        assignedTo: 'Leena George',
-        status: 'Escalated',
-        action: 'Assign deputy reviewer',
-        department: 'Credit',
-        owner: 'Leena George',
-        country: 'Bahrain',
-        rm: 'Suresh Menon',
-      },
-      {
-        id: 'NTF-2026-1105',
-        priority: 'Low',
-        notification: 'Policy update published for treasury collateral margining.',
-        module: 'Announcements',
-        deal: '-',
-        client: 'Institutional Portfolio',
-        created: '2026-07-07 09:24',
-        assignedTo: 'All Users',
-        status: 'Read',
-        action: 'Acknowledge policy',
-        department: 'Compliance',
-        owner: 'Compliance Office',
-        country: 'United Arab Emirates',
-        rm: 'System',
-      },
-      {
-        id: 'NTF-2026-1106',
-        priority: 'Medium',
-        notification: 'KYC document set expires tomorrow for strategic client.',
-        module: 'Clients',
-        deal: 'DNX-2026-211',
-        client: 'Atlas Regional Distribution',
-        created: '2026-07-07 09:46',
-        assignedTo: 'Sana Malik',
-        status: 'Unread',
-        action: 'Initiate KYC refresh',
-        department: 'Compliance',
-        owner: 'Sana Malik',
-        country: 'United Arab Emirates',
-        rm: 'Deepak Rao',
-      },
-    ],
-    [],
+        rm: matchedContext.currentOwner,
+        targetHref: mapLifecycleToWorkspaceHref(matchedContext),
+      };
+    }),
+    [auditEvents, contextLookup, operationsContexts],
   );
 
   const tasks = useMemo<TaskRecord[]>(
@@ -546,7 +517,11 @@ export default function NotificationCenterPage() {
                           <td className="px-2 py-2">{item.created}</td>
                           <td className="px-2 py-2">{item.assignedTo}</td>
                           <td className={`px-2 py-2 font-semibold ${statusClass(item.status)}`}>{item.status}</td>
-                          <td className="px-2 py-2">{item.action}</td>
+                          <td className="px-2 py-2">
+                            <Link href={item.targetHref} className="text-cyan-300 hover:text-cyan-200">
+                              {item.action}
+                            </Link>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
