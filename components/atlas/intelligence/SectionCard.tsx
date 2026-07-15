@@ -27,26 +27,26 @@ const SectionCard: React.FC<SectionCardProps> = ({
   className = '',
 }) => {
   const badgeColors = {
-    default: 'bg-slate-700 text-slate-200',
-    success: 'bg-emerald-900 text-emerald-200',
-    warning: 'bg-amber-900 text-amber-200',
-    error: 'bg-rose-900 text-rose-200',
-    info: 'bg-cyan-900 text-cyan-200',
+    default: 'border border-slate-600 bg-slate-800/80 text-slate-200',
+    success: 'border border-emerald-700/50 bg-emerald-900/40 text-emerald-200',
+    warning: 'border border-amber-700/50 bg-amber-900/40 text-amber-200',
+    error: 'border border-rose-700/50 bg-rose-900/40 text-rose-200',
+    info: 'border border-cyan-700/50 bg-cyan-900/40 text-cyan-200',
   };
 
   return (
     <div
-      className={`rounded-lg border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm ${className}`}
+      className={`rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.28)] backdrop-blur-sm sm:p-7 ${className}`}
     >
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between border-b border-slate-800/80 pb-3">
         <div className="flex items-center gap-3">
-          {Icon && <Icon className="h-5 w-5 text-cyan-400" />}
-          <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+          {Icon && <Icon className="h-5 w-5 text-cyan-300" />}
+          <h3 className="text-lg font-semibold tracking-tight text-slate-100">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           {badge && (
             <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${
                 badgeColors[badge.variant || 'default']
               }`}
             >
@@ -56,7 +56,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           {action && (
             <button
               onClick={action.onClick}
-              className="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="rounded-full border border-cyan-700/40 bg-cyan-950/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-200 transition-colors hover:bg-cyan-900/60"
             >
               {action.label}
             </button>

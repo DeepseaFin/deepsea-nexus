@@ -4,15 +4,11 @@ import type { FundingQueueItem } from "@/src/capabilities/treasury/types/Treasur
 type FundingQueueProps = {
   readonly items: readonly FundingQueueItem[];
   readonly selectedItemId?: string;
-  readonly buildItemHref?: (item: FundingQueueItem) => string;
-  readonly buildReleaseHref?: (item: FundingQueueItem) => string;
 };
 
 export default function FundingQueue({
   items,
   selectedItemId,
-  buildItemHref,
-  buildReleaseHref,
 }: FundingQueueProps) {
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
@@ -27,8 +23,8 @@ export default function FundingQueue({
             ].join(" ")}
           >
             <div className="flex items-center justify-between gap-2">
-              {buildItemHref ? (
-                <Link href={buildItemHref(item)} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200">
+              {item.itemHref ? (
+                <Link href={item.itemHref} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200">
                   {item.counterparty}
                 </Link>
               ) : (
@@ -41,9 +37,9 @@ export default function FundingQueue({
             {item.currency && <p className="mt-1 text-xs text-slate-400">Currency: {item.currency}</p>}
             {item.fundingDate && <p className="mt-1 text-xs text-slate-400">Funding Date: {item.fundingDate}</p>}
             <p className="mt-1 text-xs uppercase tracking-[0.1em] text-slate-500">Priority: {item.priority}</p>
-            {buildReleaseHref && (
+            {item.releaseHref && (
               <div className="mt-3">
-                <Link href={buildReleaseHref(item)} className="inline-flex rounded border border-cyan-700/40 bg-cyan-950/20 px-2 py-1 text-xs font-medium text-cyan-100">
+                <Link href={item.releaseHref} className="inline-flex rounded border border-cyan-700/40 bg-cyan-950/20 px-2 py-1 text-xs font-medium text-cyan-100">
                   Release for Purchase →
                 </Link>
               </div>

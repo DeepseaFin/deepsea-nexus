@@ -4,10 +4,9 @@ import type { ReceivableQueueItem } from "@/src/capabilities/forfaiting/types/Fo
 type ReceivableQueueProps = {
   readonly items: readonly ReceivableQueueItem[];
   readonly selectedItemId?: string;
-  readonly buildItemHref?: (item: ReceivableQueueItem) => string;
 };
 
-export default function ReceivableQueue({ items, selectedItemId, buildItemHref }: ReceivableQueueProps) {
+export default function ReceivableQueue({ items, selectedItemId }: ReceivableQueueProps) {
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
       <h2 className="text-lg font-semibold text-slate-100">Receivable Queue</h2>
@@ -26,8 +25,8 @@ export default function ReceivableQueue({ items, selectedItemId, buildItemHref }
             {items.map((item) => (
               <tr key={item.id} className={["border-t border-slate-800/80", item.id === selectedItemId ? "bg-cyan-950/20" : ""].join(" ")}>
                 <td className="px-3 py-2 font-medium text-slate-100">
-                  {buildItemHref ? (
-                    <Link href={buildItemHref(item)} className="text-cyan-300 hover:text-cyan-200">
+                  {item.itemHref ? (
+                    <Link href={item.itemHref} className="text-cyan-300 hover:text-cyan-200">
                       {item.obligor}
                     </Link>
                   ) : (

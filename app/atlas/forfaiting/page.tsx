@@ -286,7 +286,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
     ),
   };
 
-  const buildReceivableHref = (item: ReceivableQueueItem): string => {
+  const receivableQueueWithHrefs: ReceivableQueueItem[] = state.receivableQueue.map((item) => {
     let nextLifecycle = item.lifecycleStatus ?? forfaittingBusinessContext.opportunityLifecycle;
     let nextBusinessContext = createBusinessContext({
       ...forfaittingBusinessContext,
@@ -321,14 +321,21 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
       businessContext: serializeBusinessContext(nextBusinessContext),
     });
 
-    return `/atlas/forfaiting?${itemParams.toString()}`;
+    return {
+      ...item,
+      itemHref: `/atlas/forfaiting?${itemParams.toString()}`,
+    };
+  });
+
+  const hydratedState: ForfaittingWorkspaceState = {
+    ...state,
+    receivableQueue: receivableQueueWithHrefs,
   };
 
   return (
     <ForfaitingWorkspace
-      initialState={state}
+      initialState={hydratedState}
       selectedReceivableId={selectedReceivable.id}
-      buildReceivableHref={buildReceivableHref}
     />
   );
 }

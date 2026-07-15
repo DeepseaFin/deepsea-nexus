@@ -9,17 +9,20 @@ export default function CommercialProgress({ steps }: CommercialProgressProps) {
   const percentage = Math.round((completedCount / steps.length) * 100);
 
   return (
-    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">Commercial Progress</h2>
-        <p className="text-sm font-medium text-cyan-200">{percentage}%</p>
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Workflow Health</p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-100">Commercial Progress</h2>
+        </div>
+        <p className="text-2xl font-semibold tracking-tight text-cyan-200">{percentage}%</p>
       </div>
 
-      <div className="mt-3 h-2 rounded-full bg-slate-800">
-        <div className="h-2 rounded-full bg-cyan-500" style={{ width: `${percentage}%` }} />
+      <div className="mt-4 h-2.5 rounded-full bg-slate-800">
+        <div className="h-2.5 rounded-full bg-cyan-500" style={{ width: `${percentage}%` }} />
       </div>
 
-      <p className="mt-2 text-xs text-slate-400">{completedCount} of {steps.length} stages completed</p>
+      <p className="mt-3 text-xs text-slate-400">{completedCount} of {steps.length} stages completed</p>
     </section>
   );
 }

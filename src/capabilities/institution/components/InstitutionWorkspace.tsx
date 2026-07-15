@@ -75,15 +75,15 @@ export default function InstitutionWorkspace({ initialState }: InstitutionWorksp
   });
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1920px] space-y-3 pb-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1920px] space-y-4 pb-10">
         <InstitutionHeader workspace={workspace} />
 
         <InstitutionNavigation items={workspace.navigation} activeView={activeView} onSelect={setActiveView} />
 
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <main className="space-y-2">{renderView(activeView, workspace, workflowEvents)}</main>
-          <div className="space-y-2">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <main className="space-y-3">{renderView(activeView, workspace, workflowEvents)}</main>
+          <div className="space-y-3">
             <InstitutionAiAdvisor advisor={workspace.aiAdvisor} />
             <InstitutionDecisionFeed decisions={workspace.decisionFeed.slice(0, 2)} />
           </div>

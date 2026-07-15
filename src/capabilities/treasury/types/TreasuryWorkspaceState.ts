@@ -26,6 +26,8 @@ export interface FundingQueueItem {
   readonly id: string;
   readonly counterparty: string;
   readonly opportunityReference?: string;
+  readonly itemHref?: string;
+  readonly releaseHref?: string;
   readonly amount: string;
   readonly fundingDate?: string;
   readonly currency?: string;

@@ -5,7 +5,6 @@ import type {
   CustomerOnboardingState,
   CustomerOnboardingStatus,
   CustomerOnboardingStep,
-  CustomerOnboardingStepId,
 } from "@/src/capabilities/onboarding/types/CustomerOnboardingState";
 
 export interface UseCustomerOnboardingResult {

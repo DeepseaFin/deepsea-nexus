@@ -258,7 +258,7 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
     ],
   };
 
-  const buildFundingItemHref = (item: FundingQueueItem): string => {
+  const fundingQueueWithHrefs: FundingQueueItem[] = state.fundingQueue.map((item) => {
     const itemParams = new URLSearchParams({
       fundingId: item.id,
       institutionName: item.counterparty,
@@ -278,10 +278,6 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
       ),
     });
 
-    return `/atlas/treasury?${itemParams.toString()}`;
-  };
-
-  const buildReleaseHref = (item: FundingQueueItem): string => {
     let releaseLifecycle = item.currentStatus ?? treasuryBusinessContext.opportunityLifecycle;
     let releaseBusinessContext = createBusinessContext({
       ...treasuryBusinessContext,
@@ -315,15 +311,22 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
       businessContext: serializeBusinessContext(releaseBusinessContext),
     });
 
-    return `/atlas/forfaiting?${releaseParams.toString()}`;
+    return {
+      ...item,
+      itemHref: `/atlas/treasury?${itemParams.toString()}`,
+      releaseHref: `/atlas/forfaiting?${releaseParams.toString()}`,
+    };
+  });
+
+  const hydratedState: TreasuryWorkspaceState = {
+    ...state,
+    fundingQueue: fundingQueueWithHrefs,
   };
 
   return (
     <TreasuryWorkspace
-      initialState={state}
+      initialState={hydratedState}
       selectedFundingItemId={selectedFundingItem.id}
-      buildFundingItemHref={buildFundingItemHref}
-      buildReleaseHref={buildReleaseHref}
     />
   );
 }

@@ -21,6 +21,7 @@ export interface ReceivableQueueItem {
   readonly id: string;
   readonly obligor: string;
   readonly exporter: string;
+  readonly itemHref?: string;
   readonly amount: string;
   readonly tenorDays: number;
   readonly status: "new" | "review" | "approved" | "on_hold";
