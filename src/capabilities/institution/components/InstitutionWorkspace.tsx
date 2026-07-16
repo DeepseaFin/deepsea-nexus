@@ -11,6 +11,7 @@ import InstitutionHeader from "@/src/capabilities/institution/components/Institu
 import InstitutionHealth from "@/src/capabilities/institution/components/InstitutionHealth";
 import InstitutionKnowledgeGraph from "@/src/capabilities/institution/components/InstitutionKnowledgeGraph";
 import InstitutionNavigation from "@/src/capabilities/institution/components/InstitutionNavigation";
+import InstitutionTimeline from "@/src/capabilities/institution/components/InstitutionTimeline";
 import { useInstitution } from "@/src/capabilities/institution/hooks/useInstitution";
 import type {
   InstitutionNavigationKey,
@@ -28,7 +29,12 @@ function renderView(
 ) {
   switch (view) {
     case "timeline":
-      return <WorkflowTimelinePanel events={workflowEvents} title="Workflow Timeline" />;
+      return (
+        <div className="space-y-3">
+          <InstitutionTimeline timeline={workspace.timeline} />
+          <WorkflowTimelinePanel events={workflowEvents} compact title="Workflow Execution Context" />
+        </div>
+      );
     case "health":
       return <InstitutionHealth health={workspace.health} />;
     case "documents":
@@ -44,7 +50,7 @@ function renderView(
       return (
         <div className="space-y-2">
           <InstitutionDashboard kpis={workspace.kpis} />
-          <WorkflowTimelinePanel events={workflowEvents} compact title="Workflow Timeline" />
+          <InstitutionTimeline timeline={workspace.timeline.slice(0, 6)} />
           <InstitutionHealth health={workspace.health} />
         </div>
       );

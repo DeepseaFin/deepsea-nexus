@@ -211,6 +211,32 @@ function buildKnowledgeGraph(input: {
   };
 }
 
+function toEpoch(value: string | undefined): number {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function createTimelineItem(input: {
+  readonly id: string;
+  readonly timestamp: string | undefined;
+  readonly title: string;
+  readonly actor: string;
+  readonly detail: string;
+  readonly fallbackTimestamp: string;
+}): InstitutionTimelineItem {
+  return {
+    id: input.id,
+    timestamp: input.timestamp ?? input.fallbackTimestamp,
+    title: input.title,
+    actor: input.actor,
+    detail: input.detail,
+  };
+}
+
 function buildTimeline(input: {
   readonly institutionContext: InstitutionContext;
   readonly runtime: RuntimeAuthContext;
@@ -218,34 +244,231 @@ function buildTimeline(input: {
   readonly summary: InstitutionContextSummary;
 }): readonly InstitutionTimelineItem[] {
   const reviewedAt = input.summary.assembledAt;
-  const timeline: InstitutionTimelineItem[] = [
-    {
-      id: `TL-${input.summary.contextId}-auth`,
-      timestamp: reviewedAt,
-      title: "Runtime authentication resolved",
-      actor: input.runtime.identity.identity.displayName ?? input.runtime.identity.identity.identityId,
-      detail: `${input.runtime.identity.identity.roles.length} roles and ${input.runtime.identity.identity.memberships.length} memberships are active.`,
-    },
-    {
-      id: `TL-${input.summary.contextId}-context`,
-      timestamp: input.institutionContext.workflowStatus.lastUpdatedAt ?? reviewedAt,
-      title: "Institution context assembled",
-      actor: input.institutionContext.institution.identity.legalName,
-      detail: `Workflow ${input.institutionContext.workflowStatus.workflowId ?? "runtime"} is bound to the live workspace.`,
-    },
-  ];
+  const actor = input.runtime.identity.identity.displayName ?? input.runtime.identity.identity.identityId;
+  const timeline: InstitutionTimelineItem[] = [];
+  const workflowStatus = input.institutionContext.workflowStatus;
+  const passport = input.institutionContext.passport;
+  const journey = input.institutionContext.journey;
+  const health = input.institutionContext.health;
+  const intelligence = input.institutionContext.intelligence;
+
+  timeline.push(createTimelineItem({
+    id: `TL-${input.summary.contextId}-auth`,
+    timestamp: reviewedAt,
+    title: "Runtime authentication resolved",
+    actor,
+    detail: `${input.runtime.identity.identity.roles.length} roles and ${input.runtime.identity.identity.memberships.length} memberships are active.`,
+    fallbackTimestamp: reviewedAt,
+  }));
+
+  timeline.push(createTimelineItem({
+    id: `TL-${input.summary.contextId}-workflow-execution`,
+    timestamp: workflowStatus.lastUpdatedAt,
+    title: `Workflow execution ${workflowStatus.runState ?? "resolved"}`,
+    actor,
+    detail: `Workflow ${workflowStatus.workflowId ?? "runtime"} at step ${workflowStatus.currentStep ?? "unknown"} with ${workflowStatus.completedStepCount} completed steps.`,
+    fallbackTimestamp: reviewedAt,
+  }));
 
   if (input.businessContext) {
-    timeline.push({
-      id: `TL-${input.summary.contextId}-workflow`,
-      timestamp: input.institutionContext.workflowStatus.lastUpdatedAt ?? reviewedAt,
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-workflow-context`,
+      timestamp: workflowStatus.lastUpdatedAt,
       title: "Workflow repository context selected",
       actor: input.businessContext.currentOwner,
-      detail: `Opportunity ${input.businessContext.opportunityId} is active in ${input.businessContext.currentWorkspace}.`,
+      detail: `Opportunity ${input.businessContext.opportunityId} is active in ${input.businessContext.currentWorkspace} at lifecycle ${input.businessContext.opportunityLifecycle}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+  }
+
+  intelligence?.references.events.forEach((event) => {
+    timeline.push(createTimelineItem({
+      id: `TL-${event.metadata.eventId}`,
+      timestamp: event.metadata.timestamp,
+      title: `Institution event: ${event.type}`,
+      actor: event.metadata.actor ?? event.metadata.source,
+      detail: event.payload.reason
+        ?? `Category ${event.category} updated ${event.payload.changedFields?.join(", ") ?? "institution state"}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+  });
+
+  journey?.timeline.forEach((event, index) => {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-journey-${index}`,
+      timestamp: event.timestamp,
+      title: `Journey: ${event.event}`,
+      actor: event.performedBy,
+      detail: event.notes,
+      fallbackTimestamp: reviewedAt,
+    }));
+  });
+
+  if (journey) {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-journey-status`,
+      timestamp: journey.lastUpdated,
+      title: `Journey ${journey.status}`,
+      actor: journey.startedBy,
+      detail: `${journey.completedSteps.length} steps completed at ${journey.completionPercentage}% progress.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+  }
+
+  if (passport) {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-passport-created`,
+      timestamp: passport.metadata.audit.createdAt,
+      title: "Business Passport created",
+      actor: passport.metadata.audit.createdBy,
+      detail: `Passport ${passport.passportId.toString()} initialized with lifecycle ${passport.lifecycle}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-passport-updated`,
+      timestamp: passport.metadata.audit.updatedAt,
+      title: "Business Passport updated",
+      actor: passport.metadata.audit.updatedBy,
+      detail: `Status ${passport.status}, maturity ${passport.maturity.level}, confidence ${passport.confidence.score}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-passport-lineage`,
+      timestamp: passport.metadata.lineage.ingestedAt,
+      title: "Business Passport lineage refreshed",
+      actor: "Business Passport",
+      detail: `${passport.metadata.lineage.sourceSystems.length} source systems and ${passport.metadata.lineage.sourceReferences.length} source references ingested.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    if (passport.profiles.timelineProfile.lastMaterialEventAt) {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-passport-material-event`,
+        timestamp: passport.profiles.timelineProfile.lastMaterialEventAt,
+        title: "Business Passport material event",
+        actor: "Business Passport",
+        detail: `Lifecycle ${passport.profiles.timelineProfile.currentLifecycleStep ?? "active"} with next step ${passport.profiles.timelineProfile.nextLifecycleStep ?? "not set"}.`,
+        fallbackTimestamp: reviewedAt,
+      }));
+    }
+
+    const evidenceProfile = passport.profiles.evidenceProfile;
+
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-evidence-coverage`,
+      timestamp: passport.metadata.audit.updatedAt,
+      title: "Evidence profile assessed",
+      actor: "Evidence",
+      detail: `Coverage ${evidenceProfile.evidenceCoverageScore ?? 0}; missing ${evidenceProfile.missingEvidenceItems?.length ?? 0}; stale ${evidenceProfile.staleEvidenceItems?.length ?? 0}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    evidenceProfile.missingEvidenceItems?.slice(0, 5).forEach((item, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-evidence-missing-${index}`,
+        timestamp: passport.metadata.audit.updatedAt,
+        title: "Evidence gap detected",
+        actor: "Evidence",
+        detail: item,
+        fallbackTimestamp: reviewedAt,
+      }));
     });
   }
 
-  return timeline;
+  const knowledgeFacts = intelligence?.references.knowledge?.facts ?? [];
+  if (knowledgeFacts.length > 0) {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-knowledge-collected`,
+      timestamp: knowledgeFacts[0]?.lastVerified ?? knowledgeFacts[0]?.effectiveDate,
+      title: "Knowledge collection synchronized",
+      actor: "Knowledge",
+      detail: `${knowledgeFacts.length} knowledge facts connected to institutional memory.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    knowledgeFacts.slice(0, 5).forEach((fact, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-knowledge-fact-${index}`,
+        timestamp: fact.lastVerified ?? fact.metadata.updatedAt ?? fact.metadata.createdAt ?? fact.effectiveDate,
+        title: `Knowledge fact: ${fact.factName}`,
+        actor: fact.metadata.createdBy,
+        detail: `${fact.knowledgeType} from ${fact.source} at confidence ${fact.confidence}.`,
+        fallbackTimestamp: reviewedAt,
+      }));
+    });
+  }
+
+  if (health) {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-health-assessment`,
+      timestamp: health.assessedAt,
+      title: "Institution health assessed",
+      actor: "Institution Health",
+      detail: `Overall ${health.overallStatus} (${health.overallScore}) with trend ${health.overallTrend.direction}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    health.indicators.slice(0, 5).forEach((indicator, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-health-indicator-${index}`,
+        timestamp: indicator.trend.observedAt,
+        title: `Health indicator: ${indicator.type}`,
+        actor: "Institution Health",
+        detail: `${indicator.status} at ${indicator.score.value}; ${indicator.explanation}`,
+        fallbackTimestamp: reviewedAt,
+      }));
+    });
+  }
+
+  if (intelligence) {
+    timeline.push(createTimelineItem({
+      id: `TL-${input.summary.contextId}-intelligence-assessed`,
+      timestamp: intelligence.overallScore.assessedAt,
+      title: "Institution intelligence assessed",
+      actor: "Institution Intelligence",
+      detail: `Rating ${intelligence.overallRating}, score ${intelligence.overallScore.value}/${intelligence.overallScore.maxValue}.`,
+      fallbackTimestamp: reviewedAt,
+    }));
+
+    intelligence.keyInsights.slice(0, 5).forEach((insight, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-intelligence-insight-${index}`,
+        timestamp: intelligence.overallScore.assessedAt,
+        title: `Intelligence insight: ${insight.title}`,
+        actor: insight.sourceDomain,
+        detail: insight.summary,
+        fallbackTimestamp: reviewedAt,
+      }));
+    });
+
+    intelligence.alerts.slice(0, 5).forEach((alert, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-intelligence-alert-${index}`,
+        timestamp: intelligence.overallScore.assessedAt,
+        title: `Intelligence alert (${alert.severity})`,
+        actor: alert.sourceDomain,
+        detail: alert.title,
+        fallbackTimestamp: reviewedAt,
+      }));
+    });
+
+    intelligence.recommendations.slice(0, 5).forEach((recommendation, index) => {
+      timeline.push(createTimelineItem({
+        id: `TL-${input.summary.contextId}-intelligence-recommendation-${index}`,
+        timestamp: intelligence.overallScore.assessedAt,
+        title: `Intelligence recommendation: ${recommendation.title}`,
+        actor: recommendation.sourceDomain,
+        detail: recommendation.action,
+        fallbackTimestamp: reviewedAt,
+      }));
+    });
+  }
+
+  return timeline
+    .sort((left, right) => toEpoch(right.timestamp) - toEpoch(left.timestamp))
+    .slice(0, 60);
 }
 
 function buildAdvisor(input: {
