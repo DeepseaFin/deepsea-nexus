@@ -27,7 +27,7 @@ type WorkflowContextRow = {
   payload: unknown;
 };
 
-type SupabaseWorkflowContextRepositoryOptions = {
+export type SupabaseWorkflowContextRepositoryOptions = {
   readonly tableName?: string;
   readonly onPersistenceError?: (error: Error) => void;
 };
