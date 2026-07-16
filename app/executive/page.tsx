@@ -1,15 +1,29 @@
 import Link from "next/link";
+import { cookies, headers } from "next/headers";
 import WorkflowTimelinePanel from "@/components/atlas/workflows/WorkflowTimelinePanel";
-import type { BusinessDNA } from "@/lib/knowledge/businessDNA";
-import type { KnowledgeAttribute } from "@/lib/knowledge/knowledgeAttribute";
-import type { FundingAssessment } from "@/lib/business/fundingAssessmentService";
-import type { RelationshipTimeline } from "@/lib/relationship/relationshipTimeline";
+import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
+import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
+import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from "@/lib/runtime/InstitutionalDigitalTwin";
+import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
+import ExecutiveAlerts from "@/src/capabilities/executive/components/ExecutiveAlerts";
+import ExecutiveDashboard from "@/src/capabilities/executive/components/ExecutiveDashboard";
+import ExecutiveDecisions from "@/src/capabilities/executive/components/ExecutiveDecisions";
+import { createLiveExecutiveWorkspaceViewModel } from "@/src/capabilities/executive/services/ExecutiveWorkspaceAssembler";
+import type {
+  ExecutiveAlertItem,
+  ExecutiveDecisionItem,
+  ExecutiveKpiItem,
+} from "@/src/capabilities/executive/types/ExecutiveWorkspaceState";
 import {
   createBusinessContext,
   parseBusinessContext,
   serializeBusinessContext,
   transitionBusinessContext,
   workflowContextRepository,
+  type BusinessContext,
+  type CustomerOnboardingWorkflowInput,
+  type WorkflowContext,
+  type WorkflowContextServices,
 } from "@/lib/workflows/WorkflowContext";
 import { buildMockWorkflowEvents } from "@/lib/workflows/WorkflowTimeline";
 import {
@@ -17,209 +31,135 @@ import {
   canTransitionOpportunityLifecycle,
   transitionOpportunityLifecycle,
 } from "@/lib/workflows/WorkflowTransition";
-import { getDemoScenario } from "@/lib/workflows/DemoScenario";
-import { executiveWorkspaceAssembler } from "@/lib/workspaces/executiveWorkspaceAssembler";
-import ExecutiveAlerts from "@/src/capabilities/executive/components/ExecutiveAlerts";
-import ExecutiveDashboard from "@/src/capabilities/executive/components/ExecutiveDashboard";
-import ExecutiveDecisions from "@/src/capabilities/executive/components/ExecutiveDecisions";
-import type {
-  ExecutiveAlertItem,
-  ExecutiveDecisionItem,
-  ExecutiveKpiItem,
-} from "@/src/capabilities/executive/types/ExecutiveWorkspaceState";
+import { createInstitutionContextProvider } from "@/lib/workspaces/InstitutionContextProvider";
+import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
+import { WorkflowRunState } from "@/lib/workflows/WorkflowExecutionState";
+import { WorkflowStep } from "@/lib/workflows/WorkflowStep";
 
-function attribute<T>(value: T, source: string, confidence = 92, updatedAt = "2026-07-12T09:00:00Z"): KnowledgeAttribute<T> {
+function toOpportunityLifecycleLabel(value: OpportunityLifecycle): string {
+  return value.replaceAll("_", " ");
+}
+
+async function createCookieAdapter(): Promise<RuntimeAuthCookieAdapter> {
+  const cookieStore = await cookies();
+
   return {
-    value,
-    source,
-    confidence,
-    updatedAt,
+    get(name: string): string | undefined {
+      return cookieStore.get(name)?.value;
+    },
   };
 }
 
-const businesses: BusinessDNA[] = [
-  {
-    identity: {
-      legalName: attribute("Alpine Logistics LLC", "executive portfolio"),
-      tradingName: attribute("Alpine Logistics", "executive portfolio", 88),
-      entityType: attribute("Logistics Company", "executive portfolio"),
-      registrationNumber: attribute("TRN-10294", "executive portfolio", 86),
-      incorporationDate: attribute("2019-03-14", "executive portfolio", 84),
-      jurisdiction: attribute("Dubai, UAE", "executive portfolio"),
-      website: attribute("alpinelogistics.ae", "executive portfolio", 80),
-      headquartersLocation: attribute("Dubai South", "executive portfolio", 84),
-    },
-    business: {
-      industry: attribute("Logistics and Freight", "portfolio data"),
-      businessModel: attribute("B2B logistics services", "portfolio data"),
-      productsServices: attribute(["Freight forwarding", "Warehousing", "Last-mile delivery"], "portfolio data"),
-      customerSegments: attribute(["Importers", "Regional distributors", "Retailers"], "portfolio data"),
-      operatingMarkets: attribute(["UAE", "GCC"], "portfolio data"),
-      employeeCount: attribute(126, "portfolio data", 90),
-      operatingRegions: attribute(["Dubai", "Abu Dhabi", "Sharjah"], "portfolio data"),
-    },
-    financial: {
-      revenueRange: attribute("AED 40M - AED 50M", "portfolio data"),
-      monthlyTurnover: attribute("AED 3.8M", "portfolio data"),
-      profitability: attribute("Healthy operating margin", "portfolio data"),
-      fundingNeed: attribute("AED 10M", "portfolio data"),
-      preferredFacility: attribute("Working Capital Line", "portfolio data"),
-      bankAccountCountry: attribute("UAE", "portfolio data"),
-      cashFlowProfile: attribute("Receivables-backed cash flow with seasonal peaks", "portfolio data"),
-    },
-    behaviour: {
-      paymentBehaviour: attribute("Strong payment discipline", "portfolio data"),
-      invoicingBehaviour: attribute("Invoices issued weekly", "portfolio data"),
-      seasonality: attribute("Q4 demand surge", "portfolio data"),
-      growthTrend: attribute("Accelerating", "portfolio data"),
-      riskSignals: attribute(["Long receivables cycle"], "portfolio data"),
-      operationalDiscipline: attribute("Well documented and repeatable", "portfolio data"),
-    },
-    relationship: {
-      relationshipOwner: attribute("Executive Coverage Team", "portfolio data"),
-      relationshipStage: attribute("Discovery", "portfolio data"),
-      referralSource: attribute("Inbound pipeline", "portfolio data"),
-      engagementLevel: attribute("Warm", "portfolio data"),
-      responsiveness: attribute("Responsive", "portfolio data"),
-      trustLevel: attribute("Building", "portfolio data"),
-    },
-    intelligence: {
-      profileCompleteness: attribute(91, "portfolio scoring"),
-      documentCoverage: attribute(87, "portfolio scoring"),
-      dataFreshness: attribute("Today", "portfolio scoring"),
-      overallConfidence: attribute(91, "portfolio scoring"),
-      nextBestAction: attribute("Approve senior review and schedule an outreach sequence", "portfolio scoring"),
-      insightSummary: attribute("Large logistics relationship with strong operating discipline and active funding demand.", "portfolio scoring"),
-    },
-  },
-  {
-    identity: {
-      legalName: attribute("Northstar Foods Trading", "executive portfolio"),
-      entityType: attribute("Trading Company", "executive portfolio"),
-      jurisdiction: attribute("Abu Dhabi, UAE", "executive portfolio"),
-    },
-    business: {
-      industry: attribute("Food Distribution", "portfolio data"),
-      businessModel: attribute("B2B food wholesale", "portfolio data"),
-    },
-    financial: {
-      fundingNeed: attribute("AED 5M", "portfolio data"),
-      preferredFacility: attribute("Invoice Financing", "portfolio data"),
-    },
-    behaviour: {},
-    relationship: {},
-    intelligence: {
-      overallConfidence: attribute(84, "portfolio scoring"),
-    },
-  },
-  {
-    identity: {
-      legalName: attribute("Summit Industrial Supplies", "executive portfolio"),
-      entityType: attribute("Industrial Supplier", "executive portfolio"),
-      jurisdiction: attribute("Sharjah, UAE", "executive portfolio"),
-    },
-    business: {
-      industry: attribute("Industrial Supplies", "portfolio data"),
-      businessModel: attribute("B2B supply chain", "portfolio data"),
-    },
-    financial: {
-      fundingNeed: attribute("AED 2.5M", "portfolio data"),
-      preferredFacility: attribute("Business Expansion Facility", "portfolio data"),
-    },
-    behaviour: {},
-    relationship: {},
-    intelligence: {
-      overallConfidence: attribute(79, "portfolio scoring"),
-    },
-  },
-];
+function resolveBusinessContext(workflowId: string | undefined): BusinessContext | undefined {
+  if (workflowId) {
+    const byWorkflowId = workflowContextRepository.findByWorkflowId(workflowId);
+    if (byWorkflowId) {
+      return byWorkflowId;
+    }
+  }
 
-const fundingAssessments: FundingAssessment[] = [
-  {
-    recommendedFacility: "Working Capital Line",
-    confidence: 91,
-    advanceRate: "32.4",
-    riskLevel: "MEDIUM",
-    turnaround: "3-5 business days",
-    recommendation: "Proceed with a working capital line subject to standard portfolio review.",
-  },
-  {
-    recommendedFacility: "Invoice Financing",
-    confidence: 84,
-    advanceRate: "27.8",
-    riskLevel: "LOW",
-    turnaround: "24-48 hours",
-    recommendation: "Proceed with invoice financing for the food distribution relationship.",
-  },
-  {
-    recommendedFacility: "Business Expansion Facility",
-    confidence: 79,
-    advanceRate: "24.1",
-    riskLevel: "MEDIUM",
-    turnaround: "3-5 business days",
-    recommendation: "Advance to senior review for the industrial supply opportunity.",
-  },
-];
+  const [latest] = workflowContextRepository.list();
+  return latest;
+}
 
-const relationshipTimelines: RelationshipTimeline[] = [
-  {
-    businessId: "alpine-logistics-llc",
-    events: [
-      {
-        id: "alpine-intake",
-        occurredAt: "2026-07-12T07:30:00Z",
-        category: "Intake",
-        title: "Business Profile Created",
-        description: "Logistics relationship captured and qualified for executive review.",
-        confidence: 92,
-        source: "portfolio intake",
-      },
-      {
-        id: "alpine-contact",
-        occurredAt: "2026-07-12T08:10:00Z",
-        category: "Relationship",
-        title: "Senior Outreach Required",
-        description: "Customer is warm and ready for a direct executive contact sequence.",
-        confidence: 90,
-        source: "relationship management",
-      },
-    ],
-  },
-  {
-    businessId: "northstar-foods-trading",
-    events: [
-      {
-        id: "northstar-intake",
-        occurredAt: "2026-07-12T08:25:00Z",
-        category: "Funding",
-        title: "Funding Need Recorded",
-        description: "Invoice financing appetite captured for the food distribution business.",
-        confidence: 88,
-        source: "portfolio intake",
-      },
-    ],
-  },
-  {
-    businessId: "summit-industrial-supplies",
-    events: [
-      {
-        id: "summit-review",
-        occurredAt: "2026-07-12T08:50:00Z",
-        category: "Review",
-        title: "Executive Review Pending",
-        description: "Industrial supply case is ready for prioritization and follow-up.",
-        confidence: 79,
-        source: "portfolio review",
-      },
-    ],
-  },
-];
+function createLiveWorkflowContext(input: { readonly workflowId: string }): WorkflowContext {
+  return {
+    workflowId: input.workflowId,
+    executionId: `exec-${input.workflowId}`,
+    currentStep: WorkflowStep.InstitutionIntelligence,
+    services: {} as WorkflowContextServices,
+    input: {} as CustomerOnboardingWorkflowInput,
+  } as WorkflowContext;
+}
 
-const executiveWorkspaceViewModel = executiveWorkspaceAssembler.build(businesses, fundingAssessments, relationshipTimelines);
+function createLiveInstitutionContext(input: {
+  readonly runtime: Awaited<ReturnType<typeof resolveServerRuntimeAuthContext>>;
+  readonly businessContext: BusinessContext;
+  readonly workflowId: string;
+  readonly timestamp: string;
+}) {
+  const institutionContextProvider = createInstitutionContextProvider();
+
+  return institutionContextProvider.provide({
+    institution: {
+      identity: {
+        institutionId: input.businessContext.institutionId,
+        legalName: input.runtime.identity.identity.displayName ?? input.runtime.identity.identity.email ?? input.businessContext.institutionId,
+        displayName: input.runtime.identity.identity.displayName ?? input.runtime.identity.identity.email ?? input.businessContext.institutionId,
+        institutionType: InstitutionType.Corporate,
+        jurisdiction: (input.runtime.identity.identity.metadata.jurisdiction as string | undefined) ?? "Live Runtime",
+        registrationNumber: input.workflowId,
+      },
+      status: input.runtime.session.isAuthenticated ? InstitutionStatus.Active : InstitutionStatus.Draft,
+      profile: {
+        legalForm: input.runtime.identity.identity.memberships[0] ?? "Executive Runtime",
+        businessActivity: `Live executive cockpit for ${input.businessContext.opportunityId}`,
+        establishedOn: input.runtime.session.snapshot.metadata.issuedAt ?? input.timestamp,
+        references: {
+          businessPassportId: input.businessContext.opportunityId,
+          timelineId: input.businessContext.workflowId,
+          journeyId: input.businessContext.workflowId,
+          evidenceIds: [input.businessContext.opportunityId],
+          knowledgeIds: [input.businessContext.workflowId],
+        },
+      },
+      metadata: {
+        createdAt: input.runtime.session.snapshot.metadata.issuedAt ?? input.timestamp,
+        createdBy: input.runtime.identity.identity.identityId,
+        updatedAt: input.timestamp,
+        updatedBy: input.runtime.identity.identity.identityId,
+        source: "runtime-auth",
+      },
+    },
+    passport: undefined,
+    journey: undefined,
+    health: undefined,
+    intelligence: undefined,
+    commercialSummary: {
+      opportunityId: input.businessContext.opportunityId,
+      product: input.businessContext.currentWorkspace === "executive" ? "Executive Review" : undefined,
+      indicativeAmount: input.businessContext.receivableId ? `Linked receivable ${input.businessContext.receivableId}` : undefined,
+      indicativeTenor: input.businessContext.opportunityLifecycle === OpportunityLifecycle.FUNDING_ALLOCATED ? "Live funding allocation" : "Live workflow review",
+      stage: input.businessContext.opportunityLifecycle,
+      readyForApproval: input.businessContext.opportunityLifecycle === OpportunityLifecycle.APPROVED,
+    },
+    workflowExecutionState: {
+      workflowId: input.workflowId,
+      executionId: `exec-${input.workflowId}`,
+      runState: WorkflowRunState.Completed,
+      currentStep: WorkflowStep.InstitutionIntelligence,
+      completedSteps: [WorkflowStep.InstitutionIntelligence],
+      pendingSteps: [],
+      startedAt: input.runtime.session.snapshot.metadata.issuedAt ?? input.timestamp,
+      completedAt: input.timestamp,
+      lastEventAt: input.timestamp,
+    },
+    totalWorkflowSteps: 1,
+    assembledAt: input.timestamp,
+  });
+}
+
+function buildApprovalQueueItem(input: {
+  readonly context: BusinessContext;
+  readonly institutionName: string;
+  readonly timestamp: string;
+}): ApprovalQueueItem {
+  return {
+    id: `queue-${input.context.workflowId}`,
+    businessContext: input.context,
+    institutionName: input.institutionName,
+    opportunityReference: input.context.opportunityId,
+    requestedAmount: input.context.receivableId ? `Receivable ${input.context.receivableId}` : `Opportunity ${input.context.opportunityId}`,
+    requestedTenor: input.context.opportunityLifecycle === OpportunityLifecycle.FUNDING_ALLOCATED ? "Allocated funding" : "Live runtime review",
+    currentStatus: input.context.opportunityLifecycle,
+    submittedBy: input.context.currentOwner,
+    submissionDate: input.timestamp,
+    product: input.context.currentWorkspace === "executive" ? "Executive Review" : "Live Opportunity",
+  };
+}
 
 type ExecutivePageProps = {
   searchParams?: Promise<{
-    demoScenario?: string;
     businessContext?: string;
     workflowId?: string;
     queueId?: string;
@@ -236,7 +176,7 @@ type ExecutivePageProps = {
 
 type ApprovalQueueItem = {
   readonly id: string;
-  readonly businessContext: ReturnType<typeof createBusinessContext>;
+  readonly businessContext: BusinessContext;
   readonly institutionName: string;
   readonly opportunityReference: string;
   readonly requestedAmount: string;
@@ -247,136 +187,72 @@ type ApprovalQueueItem = {
   readonly product: string;
 };
 
-function toOpportunityLifecycle(
-  value: string | undefined,
-  fallback: OpportunityLifecycle,
-): OpportunityLifecycle {
-  if (!value) {
-    return fallback;
-  }
-
-  const match = Object.values(OpportunityLifecycle).find((item) => item === value);
-  return match ?? fallback;
-}
-
-function toOpportunityLifecycleLabel(value: OpportunityLifecycle): string {
-  return value.replaceAll("_", " ");
-}
-
 export default async function ExecutivePage({ searchParams }: ExecutivePageProps) {
   const params = (await searchParams) ?? {};
-  const demoScenario = getDemoScenario(params.demoScenario);
+  const requestHeaders = await headers();
+  const requestCookies = await createCookieAdapter();
+  const runtime = await resolveServerRuntimeAuthContext({
+    url: "http://localhost/executive",
+    method: "GET",
+    pathname: "/executive",
+    headers: requestHeaders,
+    searchParams: new URLSearchParams(params.workflowId ? { workflowId: params.workflowId } : {}),
+    cookies: requestCookies,
+  });
+
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
-  const workflowId = parsedBusinessContext?.workflowId
-    ?? demoScenario?.contexts.executive.workflowId
-    ?? params.workflowId
-    ?? "COM-ORIG-9001";
-
-  if (demoScenario) {
-    workflowContextRepository.save(demoScenario.contexts.executive);
-  }
-
-  const repositoryBusinessContext = workflowContextRepository.findByWorkflowId(workflowId);
-  const resolvedBusinessContext = repositoryBusinessContext ?? parsedBusinessContext;
-
-  if (!repositoryBusinessContext && parsedBusinessContext) {
-    workflowContextRepository.save(parsedBusinessContext);
-  }
-
-  const hasSubmission = Boolean(resolvedBusinessContext?.opportunityId ?? params.opportunityId);
-  const submittedInstitution = params.institutionName ?? resolvedBusinessContext?.institutionId ?? "Al Noor Trading LLC";
-  const submittedOpportunityId = resolvedBusinessContext?.opportunityId ?? params.opportunityId ?? "OPP-7712";
-  const submittedProduct = params.product ?? "Receivables Finance";
-  const submittedTargetAmount = params.targetAmount ?? "USD 6,200,000";
-  const submittedTenor = params.tenor ?? "180 days";
-  const submittedStatus = resolvedBusinessContext?.opportunityLifecycle
-    ?? toOpportunityLifecycle(params.currentStatus, OpportunityLifecycle.SUBMITTED);
-  const submittedBy = resolvedBusinessContext?.currentOwner ?? params.submittedBy ?? "Relationship Manager";
-  const submittedAt = params.submissionDate ?? "2026-07-15T10:30:00Z";
-
-  const defaultBusinessContext = createBusinessContext({
-    institutionId: "INS-AL-NOOR",
-    opportunityId: submittedOpportunityId,
-    workflowId,
+  const repositoryBusinessContext = resolveBusinessContext(params.workflowId);
+  const businessContext = repositoryBusinessContext ?? parsedBusinessContext ?? createBusinessContext({
+    institutionId: runtime.identity.identity.identityId,
+    opportunityId: params.opportunityId ?? `OPP-${runtime.identity.identity.identityId}`,
+    workflowId: params.workflowId ?? `EXEC-${runtime.identity.identity.identityId}`,
     opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
-    currentOwner: submittedBy,
+    currentOwner: runtime.identity.identity.displayName ?? runtime.identity.identity.identityId,
     currentWorkspace: "executive",
   });
 
-  const mockApprovalQueue: ApprovalQueueItem[] = [
-    {
-      id: "queue-op-7712",
-      businessContext: createBusinessContext({
-        institutionId: "INS-AL-NOOR",
-        opportunityId: "OPP-7712",
-        workflowId: "COM-ORIG-9001",
-        opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
-        currentOwner: "Layla Rahman",
-        currentWorkspace: "executive",
-      }),
-      institutionName: "Al Noor Trading LLC",
-      opportunityReference: "OPP-7712",
-      requestedAmount: "USD 6,200,000",
-      requestedTenor: "180 days",
-      currentStatus: OpportunityLifecycle.UNDER_REVIEW,
-      submittedBy: "Layla Rahman",
-      submissionDate: "2026-07-14T16:00:00Z",
-      product: "Receivables Finance",
-    },
-    {
-      id: "queue-op-6640",
-      businessContext: createBusinessContext({
-        institutionId: "INS-NORTHSTAR",
-        opportunityId: "OPP-6640",
-        workflowId: "COM-ORIG-9002",
-        opportunityLifecycle: OpportunityLifecycle.UNDER_REVIEW,
-        currentOwner: "Executive Coverage Team",
-        currentWorkspace: "executive",
-      }),
-      institutionName: "Northstar Foods Trading",
-      opportunityReference: "OPP-6640",
-      requestedAmount: "USD 3,900,000",
-      requestedTenor: "120 days",
-      currentStatus: OpportunityLifecycle.UNDER_REVIEW,
-      submittedBy: "Executive Coverage Team",
-      submissionDate: "2026-07-13T09:15:00Z",
-      product: "Invoice Financing",
-    },
-  ];
+  if (parsedBusinessContext && !repositoryBusinessContext) {
+    workflowContextRepository.save(parsedBusinessContext);
+  }
 
-  const approvalQueue: ApprovalQueueItem[] = hasSubmission
-    ? [
-        {
-          id: `queue-${submittedOpportunityId.toLowerCase()}`,
-          businessContext: resolvedBusinessContext
-            ? canTransitionOpportunityLifecycle(
-                resolvedBusinessContext.opportunityLifecycle,
-                OpportunityLifecycle.UNDER_REVIEW,
-              )
-              ? transitionBusinessContext({
-                  context: resolvedBusinessContext,
-                  toLifecycle: OpportunityLifecycle.UNDER_REVIEW,
-                  toWorkspace: "executive",
-                  nextOwner: submittedBy,
-                })
-              : createBusinessContext({
-                  ...resolvedBusinessContext,
-                  currentWorkspace: "executive",
-                  currentOwner: submittedBy,
-                })
-            : defaultBusinessContext,
-          institutionName: submittedInstitution,
-          opportunityReference: submittedOpportunityId,
-          requestedAmount: submittedTargetAmount,
-          requestedTenor: submittedTenor,
-          currentStatus: submittedStatus,
-          submittedBy,
-          submissionDate: submittedAt,
-          product: submittedProduct,
-        },
-        ...mockApprovalQueue.filter((item) => item.opportunityReference !== submittedOpportunityId),
-      ]
-    : mockApprovalQueue;
+  if (!repositoryBusinessContext) {
+    workflowContextRepository.save(businessContext);
+  }
+
+  const timestamp = runtime.session.snapshot.metadata.lastRefreshedAt
+    ?? runtime.session.snapshot.metadata.issuedAt
+    ?? new Date().toISOString();
+  const workflowId = businessContext.workflowId;
+  const institutionContext = createLiveInstitutionContext({
+    runtime,
+    businessContext,
+    workflowId,
+    timestamp,
+  });
+  const summary = createInstitutionContextSummaryBuilder().build(institutionContext);
+  const workflow = createLiveWorkflowContext({
+    workflowId,
+  });
+  const digitalTwin: InstitutionalDigitalTwin = createInstitutionalDigitalTwin({
+    authentication: runtime,
+    workflow,
+    institutionContext,
+  });
+
+  const liveQueueContexts = workflowContextRepository.list();
+  const approvalQueue: ApprovalQueueItem[] = liveQueueContexts.length > 0
+    ? liveQueueContexts.map((context) => buildApprovalQueueItem({
+        context,
+        institutionName: context.institutionId === institutionContext.institution.identity.institutionId
+          ? institutionContext.institution.identity.legalName
+          : `Institution ${context.institutionId}`,
+        timestamp,
+      }))
+    : [buildApprovalQueueItem({
+        context: businessContext,
+        institutionName: institutionContext.institution.identity.legalName,
+        timestamp,
+      })];
 
   const selectedQueueId = params.queueId ?? approvalQueue[0]?.id;
   const selectedQueueItem = approvalQueue.find((item) => item.id === selectedQueueId) ?? approvalQueue[0];
@@ -420,18 +296,25 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
 
   workflowContextRepository.save(treasuryBusinessContext);
 
+  const executiveWorkspaceViewModel = createLiveExecutiveWorkspaceViewModel({
+    institutionContext,
+    digitalTwin,
+    summary,
+    approvalQueueSize: approvalQueue.length,
+  });
+
   const approvalQueueKpis: ExecutiveKpiItem[] = [
     {
       id: "queue-count",
       label: "Approval Queue",
       value: String(approvalQueue.length),
-      note: hasSubmission ? "New submission received from Commercial Workspace" : "Using temporary mock queue",
+      note: "Live workflow repository contexts",
     },
     {
       id: "queue-institution",
       label: "Institution",
       value: selectedQueueItem.institutionName,
-      note: "Originated from Relationship Manager workflow",
+      note: "Derived from the current runtime institution context",
     },
     {
       id: "queue-opportunity",
@@ -452,7 +335,7 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
       id: "decision-pending-submission",
       title: `${selectedQueueItem.institutionName} · ${selectedQueueItem.product}`,
       committee: "Executive Credit Committee",
-      outcome: "pending",
+      outcome: selectedQueueItem.currentStatus === OpportunityLifecycle.APPROVED ? "approved" : "pending",
       decidedAt: `Submitted ${selectedQueueItem.submissionDate}`,
       lifecycleStatus: selectedQueueItem.currentStatus,
     },
@@ -463,7 +346,7 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
       id: "alert-new-commercial-submission",
       category: "Approval Queue",
       message: `Submission ${selectedQueueItem.opportunityReference} is awaiting executive approval.`,
-      severity: "medium",
+      severity: selectedQueueItem.currentStatus === OpportunityLifecycle.UNDER_REVIEW ? "medium" : "low",
       updatedAt: selectedQueueItem.submissionDate,
     },
   ];
