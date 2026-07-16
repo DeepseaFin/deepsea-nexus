@@ -135,23 +135,66 @@ export function parseBusinessContext(value: string | undefined): BusinessContext
 
 export interface WorkflowContextRepository {
   save(context: BusinessContext): void;
+  saveMany(contexts: readonly BusinessContext[]): void;
   findByWorkflowId(workflowId: string): BusinessContext | undefined;
+  hasWorkflowId(workflowId: string): boolean;
+  deleteByWorkflowId(workflowId: string): boolean;
   list(): readonly BusinessContext[];
+  count(): number;
+  clear(): void;
 }
 
 class InMemoryWorkflowContextRepository implements WorkflowContextRepository {
   private readonly contexts = new Map<string, BusinessContext>();
 
+  private static normalizeWorkflowId(workflowId: string): string {
+    return workflowId.trim();
+  }
+
+  private static normalizeBusinessContext(context: BusinessContext): BusinessContext {
+    return createBusinessContext(context);
+  }
+
   save(context: BusinessContext): void {
-    this.contexts.set(context.workflowId, context);
+    const normalized = InMemoryWorkflowContextRepository.normalizeBusinessContext(context);
+    const workflowId = InMemoryWorkflowContextRepository.normalizeWorkflowId(normalized.workflowId);
+    this.contexts.set(workflowId, normalized);
+  }
+
+  saveMany(contexts: readonly BusinessContext[]): void {
+    for (const context of contexts) {
+      this.save(context);
+    }
   }
 
   findByWorkflowId(workflowId: string): BusinessContext | undefined {
-    return this.contexts.get(workflowId);
+    const normalizedWorkflowId = InMemoryWorkflowContextRepository.normalizeWorkflowId(workflowId);
+    const context = this.contexts.get(normalizedWorkflowId);
+    return context ? InMemoryWorkflowContextRepository.normalizeBusinessContext(context) : undefined;
+  }
+
+  hasWorkflowId(workflowId: string): boolean {
+    const normalizedWorkflowId = InMemoryWorkflowContextRepository.normalizeWorkflowId(workflowId);
+    return this.contexts.has(normalizedWorkflowId);
+  }
+
+  deleteByWorkflowId(workflowId: string): boolean {
+    const normalizedWorkflowId = InMemoryWorkflowContextRepository.normalizeWorkflowId(workflowId);
+    return this.contexts.delete(normalizedWorkflowId);
   }
 
   list(): readonly BusinessContext[] {
-    return Array.from(this.contexts.values());
+    return Object.freeze(
+      Array.from(this.contexts.values(), (context) => InMemoryWorkflowContextRepository.normalizeBusinessContext(context)),
+    );
+  }
+
+  count(): number {
+    return this.contexts.size;
+  }
+
+  clear(): void {
+    this.contexts.clear();
   }
 }
 
