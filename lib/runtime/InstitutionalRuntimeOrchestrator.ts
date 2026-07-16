@@ -7,12 +7,15 @@ import { InstitutionEventCategory } from '@/lib/institution/events/constants/Ins
 import { InstitutionEventType } from '@/lib/institution/events/constants/InstitutionEventType';
 import { institutionEventFactory } from '@/lib/institution/events/services/InstitutionEventFactory';
 import type { BusinessPassport } from '@/lib/business-passport/domain/BusinessPassport';
+import { knowledgeIdentityProjector } from '@/lib/business-passport/projections/KnowledgeIdentityProjector';
+import type { KnowledgeProjectionResult } from '@/lib/business-passport/projections/KnowledgeProjectionResult';
 import type { Institution } from '@/lib/institution/domain/Institution';
 import type { InstitutionHealth } from '@/lib/institution/health/domain/InstitutionHealth';
 import type { InstitutionIntelligence } from '@/lib/institution/intelligence/domain/InstitutionIntelligence';
 import type { Journey } from '@/lib/journey/domain/Journey';
 import type { KnowledgeCollection } from '@/lib/knowledge/domain/KnowledgeCollection';
 import { evidenceKnowledgeMapper } from '@/lib/knowledge/services/EvidenceKnowledgeMapper';
+import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from '@/lib/runtime/InstitutionalDigitalTwin';
 import {
   createBusinessContext,
   type BusinessContext,
@@ -87,6 +90,7 @@ export interface ExecuteInstitutionalRuntimeResult {
   readonly execution: WorkflowExecutionResult;
   readonly persistedWorkflowContext: BusinessContext;
   readonly institutionContext?: InstitutionContext;
+  readonly digitalTwin?: InstitutionalDigitalTwin;
 }
 
 export interface ExecuteOracleKnowledgePipelineResult {
@@ -95,7 +99,9 @@ export interface ExecuteOracleKnowledgePipelineResult {
   readonly evidenceValidation: EvidenceValidationResult;
   readonly knowledge: KnowledgeCollection;
   readonly businessPassport: BusinessPassport;
+  readonly passportProjection: KnowledgeProjectionResult;
   readonly institutionContext: InstitutionContext;
+  readonly digitalTwin: InstitutionalDigitalTwin;
   readonly persistedWorkflowContext: BusinessContext;
   readonly notificationPublished: boolean;
 }
@@ -181,6 +187,17 @@ function toInstitutionContextInput(execution: WorkflowExecutionResult): BuildIns
   };
 }
 
+function createDigitalTwin(input: {
+  readonly pipeline: InstitutionalRuntimePipeline;
+  readonly institutionContext: InstitutionContext;
+}): InstitutionalDigitalTwin {
+  return createInstitutionalDigitalTwin({
+    authentication: input.pipeline.authentication,
+    workflow: input.pipeline.workflow.context,
+    institutionContext: input.institutionContext,
+  });
+}
+
 function resolveWorkspaceForStep(step: WorkflowStep): BusinessWorkspace {
   void step;
   return 'institution';
@@ -252,6 +269,13 @@ async function resolveBusinessPassportEntity(input: {
   }
 
   return input.services.businessPassportService.create(input.workflowInput.businessPassport);
+}
+
+function refreshBusinessPassportFromKnowledge(input: {
+  readonly knowledge: KnowledgeCollection;
+  readonly businessPassport: BusinessPassport;
+}): KnowledgeProjectionResult {
+  return knowledgeIdentityProjector.project(input.knowledge, input.businessPassport);
 }
 
 async function publishRuntimeNotification(input: {
@@ -349,12 +373,19 @@ export function createInstitutionalRuntimeOrchestrator(
       const institutionContext = institutionContextInput
         ? this.provideInstitutionContext(institutionContextInput)
         : undefined;
+      const digitalTwin = institutionContext
+        ? createDigitalTwin({
+          pipeline,
+          institutionContext,
+        })
+        : undefined;
 
       return Object.freeze({
         pipeline,
         execution,
         persistedWorkflowContext,
         institutionContext,
+        digitalTwin,
       });
     },
 
@@ -387,6 +418,11 @@ export function createInstitutionalRuntimeOrchestrator(
         services,
         workflowInput: pipeline.workflow.input,
       });
+      const passportProjection = refreshBusinessPassportFromKnowledge({
+        knowledge,
+        businessPassport,
+      });
+      const refreshedBusinessPassport = passportProjection.updatedPassport;
       const institution = await resolveInstitutionEntity({
         services,
         workflowInput: pipeline.workflow.input,
@@ -406,7 +442,7 @@ export function createInstitutionalRuntimeOrchestrator(
         ...pipeline.workflow.input.intelligenceInput,
         institutionId: institution.identity.institutionId,
         health,
-        businessPassport,
+        businessPassport: refreshedBusinessPassport,
         journey,
         knowledge,
         events: [],
@@ -420,12 +456,16 @@ export function createInstitutionalRuntimeOrchestrator(
 
       const institutionContext = this.provideInstitutionContext({
         institution,
-        passport: businessPassport,
+        passport: refreshedBusinessPassport,
         journey,
         health,
         intelligence,
         workflowExecutionState: executionState,
         totalWorkflowSteps: CUSTOMER_ONBOARDING_WORKFLOW_STEPS.length,
+      });
+      const digitalTwin = createDigitalTwin({
+        pipeline,
+        institutionContext,
       });
 
       const persistedWorkflowContext = createBusinessContext({
@@ -450,8 +490,10 @@ export function createInstitutionalRuntimeOrchestrator(
         evidence,
         evidenceValidation,
         knowledge,
-        businessPassport,
+        businessPassport: refreshedBusinessPassport,
+        passportProjection,
         institutionContext,
+        digitalTwin,
         persistedWorkflowContext,
         notificationPublished,
       });
