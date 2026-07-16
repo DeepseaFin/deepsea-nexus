@@ -1,7 +1,22 @@
 import { randomUUID } from 'crypto';
+import type { Evidence } from '@/lib/evidence/domain/Evidence';
+import { evidenceFactory } from '@/lib/evidence/services/EvidenceFactory';
+import type { EvidenceValidationResult } from '@/lib/evidence/types/EvidenceValidationResult';
+import type { InstitutionEventPublisher } from '@/lib/institution/events/services/InstitutionEventPublisher';
+import { InstitutionEventCategory } from '@/lib/institution/events/constants/InstitutionEventCategory';
+import { InstitutionEventType } from '@/lib/institution/events/constants/InstitutionEventType';
+import { institutionEventFactory } from '@/lib/institution/events/services/InstitutionEventFactory';
+import type { BusinessPassport } from '@/lib/business-passport/domain/BusinessPassport';
+import type { Institution } from '@/lib/institution/domain/Institution';
+import type { InstitutionHealth } from '@/lib/institution/health/domain/InstitutionHealth';
+import type { InstitutionIntelligence } from '@/lib/institution/intelligence/domain/InstitutionIntelligence';
+import type { Journey } from '@/lib/journey/domain/Journey';
+import type { KnowledgeCollection } from '@/lib/knowledge/domain/KnowledgeCollection';
+import { evidenceKnowledgeMapper } from '@/lib/knowledge/services/EvidenceKnowledgeMapper';
 import {
   createBusinessContext,
   type BusinessContext,
+  type BusinessWorkspace,
 } from '@/lib/workflows/WorkflowContext';
 import type {
   BuildInstitutionContextInput,
@@ -17,7 +32,9 @@ import type {
 } from '@/lib/workflows/WorkflowContext';
 import type { WorkflowEngine } from '@/lib/workflows/WorkflowEngine';
 import type { WorkflowExecutionResult } from '@/lib/workflows/WorkflowExecutionResult';
-import type { WorkflowStep } from '@/lib/workflows/WorkflowStep';
+import { WorkflowRunState } from '@/lib/workflows/WorkflowExecutionState';
+import { WorkflowStep } from '@/lib/workflows/WorkflowStep';
+import { CUSTOMER_ONBOARDING_WORKFLOW_STEPS } from '@/lib/workflows/WorkflowStep';
 import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 import {
   createWorkflowRepositoryProvider,
@@ -72,16 +89,29 @@ export interface ExecuteInstitutionalRuntimeResult {
   readonly institutionContext?: InstitutionContext;
 }
 
+export interface ExecuteOracleKnowledgePipelineResult {
+  readonly pipeline: InstitutionalRuntimePipeline;
+  readonly evidence: Evidence;
+  readonly evidenceValidation: EvidenceValidationResult;
+  readonly knowledge: KnowledgeCollection;
+  readonly businessPassport: BusinessPassport;
+  readonly institutionContext: InstitutionContext;
+  readonly persistedWorkflowContext: BusinessContext;
+  readonly notificationPublished: boolean;
+}
+
 export interface InstitutionalRuntimeOrchestrator {
   initializeRuntime(input: InstitutionalRuntimePipelineInput): Promise<InstitutionalRuntimePipeline>;
   createPipeline(input: InstitutionalRuntimePipelineInput): Promise<InstitutionalRuntimePipeline>;
   executeCustomerOnboarding(input: ExecuteInstitutionalRuntimeInput): Promise<ExecuteInstitutionalRuntimeResult>;
+  executeOracleKnowledgePipeline(input: InstitutionalRuntimePipelineInput): Promise<ExecuteOracleKnowledgePipelineResult>;
   provideInstitutionContext(input: BuildInstitutionContextInput): InstitutionContext;
 }
 
 export interface InstitutionalRuntimeOrchestratorOptions {
   readonly repositoryProvider?: WorkflowRepositoryProvider;
   readonly institutionContextProvider?: InstitutionContextProvider;
+  readonly eventPublisher?: InstitutionEventPublisher;
 }
 
 function createWorkflowContextForPipeline(input: {
@@ -151,11 +181,119 @@ function toInstitutionContextInput(execution: WorkflowExecutionResult): BuildIns
   };
 }
 
+function resolveWorkspaceForStep(step: WorkflowStep): BusinessWorkspace {
+  void step;
+  return 'institution';
+}
+
+function createWorkflowExecutionStateSnapshot(input: {
+  readonly workflowInput: CustomerOnboardingWorkflowInput;
+  readonly executionId: string;
+  readonly currentStep: WorkflowStep;
+}): {
+  readonly workflowId: string;
+  readonly executionId: string;
+  readonly runState: WorkflowRunState;
+  readonly currentStep: WorkflowStep;
+  readonly completedSteps: readonly WorkflowStep[];
+  readonly pendingSteps: readonly WorkflowStep[];
+  readonly startedAt: string;
+  readonly completedAt: string | null;
+  readonly lastEventAt: string | null;
+} {
+  const currentStepIndex = CUSTOMER_ONBOARDING_WORKFLOW_STEPS.indexOf(input.currentStep);
+  const safeIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
+
+  return Object.freeze({
+    workflowId: input.workflowInput.workflowId,
+    executionId: input.executionId,
+    runState: WorkflowRunState.Completed,
+    currentStep: input.currentStep,
+    completedSteps: CUSTOMER_ONBOARDING_WORKFLOW_STEPS.slice(0, safeIndex + 1),
+    pendingSteps: CUSTOMER_ONBOARDING_WORKFLOW_STEPS.slice(safeIndex + 1),
+    startedAt: input.workflowInput.initiatedAt,
+    completedAt: new Date().toISOString(),
+    lastEventAt: new Date().toISOString(),
+  });
+}
+
+async function resolveInstitutionEntity(input: {
+  readonly services: WorkflowContextServices;
+  readonly workflowInput: CustomerOnboardingWorkflowInput;
+}): Promise<Institution> {
+  const institutionId = input.workflowInput.institution.identity.institutionId;
+  const existing = await input.services.institutionService.get(institutionId);
+  if (existing) {
+    return existing;
+  }
+
+  return input.services.institutionService.create(input.workflowInput.institution);
+}
+
+async function resolveJourneyEntity(input: {
+  readonly services: WorkflowContextServices;
+  readonly workflowInput: CustomerOnboardingWorkflowInput;
+}): Promise<Journey> {
+  const existing = await input.services.journeyService.getJourney(input.workflowInput.journey.journeyId);
+  if (existing) {
+    return existing;
+  }
+
+  return input.services.journeyService.startJourney(input.workflowInput.journey);
+}
+
+async function resolveBusinessPassportEntity(input: {
+  readonly services: WorkflowContextServices;
+  readonly workflowInput: CustomerOnboardingWorkflowInput;
+}) {
+  const existing = await input.services.businessPassportService.get(input.workflowInput.businessPassport.passportId);
+  if (existing) {
+    return existing;
+  }
+
+  return input.services.businessPassportService.create(input.workflowInput.businessPassport);
+}
+
+async function publishRuntimeNotification(input: {
+  readonly eventPublisher: InstitutionEventPublisher | undefined;
+  readonly institutionId: string;
+  readonly workflowInput: CustomerOnboardingWorkflowInput;
+  readonly evidenceId: string;
+}): Promise<boolean> {
+  if (!input.eventPublisher) {
+    return false;
+  }
+
+  await input.eventPublisher.publish(
+    institutionEventFactory.create(
+      {
+        eventId: randomUUID(),
+        institutionId: input.institutionId,
+        timestamp: new Date().toISOString(),
+        source: 'institutional-runtime-orchestrator',
+        correlationId: input.workflowInput.workflowId,
+        version: '1.0',
+        actor: input.workflowInput.initiatedBy,
+      },
+      InstitutionEventType.KnowledgeLinked,
+      InstitutionEventCategory.Intelligence,
+      {
+        institutionId: input.institutionId,
+        changedFields: ['evidence', 'knowledge', 'business_passport', 'institution_context'],
+        reason: `oracle_pipeline:${input.evidenceId}`,
+      },
+    ),
+  );
+
+  return true;
+}
+
 export function createInstitutionalRuntimeOrchestrator(
   options: InstitutionalRuntimeOrchestratorOptions = {},
 ): InstitutionalRuntimeOrchestrator {
   const repositoryProvider = options.repositoryProvider ?? createWorkflowRepositoryProvider();
   const institutionContextProvider = options.institutionContextProvider ?? createInstitutionContextProvider();
+  const eventPublisher = options.eventPublisher;
 
   return {
     async initializeRuntime(
@@ -217,6 +355,105 @@ export function createInstitutionalRuntimeOrchestrator(
         execution,
         persistedWorkflowContext,
         institutionContext,
+      });
+    },
+
+    async executeOracleKnowledgePipeline(
+      input: InstitutionalRuntimePipelineInput,
+    ): Promise<ExecuteOracleKnowledgePipelineResult> {
+      const pipeline = await this.initializeRuntime(input);
+      const services = pipeline.workflow.services;
+
+      await services.oracleWorkflow.processDocument(pipeline.workflow.input.oracleDocument);
+
+      const evidence = evidenceFactory.createFromOracleDocument(
+        pipeline.workflow.input.oracleDocument,
+      );
+      const evidenceValidation = services.evidenceService.validateEvidence(
+        evidence,
+        pipeline.workflow.input.initiatedAt,
+      );
+
+      const knowledgeTransformation = evidenceKnowledgeMapper.mapEvidence(evidence);
+      const knowledge = services.knowledgeService.createCollection(
+        knowledgeTransformation.knowledgeCollection.facts,
+      );
+      services.knowledgeService.validateCollection(
+        knowledge,
+        pipeline.workflow.input.initiatedAt,
+      );
+
+      const businessPassport = await resolveBusinessPassportEntity({
+        services,
+        workflowInput: pipeline.workflow.input,
+      });
+      const institution = await resolveInstitutionEntity({
+        services,
+        workflowInput: pipeline.workflow.input,
+      });
+      const journey = await resolveJourneyEntity({
+        services,
+        workflowInput: pipeline.workflow.input,
+      });
+
+      const health: InstitutionHealth = services.institutionHealthService.calculate(
+        institution.identity.institutionId,
+        pipeline.workflow.input.healthDimensions,
+        pipeline.workflow.input.initiatedAt,
+      );
+
+      const intelligence: InstitutionIntelligence = services.institutionIntelligenceService.build({
+        ...pipeline.workflow.input.intelligenceInput,
+        institutionId: institution.identity.institutionId,
+        health,
+        businessPassport,
+        journey,
+        knowledge,
+        events: [],
+      });
+
+      const executionState = createWorkflowExecutionStateSnapshot({
+        workflowInput: pipeline.workflow.input,
+        executionId: pipeline.workflow.context.executionId,
+        currentStep: WorkflowStep.InstitutionIntelligence,
+      });
+
+      const institutionContext = this.provideInstitutionContext({
+        institution,
+        passport: businessPassport,
+        journey,
+        health,
+        intelligence,
+        workflowExecutionState: executionState,
+        totalWorkflowSteps: CUSTOMER_ONBOARDING_WORKFLOW_STEPS.length,
+      });
+
+      const persistedWorkflowContext = createBusinessContext({
+        institutionId: institution.identity.institutionId,
+        opportunityId: String(pipeline.workflow.input.businessPassport.passportId),
+        workflowId: pipeline.workflow.input.workflowId,
+        opportunityLifecycle: OpportunityLifecycle.DRAFT,
+        currentOwner: pipeline.workflow.input.initiatedBy,
+        currentWorkspace: resolveWorkspaceForStep(WorkflowStep.InstitutionIntelligence),
+      });
+      pipeline.repositories.workflowContextRepository.save(persistedWorkflowContext);
+
+      const notificationPublished = await publishRuntimeNotification({
+        eventPublisher,
+        institutionId: institution.identity.institutionId,
+        workflowInput: pipeline.workflow.input,
+        evidenceId: evidence.evidenceId.toString(),
+      });
+
+      return Object.freeze({
+        pipeline,
+        evidence,
+        evidenceValidation,
+        knowledge,
+        businessPassport,
+        institutionContext,
+        persistedWorkflowContext,
+        notificationPublished,
       });
     },
 
