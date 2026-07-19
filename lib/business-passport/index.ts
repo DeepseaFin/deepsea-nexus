@@ -34,6 +34,7 @@ export * from "@/lib/business-passport/repositories/InMemoryBusinessPassportRepo
 
 export * from "@/lib/business-passport/services/BusinessPassportService";
 export * from "@/lib/business-passport/services/BusinessPassportApplicationService";
+export * from "@/lib/business-passport/services/BusinessPassportIntegrationPipeline";
 export * from "@/lib/business-passport/services/BusinessPassportProfileService";
 export * from "@/lib/business-passport/services/IdentityProfileValidator";
 export * from "@/lib/business-passport/services/InstitutionProfileValidator";
