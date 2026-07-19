@@ -1,9 +1,7 @@
 import type { EventEnvelope } from "@/lib/business-passport/events/EventEnvelope";
 import {
   createInProcessEventRuntime as createPlatformInProcessEventRuntime,
-  createInProcessEventRuntimePublisher as createPlatformInProcessEventRuntimePublisher,
   type InProcessEventRuntime as PlatformInProcessEventRuntime,
-  type InProcessEventRuntimePublisher as PlatformInProcessEventRuntimePublisher,
 } from "@/lib/platform/events/InProcessEventRuntime";
 
 export type InProcessEventHandler<TType extends string = string> = (
@@ -54,24 +52,9 @@ export function createInProcessEventRuntime<TType extends string = string>(): In
 export function createInProcessEventRuntimePublisher<TType extends string = string>(
   runtime: InProcessEventRuntime<TType>,
 ): InProcessEventRuntimePublisher<TType> {
-  const platformPublisher: PlatformInProcessEventRuntimePublisher<TType> = createPlatformInProcessEventRuntimePublisher({
-    registerHandler(eventType, handler) {
-      return runtime.registerHandler(eventType, (event) => handler(event));
-    },
-    publish(event) {
-      return runtime.publish(event as EventEnvelope<TType, unknown>);
-    },
-    clearHandlers(eventType) {
-      runtime.clearHandlers(eventType);
-    },
-    handlerCount(eventType) {
-      return runtime.handlerCount(eventType);
-    },
-  });
-
   return {
     publish(event: EventEnvelope<TType, unknown>): Promise<void> {
-      return platformPublisher.publish(event);
+      return runtime.publish(event);
     },
   };
 }

@@ -2,9 +2,7 @@ import type { EventEnvelope } from "@/lib/business-passport/events/EventEnvelope
 import type { ProjectionDefinition } from "@/lib/business-passport/projections/ProjectionDefinition";
 import {
   createInProcessProjectionRuntime as createPlatformInProcessProjectionRuntime,
-  createInProcessProjectionRuntimeExecutor as createPlatformInProcessProjectionRuntimeExecutor,
   type InProcessProjectionRuntime as PlatformInProcessProjectionRuntime,
-  type InProcessProjectionRuntimeExecutor as PlatformInProcessProjectionRuntimeExecutor,
   type RuntimeProjectionDefinition,
 } from "@/lib/platform/projections/InProcessProjectionRuntime";
 
@@ -74,34 +72,9 @@ export function createInProcessProjectionRuntime<
 export function createInProcessProjectionRuntimeExecutor<
   TContext extends ProjectionExecutionContext = ProjectionExecutionContext,
 >(runtime: InProcessProjectionRuntime<TContext>): InProcessProjectionRuntimeExecutor<TContext> {
-  const platformExecutor: PlatformInProcessProjectionRuntimeExecutor<TContext> =
-    createPlatformInProcessProjectionRuntimeExecutor({
-      registerProjection(definition, handler) {
-        return runtime.registerProjection(
-          {
-            projectionName: definition.projectionName,
-            description: "compatibility-runtime-projection",
-            supportedEvents: definition.supportedEvents,
-            dependencies: [],
-            produces: [],
-          },
-          (context) => handler(context),
-        );
-      },
-      project(context) {
-        return runtime.project(context);
-      },
-      clearProjections(projectionName) {
-        runtime.clearProjections(projectionName);
-      },
-      projectionCount(projectionName) {
-        return runtime.projectionCount(projectionName);
-      },
-    });
-
   return {
     project(context: TContext): Promise<void> {
-      return platformExecutor.project(context);
+      return runtime.project(context);
     },
   };
 }

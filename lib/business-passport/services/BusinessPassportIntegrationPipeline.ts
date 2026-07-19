@@ -116,6 +116,9 @@ export interface BusinessPassportIntegrationPipeline {
 export function createBusinessPassportIntegrationPipeline(
   dependencies: BusinessPassportIntegrationPipelineDependencies = {},
 ): BusinessPassportIntegrationPipeline {
+  // Business Passport now exercises the extracted platform kernel through
+  // platform contracts, platform event/projection runtimes, and the generic
+  // integration pipeline, while preserving its bounded-context API surface.
   const repository = dependencies.repository ?? createInMemoryBusinessPassportRepository();
   const eventRuntime = dependencies.eventRuntime ?? createInProcessEventRuntime<string>();
   const projectionRuntime = dependencies.projectionRuntime ?? createInProcessProjectionRuntime<ProjectionContext>();
