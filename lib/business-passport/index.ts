@@ -15,6 +15,7 @@ export * from "@/lib/business-passport/events/EventEnvelope";
 export * from "@/lib/business-passport/events/EventMetadata";
 export * from "@/lib/business-passport/events/EventRegistry";
 export * from "@/lib/business-passport/events/EventVersion";
+export * from "@/lib/business-passport/events/InProcessEventRuntime";
 
 export * from "@/lib/business-passport/projections/BusinessPassportProjection";
 export * from "@/lib/business-passport/projections/KnowledgeIdentityProjector";
