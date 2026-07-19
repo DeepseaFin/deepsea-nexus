@@ -23,6 +23,7 @@ import type { InstitutionalPulse } from "@/lib/business-passport/types/Instituti
 import type { KnowledgeDensity } from "@/lib/business-passport/types/KnowledgeDensity";
 import type { PassportMaturity } from "@/lib/business-passport/types/PassportMaturity";
 import type { PassportId } from "@/lib/business-passport/value-objects/PassportId";
+import type { AggregateRoot } from "@/lib/platform/contracts/AggregateRoot";
 
 export interface BusinessPassportProfiles {
   readonly identityProfile: IdentityProfile;
@@ -41,7 +42,8 @@ export interface BusinessPassportProfiles {
   readonly versionProfile: VersionProfile;
 }
 
-export interface BusinessPassport {
+export interface BusinessPassport extends AggregateRoot<PassportId> {
+  // Backward-compatible identity field preserved for existing consumers.
   readonly passportId: PassportId;
   readonly status: PassportStatus;
   readonly lifecycle: PassportLifecycle;

@@ -126,6 +126,10 @@ export class DefaultBusinessPassportApplicationService implements BusinessPasspo
     this.eventPublisher = dependencies.eventPublisher;
   }
 
+  async execute(input: CreateBusinessPassportInput): Promise<BusinessPassport> {
+    return this.create(input);
+  }
+
   async create(input: CreateBusinessPassportInput): Promise<BusinessPassport> {
     const validatedAt = input.metadata.audit.updatedAt;
     const validations = this.profileService.validateProfiles({
@@ -141,6 +145,8 @@ export class DefaultBusinessPassportApplicationService implements BusinessPasspo
     // Orchestration decision: create uses existing contracts and defaults status/lifecycle
     // because the create input contract does not currently carry these two fields.
     const passport: BusinessPassport = {
+      id: input.passportId,
+      version: input.metadata.version.aggregateVersion,
       passportId: input.passportId,
       status: PassportStatus.Draft,
       lifecycle: PassportLifecycle.Onboarding,

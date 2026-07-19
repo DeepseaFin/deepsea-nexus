@@ -8,6 +8,7 @@ import type { InstitutionalPulse } from "@/lib/business-passport/types/Instituti
 import type { KnowledgeDensity } from "@/lib/business-passport/types/KnowledgeDensity";
 import type { PassportMaturity } from "@/lib/business-passport/types/PassportMaturity";
 import type { PassportId } from "@/lib/business-passport/value-objects/PassportId";
+import type { ApplicationService } from "@/lib/platform/contracts/ApplicationService";
 
 export interface CreateBusinessPassportInput {
   readonly passportId: PassportId;
@@ -20,7 +21,8 @@ export interface CreateBusinessPassportInput {
   readonly maturity: PassportMaturity;
 }
 
-export interface BusinessPassportService {
+export interface BusinessPassportService
+  extends ApplicationService<CreateBusinessPassportInput, BusinessPassport> {
   create(input: CreateBusinessPassportInput): Promise<BusinessPassport>;
   get(passportId: PassportId): Promise<BusinessPassport | null>;
   updateStatus(passportId: PassportId, status: PassportStatus, updatedBy: string): Promise<BusinessPassport>;
