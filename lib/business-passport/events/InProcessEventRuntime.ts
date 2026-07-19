@@ -1,4 +1,10 @@
 import type { EventEnvelope } from "@/lib/business-passport/events/EventEnvelope";
+import {
+  createInProcessEventRuntime as createPlatformInProcessEventRuntime,
+  createInProcessEventRuntimePublisher as createPlatformInProcessEventRuntimePublisher,
+  type InProcessEventRuntime as PlatformInProcessEventRuntime,
+  type InProcessEventRuntimePublisher as PlatformInProcessEventRuntimePublisher,
+} from "@/lib/platform/events/InProcessEventRuntime";
 
 export type InProcessEventHandler<TType extends string = string> = (
   event: EventEnvelope<TType, unknown>,
@@ -17,84 +23,55 @@ export interface InProcessEventRuntimePublisher<TType extends string = string> {
 
 export class DefaultInProcessEventRuntime<TType extends string = string>
   implements InProcessEventRuntime<TType>, InProcessEventRuntimePublisher<TType> {
-  private readonly handlersByType = new Map<TType, Set<InProcessEventHandler<TType>>>();
+  private readonly runtime: PlatformInProcessEventRuntime<TType>;
+
+  constructor(runtime?: PlatformInProcessEventRuntime<TType>) {
+    this.runtime = runtime ?? createPlatformInProcessEventRuntime<TType>();
+  }
 
   registerHandler(eventType: TType, handler: InProcessEventHandler<TType>): () => void {
-    const handlers = this.handlersByType.get(eventType) ?? new Set<InProcessEventHandler<TType>>();
-    handlers.add(handler);
-    this.handlersByType.set(eventType, handlers);
-
-    return () => {
-      const registered = this.handlersByType.get(eventType);
-      if (!registered) {
-        return;
-      }
-
-      registered.delete(handler);
-      if (registered.size === 0) {
-        this.handlersByType.delete(eventType);
-      }
-    };
+    return this.runtime.registerHandler(eventType, (event) => handler(event as EventEnvelope<TType, unknown>));
   }
 
   async publish(event: EventEnvelope<TType, unknown>): Promise<void> {
-    const handlers = Array.from(this.handlersByType.get(event.type) ?? []);
-
-    if (handlers.length === 0) {
-      return;
-    }
-
-    // Runtime responsibility: fan out one published event to all matching handlers,
-    // while preserving async behavior and collecting failures for a single throw path.
-    const results = await Promise.allSettled(handlers.map((handler) => handler(event)));
-    const failures = results
-      .filter((result): result is PromiseRejectedResult => result.status === "rejected")
-      .map((result) => result.reason);
-
-    if (failures.length === 0) {
-      return;
-    }
-
-    const reasons = failures
-      .map((reason, index) => `#${index + 1}: ${reason instanceof Error ? reason.message : String(reason)}`)
-      .join("; ");
-
-    throw new Error(`In-process event dispatch failed for ${event.type}. ${reasons}`);
+    await this.runtime.publish(event);
   }
 
   clearHandlers(eventType?: TType): void {
-    if (eventType) {
-      this.handlersByType.delete(eventType);
-      return;
-    }
-
-    this.handlersByType.clear();
+    this.runtime.clearHandlers(eventType);
   }
 
   handlerCount(eventType?: TType): number {
-    if (eventType) {
-      return this.handlersByType.get(eventType)?.size ?? 0;
-    }
-
-    let total = 0;
-    for (const handlers of this.handlersByType.values()) {
-      total += handlers.size;
-    }
-
-    return total;
+    return this.runtime.handlerCount(eventType);
   }
 }
 
 export function createInProcessEventRuntime<TType extends string = string>(): InProcessEventRuntime<TType> {
-  return new DefaultInProcessEventRuntime<TType>();
+  const runtime = createPlatformInProcessEventRuntime<TType>();
+  return new DefaultInProcessEventRuntime<TType>(runtime);
 }
 
 export function createInProcessEventRuntimePublisher<TType extends string = string>(
   runtime: InProcessEventRuntime<TType>,
 ): InProcessEventRuntimePublisher<TType> {
+  const platformPublisher: PlatformInProcessEventRuntimePublisher<TType> = createPlatformInProcessEventRuntimePublisher({
+    registerHandler(eventType, handler) {
+      return runtime.registerHandler(eventType, (event) => handler(event));
+    },
+    publish(event) {
+      return runtime.publish(event as EventEnvelope<TType, unknown>);
+    },
+    clearHandlers(eventType) {
+      runtime.clearHandlers(eventType);
+    },
+    handlerCount(eventType) {
+      return runtime.handlerCount(eventType);
+    },
+  });
+
   return {
     publish(event: EventEnvelope<TType, unknown>): Promise<void> {
-      return runtime.publish(event);
+      return platformPublisher.publish(event);
     },
   };
 }
