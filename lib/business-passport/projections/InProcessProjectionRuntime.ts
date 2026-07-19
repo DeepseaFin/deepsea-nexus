@@ -1,5 +1,12 @@
 import type { EventEnvelope } from "@/lib/business-passport/events/EventEnvelope";
 import type { ProjectionDefinition } from "@/lib/business-passport/projections/ProjectionDefinition";
+import {
+  createInProcessProjectionRuntime as createPlatformInProcessProjectionRuntime,
+  createInProcessProjectionRuntimeExecutor as createPlatformInProcessProjectionRuntimeExecutor,
+  type InProcessProjectionRuntime as PlatformInProcessProjectionRuntime,
+  type InProcessProjectionRuntimeExecutor as PlatformInProcessProjectionRuntimeExecutor,
+  type RuntimeProjectionDefinition,
+} from "@/lib/platform/projections/InProcessProjectionRuntime";
 
 export interface ProjectionExecutionContext<TType extends string = string, TPayload = unknown> {
   readonly triggeringEvent: EventEnvelope<TType, TPayload>;
@@ -22,98 +29,79 @@ export interface InProcessProjectionRuntimeExecutor<
   project(context: TContext): Promise<void>;
 }
 
-interface RegisteredProjection<TContext extends ProjectionExecutionContext> {
-  readonly definition: ProjectionDefinition;
-  readonly handler: InProcessProjectionHandler<TContext>;
-}
-
 export class DefaultInProcessProjectionRuntime<TContext extends ProjectionExecutionContext = ProjectionExecutionContext>
   implements InProcessProjectionRuntime<TContext>, InProcessProjectionRuntimeExecutor<TContext> {
-  private readonly projectionsByName = new Map<string, RegisteredProjection<TContext>>();
+  private readonly runtime: PlatformInProcessProjectionRuntime<TContext>;
 
-  registerProjection(definition: ProjectionDefinition, handler: InProcessProjectionHandler<TContext>): () => void {
-    this.projectionsByName.set(definition.projectionName, {
-      definition,
-      handler,
-    });
+  constructor(runtime?: PlatformInProcessProjectionRuntime<TContext>) {
+    this.runtime = runtime ?? createPlatformInProcessProjectionRuntime<TContext>();
+  }
 
-    return () => {
-      const registered = this.projectionsByName.get(definition.projectionName);
-      if (!registered || registered.handler !== handler) {
-        return;
-      }
-
-      this.projectionsByName.delete(definition.projectionName);
+  private static toRuntimeDefinition(definition: ProjectionDefinition): RuntimeProjectionDefinition {
+    return {
+      projectionName: definition.projectionName,
+      supportedEvents: definition.supportedEvents,
     };
   }
 
-  async project(context: TContext): Promise<void> {
-    const eventType = context.triggeringEvent.type;
-    const matchingProjections = Array.from(this.projectionsByName.values()).filter((projection) =>
-      projection.definition.supportedEvents.includes(eventType),
+  registerProjection(definition: ProjectionDefinition, handler: InProcessProjectionHandler<TContext>): () => void {
+    return this.runtime.registerProjection(
+      DefaultInProcessProjectionRuntime.toRuntimeDefinition(definition),
+      (context) => handler(context),
     );
+  }
 
-    if (matchingProjections.length === 0) {
-      return;
-    }
-
-    // Runtime responsibility: execute all matching projections for one event,
-    // keep each projection isolated, and aggregate failures after fan-out completes.
-    const results = await Promise.allSettled(matchingProjections.map((projection) => projection.handler(context)));
-    const failures = results.reduce<Array<{ projectionName: string; reason: unknown }>>((accumulator, result, index) => {
-      if (result.status !== "rejected") {
-        return accumulator;
-      }
-
-      const projectionName = matchingProjections[index]?.definition.projectionName ?? "unknown-projection";
-      accumulator.push({ projectionName, reason: result.reason });
-      return accumulator;
-    }, []);
-
-    if (failures.length === 0) {
-      return;
-    }
-
-    const reasons = failures
-      .map(({ projectionName, reason }, index) => {
-        const message = reason instanceof Error ? reason.message : String(reason);
-        return `#${index + 1} [${projectionName}]: ${message}`;
-      })
-      .join("; ");
-
-    throw new Error(`In-process projection execution failed for event ${eventType}. ${reasons}`);
+  async project(context: TContext): Promise<void> {
+    await this.runtime.project(context);
   }
 
   clearProjections(projectionName?: string): void {
-    if (projectionName) {
-      this.projectionsByName.delete(projectionName);
-      return;
-    }
-
-    this.projectionsByName.clear();
+    this.runtime.clearProjections(projectionName);
   }
 
   projectionCount(projectionName?: string): number {
-    if (projectionName) {
-      return this.projectionsByName.has(projectionName) ? 1 : 0;
-    }
-
-    return this.projectionsByName.size;
+    return this.runtime.projectionCount(projectionName);
   }
 }
 
 export function createInProcessProjectionRuntime<
   TContext extends ProjectionExecutionContext = ProjectionExecutionContext,
 >(): InProcessProjectionRuntime<TContext> {
-  return new DefaultInProcessProjectionRuntime<TContext>();
+  const runtime = createPlatformInProcessProjectionRuntime<TContext>();
+  return new DefaultInProcessProjectionRuntime<TContext>(runtime);
 }
 
 export function createInProcessProjectionRuntimeExecutor<
   TContext extends ProjectionExecutionContext = ProjectionExecutionContext,
 >(runtime: InProcessProjectionRuntime<TContext>): InProcessProjectionRuntimeExecutor<TContext> {
+  const platformExecutor: PlatformInProcessProjectionRuntimeExecutor<TContext> =
+    createPlatformInProcessProjectionRuntimeExecutor({
+      registerProjection(definition, handler) {
+        return runtime.registerProjection(
+          {
+            projectionName: definition.projectionName,
+            description: "compatibility-runtime-projection",
+            supportedEvents: definition.supportedEvents,
+            dependencies: [],
+            produces: [],
+          },
+          (context) => handler(context),
+        );
+      },
+      project(context) {
+        return runtime.project(context);
+      },
+      clearProjections(projectionName) {
+        runtime.clearProjections(projectionName);
+      },
+      projectionCount(projectionName) {
+        return runtime.projectionCount(projectionName);
+      },
+    });
+
   return {
     project(context: TContext): Promise<void> {
-      return runtime.project(context);
+      return platformExecutor.project(context);
     },
   };
 }
