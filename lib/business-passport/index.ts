@@ -30,6 +30,7 @@ export * from "@/lib/business-passport/projections/BusinessPassportProjectionSer
 export * from "@/lib/business-passport/repositories/BusinessPassportRepository";
 
 export * from "@/lib/business-passport/services/BusinessPassportService";
+export * from "@/lib/business-passport/services/BusinessPassportApplicationService";
 export * from "@/lib/business-passport/services/BusinessPassportProfileService";
 export * from "@/lib/business-passport/services/IdentityProfileValidator";
 export * from "@/lib/business-passport/services/InstitutionProfileValidator";
