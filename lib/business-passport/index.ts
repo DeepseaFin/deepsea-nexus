@@ -27,6 +27,7 @@ export * from "@/lib/business-passport/projections/ProjectionResult";
 export * from "@/lib/business-passport/projections/ProjectionRegistry";
 export * from "@/lib/business-passport/projections/ProjectionAssembler";
 export * from "@/lib/business-passport/projections/BusinessPassportProjectionService";
+export * from "@/lib/business-passport/projections/InProcessProjectionRuntime";
 
 export * from "@/lib/business-passport/repositories/BusinessPassportRepository";
 
