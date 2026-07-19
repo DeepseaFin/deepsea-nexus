@@ -28,6 +28,9 @@ import type {
 import type { PassportId } from "@/lib/business-passport/value-objects/PassportId";
 import { PassportId as PassportIdValueObject } from "@/lib/business-passport/value-objects/PassportId";
 import type { KnowledgeCollection } from "@/lib/knowledge/domain/KnowledgeCollection";
+import {
+  createInProcessIntegrationPipeline,
+} from "@/lib/platform/integration/InProcessIntegrationPipeline";
 
 const KNOWLEDGE_IDENTITY_PROJECTION: ProjectionDefinition = {
   projectionName: "knowledge_identity_projection",
@@ -130,22 +133,38 @@ export function createBusinessPassportIntegrationPipeline(
     dependencies.onKnowledgeProjectionApplied?.(result);
   });
 
-  for (const eventType of KNOWLEDGE_IDENTITY_PROJECTION.supportedEvents) {
-    eventRuntime.registerHandler(eventType, async (event) => {
-      const context = toProjectionContext(event);
-      if (!context) {
-        return;
-      }
-
-      // Pipeline responsibility: bridge published domain events into projection
-      // execution context while keeping orchestration outside domain entities.
-      await projectionRuntime.project(context);
-    });
-  }
-
   const service = createBusinessPassportApplicationService({
     repository,
     eventPublisher: createInProcessEventRuntimePublisher(eventRuntime),
+  });
+
+  const platformPipeline = createInProcessIntegrationPipeline<
+    CreateBusinessPassportInput,
+    BusinessPassport,
+    PassportId,
+    string,
+    EventEnvelope<string, unknown>,
+    ProjectionContext
+  >({
+    operation: {
+      execute(input) {
+        return service.create(input);
+      },
+      get(passportId) {
+        return service.get(passportId);
+      },
+    },
+    repository,
+    eventRuntime,
+    projectionExecutor: {
+      project(context) {
+        return projectionRuntime.project(context);
+      },
+    },
+    eventToProjection: {
+      supportedEventTypes: KNOWLEDGE_IDENTITY_PROJECTION.supportedEvents,
+      toProjectionContext,
+    },
   });
 
   return {
@@ -157,11 +176,11 @@ export function createBusinessPassportIntegrationPipeline(
     // End-to-end flow: application service create -> repository save ->
     // event publication -> event runtime -> projection runtime -> knowledge projection.
     async create(input: CreateBusinessPassportInput): Promise<BusinessPassport> {
-      return service.create(input);
+      return platformPipeline.execute(input);
     },
 
     async get(passportId: PassportId): Promise<BusinessPassport | null> {
-      return service.get(passportId);
+      return platformPipeline.get(passportId);
     },
   };
 }
