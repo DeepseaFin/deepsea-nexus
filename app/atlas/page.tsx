@@ -15,6 +15,7 @@ export default function AtlasPage() {
       actions={[
         { label: 'Open Dashboard', href: '/atlas/dashboard' },
         { label: 'Open Deals', href: '/atlas/deals' },
+        { label: 'Open Institution Home (Preview)', href: '/atlas/institution-home' },
         { label: 'Open Work Queue', href: '/atlas/work-queue' },
       ]}
       kpis={[
