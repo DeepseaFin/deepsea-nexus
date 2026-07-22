@@ -85,8 +85,8 @@ export default function JourneyWorkspace({
   const isCompleted = workspace.journeyState.status === JourneyStatus.Completed;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1920px] space-y-3 pb-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <JourneyHeader journeyState={workspace.journeyState} completionPercentage={workspace.progress.completionPercentage} />
 
         <JourneyNavigation
@@ -99,7 +99,7 @@ export default function JourneyWorkspace({
           onCompleteStep={completeCurrentStep}
         />
 
-        <div className="grid gap-2 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+        <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_360px] 2xl:gap-5">
           <JourneySidebar
             steps={workspace.steps}
             currentStep={workspace.journeyState.currentStep}
@@ -107,7 +107,7 @@ export default function JourneyWorkspace({
             status={workspace.journeyState.status}
           />
 
-          <main className="space-y-2">
+          <main className="space-y-4">
             <JourneyStepCard journeyState={workspace.journeyState} />
             <JourneyProgress progress={workspace.progress} />
             <BusinessPassportSummary passport={businessPassport} />

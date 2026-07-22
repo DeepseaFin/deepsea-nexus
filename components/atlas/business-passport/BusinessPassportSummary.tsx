@@ -16,14 +16,21 @@ interface BusinessPassportSummaryProps {
 export default function BusinessPassportSummary({ passport, className }: BusinessPassportSummaryProps) {
   return (
     <SectionCard
-      title="Business Passport Identity"
+      title="Business Passport"
       icon={BadgeCheck}
       badge={{
-        label: 'Read Only',
+        label: 'Primary',
         variant: 'info',
+      }}
+      action={{
+        label: 'Action Placeholder',
+        onClick: () => {},
       }}
       className={className}
     >
+      <p className="mb-4 text-sm text-slate-400">
+        Canonical institutional identity snapshot used by all downstream operational capabilities.
+      </p>
       <BusinessIdentityCard passport={passport} />
     </SectionCard>
   );
