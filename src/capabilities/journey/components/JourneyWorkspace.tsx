@@ -2,9 +2,11 @@
 
 import EmptyState from "@/components/atlas/design-system/EmptyState";
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
+import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
 import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
 import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
 import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
+import type { ComponentProps } from "react";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
@@ -21,6 +23,8 @@ type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metad
   };
 };
 
+type JourneyWorkspaceEvidence = ComponentProps<typeof EvidencePanel>["evidence"];
+
 type JourneyWorkspaceProps = {
   journeyState: JourneyState;
   steps: readonly JourneyStep[];
@@ -30,6 +34,7 @@ type JourneyWorkspaceProps = {
   actions: readonly string[];
   timeline: readonly JourneyTimelineEvent[];
   businessPassport: JourneyWorkspaceBusinessPassport;
+  evidence: JourneyWorkspaceEvidence;
 };
 
 export default function JourneyWorkspace({
@@ -41,6 +46,7 @@ export default function JourneyWorkspace({
   actions,
   timeline,
   businessPassport,
+  evidence,
 }: JourneyWorkspaceProps) {
   const {
     workspace,
@@ -103,6 +109,7 @@ export default function JourneyWorkspace({
             <JourneyStepCard journeyState={workspace.journeyState} />
             <JourneyProgress progress={workspace.progress} />
             <BusinessPassportSummary passport={businessPassport} />
+            <EvidencePanel evidence={evidence} title="Evidence" />
             <JourneyActionBar
               actions={workspace.actions}
               isPaused={isPaused}

@@ -14,6 +14,8 @@ import {
 import { PassportStatus } from "@/lib/business-passport/constants/PassportStatus";
 import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
 import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
+import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
+import type { ComponentProps } from "react";
 import JourneyWorkspace from "@/src/capabilities/journey/components/JourneyWorkspace";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
@@ -21,6 +23,8 @@ type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metad
     readonly identityProfile: IdentityProfile;
   };
 };
+
+type JourneyWorkspaceEvidence = ComponentProps<typeof EvidencePanel>["evidence"];
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -156,6 +160,30 @@ const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = {
   },
 };
 
+const EVIDENCE: JourneyWorkspaceEvidence = [
+  {
+    id: "ev-001",
+    title: "Certificate of Incorporation",
+    description: "Verified legal incorporation artifact aligned with identity profile.",
+    source: "Document Collection",
+    confidence: 91,
+  },
+  {
+    id: "ev-002",
+    title: "Trade License",
+    description: "Current operating license extracted and normalized for review.",
+    source: "ORACLE Processing",
+    confidence: 87,
+  },
+  {
+    id: "ev-003",
+    title: "Board Resolution",
+    description: "Supporting governance artifact pending final completeness confirmation.",
+    source: "Evidence Validation",
+    confidence: 79,
+  },
+];
+
 export default function JourneyPage() {
   return (
     <JourneyWorkspace
@@ -167,6 +195,7 @@ export default function JourneyPage() {
       actions={ACTIONS}
       timeline={TIMELINE}
       businessPassport={BUSINESS_PASSPORT}
+      evidence={EVIDENCE}
     />
   );
 }
