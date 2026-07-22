@@ -17,6 +17,7 @@ import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar
 import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
+import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -112,6 +113,7 @@ export default function JourneyWorkspace({
             <BusinessPassportSummary passport={businessPassport} />
             <EvidencePanel evidence={evidence} title="Evidence" />
             <InstitutionalAdvisorPanel />
+            <JourneyTimelinePanel />
             <JourneyActionBar
               actions={workspace.actions}
               isPaused={isPaused}
