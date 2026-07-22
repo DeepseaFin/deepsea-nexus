@@ -5,17 +5,19 @@ import {
   type JourneyState,
   type JourneyTimelineEvent,
 } from "@/lib/journey";
-import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
-import type { ComponentProps } from "react";
 import JourneyWorkspace from "@/src/capabilities/journey/components/JourneyWorkspace";
 import {
   getJourneyBusinessPassportProjection,
   type JourneyBusinessPassportViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+import {
+  getJourneyEvidenceProjection,
+  type JourneyEvidenceViewModel,
+} from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
 
 type JourneyWorkspaceBusinessPassport = JourneyBusinessPassportViewModel;
 
-type JourneyWorkspaceEvidence = ComponentProps<typeof EvidencePanel>["evidence"];
+type JourneyWorkspaceEvidenceProjection = JourneyEvidenceViewModel;
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -107,29 +109,7 @@ const ACTIONS: readonly string[] = [
 
 const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = getJourneyBusinessPassportProjection();
 
-const EVIDENCE: JourneyWorkspaceEvidence = [
-  {
-    id: "ev-001",
-    title: "Certificate of Incorporation",
-    description: "Verified legal incorporation artifact aligned with identity profile.",
-    source: "Document Collection",
-    confidence: 91,
-  },
-  {
-    id: "ev-002",
-    title: "Trade License",
-    description: "Current operating license extracted and normalized for review.",
-    source: "ORACLE Processing",
-    confidence: 87,
-  },
-  {
-    id: "ev-003",
-    title: "Board Resolution",
-    description: "Supporting governance artifact pending final completeness confirmation.",
-    source: "Evidence Validation",
-    confidence: 79,
-  },
-];
+const EVIDENCE: JourneyWorkspaceEvidenceProjection = getJourneyEvidenceProjection();
 
 export default function JourneyPage() {
   return (

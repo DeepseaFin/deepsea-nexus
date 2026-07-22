@@ -204,3 +204,9 @@ export function getJourneyBusinessPassportProjection(): JourneyBusinessPassportV
     },
   };
 }
+
+export function getJourneyProjectedBusinessPassport(): BusinessPassport {
+  const baselinePassport = buildBaselinePassport();
+  const projection = knowledgeIdentityProjector.project({ facts: [] }, baselinePassport);
+  return projection.updatedPassport;
+}
