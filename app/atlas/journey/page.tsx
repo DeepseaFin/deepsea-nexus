@@ -1,28 +1,19 @@
 import {
-  ConfidenceBand,
-} from "@/lib/business-passport/types/Confidence";
-import {
-  KnowledgeDensityBand,
-} from "@/lib/business-passport/types/KnowledgeDensity";
-import {
   JourneyStatus,
   JourneyStep,
   type JourneyRecommendation,
   type JourneyState,
   type JourneyTimelineEvent,
 } from "@/lib/journey";
-import { PassportStatus } from "@/lib/business-passport/constants/PassportStatus";
-import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
-import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
 import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
 import type { ComponentProps } from "react";
 import JourneyWorkspace from "@/src/capabilities/journey/components/JourneyWorkspace";
+import {
+  getJourneyBusinessPassportProjection,
+  type JourneyBusinessPassportViewModel,
+} from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
 
-type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
-  readonly profiles: {
-    readonly identityProfile: IdentityProfile;
-  };
-};
+type JourneyWorkspaceBusinessPassport = JourneyBusinessPassportViewModel;
 
 type JourneyWorkspaceEvidence = ComponentProps<typeof EvidencePanel>["evidence"];
 
@@ -114,51 +105,7 @@ const ACTIONS: readonly string[] = [
   "Prepare handoff for knowledge generation",
 ];
 
-const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = {
-  status: PassportStatus.UnderReview,
-  metadata: {
-    audit: {
-      createdAt: "2026-07-10T10:00:00Z",
-      createdBy: "Identity Service",
-      updatedAt: "2026-07-13T09:20:00Z",
-      updatedBy: "Journey Operator",
-    },
-    lineage: {
-      sourceSystems: ["DNOS-ONBOARDING"],
-      sourceReferences: ["BUS-1190"],
-      ingestedAt: "2026-07-10T10:05:00Z",
-    },
-    version: {
-      aggregateVersion: 3,
-      schemaVersion: "1.0.0",
-      modelVersion: "1.0.0",
-    },
-  },
-  profiles: {
-    identityProfile: {
-      profileCode: "IDENTITY",
-      lastUpdatedAt: "2026-07-13T09:20:00Z",
-      confidence: {
-        score: 88,
-        band: ConfidenceBand.High,
-        assessedAt: "2026-07-13T09:15:00Z",
-        breakdown: [],
-      },
-      knowledgeDensity: {
-        score: 76,
-        band: KnowledgeDensityBand.Established,
-        assessedAt: "2026-07-13T09:15:00Z",
-        dimensions: [],
-      },
-      evidence: [],
-      legalName: "Northstar Exports LLC",
-      registrationNumber: "REG-77421",
-      jurisdiction: "UAE",
-      incorporationDate: "2017-03-22",
-      entityType: "Limited Liability Company",
-    },
-  },
-};
+const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = getJourneyBusinessPassportProjection();
 
 const EVIDENCE: JourneyWorkspaceEvidence = [
   {
