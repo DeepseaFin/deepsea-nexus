@@ -11,6 +11,7 @@ import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
 import JourneyHeader from "@/src/capabilities/journey/components/JourneyHeader";
+import JourneyKnowledgeInsightsPanel from "@/src/capabilities/journey/components/JourneyKnowledgeInsightsPanel";
 import JourneyNavigation from "@/src/capabilities/journey/components/JourneyNavigation";
 import JourneyProgress from "@/src/capabilities/journey/components/JourneyProgress";
 import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar";
@@ -18,6 +19,7 @@ import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCa
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
 import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
+import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -37,6 +39,7 @@ type JourneyWorkspaceProps = {
   timeline: readonly JourneyTimelineEvent[];
   businessPassport: JourneyWorkspaceBusinessPassport;
   evidence: JourneyWorkspaceEvidence;
+  knowledgeInsights: JourneyKnowledgeInsightsViewModel;
 };
 
 export default function JourneyWorkspace({
@@ -49,6 +52,7 @@ export default function JourneyWorkspace({
   timeline,
   businessPassport,
   evidence,
+  knowledgeInsights,
 }: JourneyWorkspaceProps) {
   const {
     workspace,
@@ -112,6 +116,7 @@ export default function JourneyWorkspace({
             <JourneyProgress progress={workspace.progress} />
             <BusinessPassportSummary passport={businessPassport} />
             <EvidencePanel evidence={evidence} title="Evidence" />
+            <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
             <InstitutionalAdvisorPanel />
             <JourneyTimelinePanel />
             <JourneyActionBar

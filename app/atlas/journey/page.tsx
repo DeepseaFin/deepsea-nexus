@@ -14,10 +14,16 @@ import {
   getJourneyEvidenceProjection,
   type JourneyEvidenceViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
+import {
+  getJourneyKnowledgeInsightsProjection,
+  type JourneyKnowledgeInsightsViewModel,
+} from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 
 type JourneyWorkspaceBusinessPassport = JourneyBusinessPassportViewModel;
 
 type JourneyWorkspaceEvidenceProjection = JourneyEvidenceViewModel;
+
+type JourneyWorkspaceKnowledgeInsights = JourneyKnowledgeInsightsViewModel;
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -111,6 +117,8 @@ const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = getJourneyBusinessPa
 
 const EVIDENCE: JourneyWorkspaceEvidenceProjection = getJourneyEvidenceProjection();
 
+const KNOWLEDGE_INSIGHTS: JourneyWorkspaceKnowledgeInsights = getJourneyKnowledgeInsightsProjection();
+
 export default function JourneyPage() {
   return (
     <JourneyWorkspace
@@ -123,6 +131,7 @@ export default function JourneyPage() {
       timeline={TIMELINE}
       businessPassport={BUSINESS_PASSPORT}
       evidence={EVIDENCE}
+      knowledgeInsights={KNOWLEDGE_INSIGHTS}
     />
   );
 }

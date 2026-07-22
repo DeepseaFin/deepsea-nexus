@@ -1,19 +1,19 @@
 import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
+import { businessOnboardingPipeline } from "@/lib/business-onboarding/BusinessOnboardingPipeline";
+import type { BusinessOnboardingResult } from "@/lib/business-onboarding/BusinessOnboardingResult";
 import type { EvidenceReference } from "@/lib/evidence/domain/EvidenceReference";
-import { evidenceFactory } from "@/lib/evidence/services/EvidenceFactory";
 import type { OracleDocumentEvidenceInput } from "@/lib/evidence/services/EvidenceMapper";
-import { evidenceKnowledgeMapper } from "@/lib/knowledge/services/EvidenceKnowledgeMapper";
 import type { ComponentProps } from "react";
 import { getJourneyProjectedBusinessPassport } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
 
 export type JourneyEvidenceViewModel = ComponentProps<typeof EvidencePanel>["evidence"];
 
-interface JourneyEvidenceSeed {
+export interface JourneyEvidenceSeed {
   readonly oracleDocument: OracleDocumentEvidenceInput;
   readonly references: readonly EvidenceReference[];
 }
 
-const EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
+export const JOURNEY_EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
   {
     oracleDocument: {
       documentId: "ev-001",
@@ -67,23 +67,30 @@ const EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
   },
 ];
 
+export function getJourneyEvidenceProjectionResults(): readonly BusinessOnboardingResult[] {
+  let projectedPassport = getJourneyProjectedBusinessPassport();
+
+  return JOURNEY_EVIDENCE_SEEDS.map((seed) => {
+    const result = businessOnboardingPipeline.run({
+      oracleDocument: seed.oracleDocument,
+      passport: projectedPassport,
+      evidenceReferences: seed.references,
+    });
+
+    projectedPassport = result.passport;
+    return result;
+  });
+}
+
 export function getJourneyEvidenceProjection(): JourneyEvidenceViewModel {
-  const projectedPassport = getJourneyProjectedBusinessPassport();
-
-  return EVIDENCE_SEEDS.map((seed) => {
-    const evidence = evidenceFactory.createFromOracleDocument(seed.oracleDocument, seed.references);
-    const knowledgeProjection = evidenceKnowledgeMapper.mapEvidence(evidence);
-
+  return getJourneyEvidenceProjectionResults().map((result) => {
+    const evidence = result.evidence;
     return {
       id: evidence.evidenceId.toString(),
       title: evidence.metadata.documentVersion,
       description: `Projection-backed evidence captured from ${evidence.metadata.sourceSystem} for institutional review continuity.`,
       source: evidence.source,
-      confidence: knowledgeProjection.confidenceSummary.averageConfidence,
+      confidence: result.projection.projectionMetadata.confidence.score,
     };
-  }).map((item) => ({
-    ...item,
-    // Preserves projection-executed journey context while keeping the panel shape stable.
-    description: `${item.description} Passport ${projectedPassport.passportId.toString()} is synchronized.`,
-  }));
+  });
 }
