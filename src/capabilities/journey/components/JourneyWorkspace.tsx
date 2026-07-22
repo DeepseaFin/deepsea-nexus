@@ -9,6 +9,7 @@ import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
 import { useEffect, useState, type ComponentProps } from "react";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
+import JourneyActionCenterPanel from "@/src/capabilities/journey/components/JourneyActionCenterPanel";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
 import JourneyHeader from "@/src/capabilities/journey/components/JourneyHeader";
 import JourneyKnowledgeInsightsPanel from "@/src/capabilities/journey/components/JourneyKnowledgeInsightsPanel";
@@ -159,6 +160,7 @@ export default function JourneyWorkspace({
             <JourneyRecentDocumentsPanel documents={recentDocuments} isLoading={isRecentDocumentsLoading} />
             <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
             <InstitutionalAdvisorPanel />
+            <JourneyActionCenterPanel />
             <JourneyTimelinePanel />
             <JourneyActionBar
               actions={workspace.actions}
