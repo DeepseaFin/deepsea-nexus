@@ -6,7 +6,7 @@ import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
 import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
 import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
 import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
-import type { ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
@@ -14,12 +14,17 @@ import JourneyHeader from "@/src/capabilities/journey/components/JourneyHeader";
 import JourneyKnowledgeInsightsPanel from "@/src/capabilities/journey/components/JourneyKnowledgeInsightsPanel";
 import JourneyNavigation from "@/src/capabilities/journey/components/JourneyNavigation";
 import JourneyProgress from "@/src/capabilities/journey/components/JourneyProgress";
+import JourneyRecentDocumentsPanel from "@/src/capabilities/journey/components/JourneyRecentDocumentsPanel";
 import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar";
 import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
 import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
 import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+import {
+  getJourneyRecentDocumentsProjection,
+  type JourneyRecentDocumentsViewModel,
+} from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -54,6 +59,41 @@ export default function JourneyWorkspace({
   evidence,
   knowledgeInsights,
 }: JourneyWorkspaceProps) {
+  const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
+  const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecentDocuments() {
+      try {
+        const documents = await getJourneyRecentDocumentsProjection();
+
+        if (!active) {
+          return;
+        }
+
+        setRecentDocuments(documents);
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setRecentDocuments([]);
+      } finally {
+        if (active) {
+          setIsRecentDocumentsLoading(false);
+        }
+      }
+    }
+
+    void loadRecentDocuments();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const {
     workspace,
     goToNext,
@@ -116,6 +156,7 @@ export default function JourneyWorkspace({
             <JourneyProgress progress={workspace.progress} />
             <BusinessPassportSummary passport={businessPassport} />
             <EvidencePanel evidence={evidence} title="Evidence" />
+            <JourneyRecentDocumentsPanel documents={recentDocuments} isLoading={isRecentDocumentsLoading} />
             <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
             <InstitutionalAdvisorPanel />
             <JourneyTimelinePanel />
