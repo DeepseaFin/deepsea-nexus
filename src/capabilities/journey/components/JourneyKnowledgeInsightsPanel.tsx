@@ -7,13 +7,9 @@ type JourneyKnowledgeInsightsPanelProps = {
   readonly insights: JourneyKnowledgeInsightsViewModel;
 };
 
-function SectionHeader({
-}: {
-  readonly title?: string;
-  readonly description?: string;
-}) {
+function SectionHeader() {
   return (
-    <header className="mb-4 flex items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
+    <header className="mb-5 flex items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
       <div>
         <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Knowledge Insights</p>
         <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-100">Institutional Intelligence Summary</h2>
@@ -28,7 +24,7 @@ function SectionHeader({
 
 function EmptyHint({ message }: { readonly message: string }) {
   return (
-    <p className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-400">
+    <p className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-400">
       {message}
     </p>
   );
@@ -36,9 +32,8 @@ function EmptyHint({ message }: { readonly message: string }) {
 
 export default function JourneyKnowledgeInsightsPanel({ insights }: JourneyKnowledgeInsightsPanelProps) {
   return (
-    <section className="rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.22)]">
-      <SectionHeader
-      />
+    <section className="rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.22)]" aria-label="Knowledge insights summary">
+      <SectionHeader />
 
       <div className="grid gap-3 xl:grid-cols-2">
         <section className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">

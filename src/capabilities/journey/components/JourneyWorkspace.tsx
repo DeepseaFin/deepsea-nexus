@@ -152,21 +152,38 @@ export default function JourneyWorkspace({
             status={workspace.journeyState.status}
           />
 
-          <main className="space-y-4">
-            <JourneyStepCard journeyState={workspace.journeyState} />
-            <JourneyProgress progress={workspace.progress} />
-            <BusinessPassportSummary passport={businessPassport} />
-            <EvidencePanel evidence={evidence} title="Evidence" />
-            <JourneyRecentDocumentsPanel documents={recentDocuments} isLoading={isRecentDocumentsLoading} />
-            <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
-            <InstitutionalAdvisorPanel />
-            <JourneyActionCenterPanel />
-            <JourneyTimelinePanel />
-            <JourneyActionBar
-              actions={workspace.actions}
-              isPaused={isPaused}
-              onActionSelect={goToNext}
-            />
+          <main className="space-y-5" aria-label="Journey workspace canvas">
+            <section aria-label="Journey state and progress" className="space-y-4">
+              <JourneyStepCard journeyState={workspace.journeyState} />
+              <JourneyProgress progress={workspace.progress} />
+            </section>
+
+            <div className="border-t border-slate-800/80" aria-hidden="true" />
+
+            <section aria-label="Identity and evidence" className="space-y-4">
+              <BusinessPassportSummary passport={businessPassport} />
+              <EvidencePanel evidence={evidence} title="Evidence" />
+              <JourneyRecentDocumentsPanel documents={recentDocuments} isLoading={isRecentDocumentsLoading} />
+            </section>
+
+            <div className="border-t border-slate-800/80" aria-hidden="true" />
+
+            <section aria-label="Knowledge and advisory" className="space-y-4">
+              <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
+              <InstitutionalAdvisorPanel />
+              <JourneyActionCenterPanel />
+            </section>
+
+            <div className="border-t border-slate-800/80" aria-hidden="true" />
+
+            <section aria-label="Timeline and actions" className="space-y-4">
+              <JourneyTimelinePanel />
+              <JourneyActionBar
+                actions={workspace.actions}
+                isPaused={isPaused}
+                onActionSelect={goToNext}
+              />
+            </section>
           </main>
 
           <JourneyAiPanel

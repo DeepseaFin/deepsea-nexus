@@ -152,7 +152,7 @@ export default function JourneyActionCenterPanel({
   className,
 }: JourneyActionCenterPanelProps) {
   return (
-    <section className={withClassName("rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.22)]", className)}>
+    <section className={withClassName("rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.22)]", className)} aria-label="Institutional action center">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Institutional Action Center</p>

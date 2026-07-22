@@ -7,6 +7,24 @@ type JourneyRecentDocumentsPanelProps = {
   readonly isLoading?: boolean;
 };
 
+function statusTone(status: string): string {
+  const normalized = status.toUpperCase();
+
+  if (normalized === "UPLOADED" || normalized === "COMPLETED") {
+    return "border-emerald-700/40 bg-emerald-950/20 text-emerald-200";
+  }
+
+  if (normalized === "PENDING" || normalized === "PROCESSING") {
+    return "border-amber-700/40 bg-amber-950/20 text-amber-200";
+  }
+
+  if (normalized === "FAILED" || normalized === "ERROR") {
+    return "border-rose-700/40 bg-rose-950/20 text-rose-200";
+  }
+
+  return "border-cyan-700/40 bg-cyan-950/25 text-cyan-200";
+}
+
 function formatUploadDate(value: string): string {
   const parsed = new Date(value);
 
@@ -42,7 +60,7 @@ export default function JourneyRecentDocumentsPanel({ documents, isLoading = fal
       </p>
 
       {isLoading ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-4" aria-live="polite">
           <p className="text-sm font-medium text-slate-300">Loading recent documents...</p>
           <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">Projection in progress</p>
         </div>
@@ -63,7 +81,7 @@ export default function JourneyRecentDocumentsPanel({ documents, isLoading = fal
                   <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{document.documentCode}</p>
                   <h4 className="mt-1 truncate text-sm font-semibold text-slate-200">{document.name}</h4>
                 </div>
-                <span className="rounded-full border border-cyan-700/40 bg-cyan-950/25 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
+                <span className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${statusTone(document.uploadStatus)}`}>
                   {document.uploadStatus}
                 </span>
               </div>
