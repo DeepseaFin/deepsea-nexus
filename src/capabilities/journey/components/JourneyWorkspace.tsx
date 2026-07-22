@@ -1,7 +1,10 @@
 "use client";
 
 import EmptyState from "@/components/atlas/design-system/EmptyState";
+import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
+import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
+import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
@@ -12,6 +15,12 @@ import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar
 import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 
+type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
+  readonly profiles: {
+    readonly identityProfile: IdentityProfile;
+  };
+};
+
 type JourneyWorkspaceProps = {
   journeyState: JourneyState;
   steps: readonly JourneyStep[];
@@ -20,6 +29,7 @@ type JourneyWorkspaceProps = {
   nextAction: string;
   actions: readonly string[];
   timeline: readonly JourneyTimelineEvent[];
+  businessPassport: JourneyWorkspaceBusinessPassport;
 };
 
 export default function JourneyWorkspace({
@@ -30,6 +40,7 @@ export default function JourneyWorkspace({
   nextAction,
   actions,
   timeline,
+  businessPassport,
 }: JourneyWorkspaceProps) {
   const {
     workspace,
@@ -91,6 +102,7 @@ export default function JourneyWorkspace({
           <main className="space-y-2">
             <JourneyStepCard journeyState={workspace.journeyState} />
             <JourneyProgress progress={workspace.progress} />
+            <BusinessPassportSummary passport={businessPassport} />
             <JourneyActionBar
               actions={workspace.actions}
               isPaused={isPaused}
