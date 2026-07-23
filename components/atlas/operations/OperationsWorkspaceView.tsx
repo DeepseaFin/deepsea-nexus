@@ -1,5 +1,6 @@
 import AssignmentPanelView from "@/components/atlas/operations/AssignmentPanelView";
 import ActivityFeedView from "@/components/atlas/operations/ActivityFeedView";
+import WorkQueueView from "@/components/atlas/operations/WorkQueueView";
 import TimelinePanelView from "@/components/atlas/operations/TimelinePanelView";
 import type { AssignmentPanel } from "@/src/capabilities/operations/assignment/AssignmentPanel";
 import type { OperationsWorkspace } from "@/src/capabilities/operations/workspace/OperationsWorkspace";
@@ -159,6 +160,10 @@ export default function OperationsWorkspaceView({
 
       <div className="mt-4">
         <AssignmentPanelView panel={toAssignmentPanel(workspace)} />
+      </div>
+
+      <div className="mt-4">
+        <WorkQueueView queue={workspace.workQueue} />
       </div>
 
       <div className="mt-4">
