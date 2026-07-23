@@ -1,9 +1,9 @@
+import ActivityFeedView from "@/components/atlas/operations/ActivityFeedView";
 import TimelinePanelView from "@/components/atlas/operations/TimelinePanelView";
-import type { TimelinePanel } from "@/src/capabilities/operations/timeline/TimelinePanel";
-import type { OperationsWorkspaceProjection } from "@/src/capabilities/operations/projections/OperationsWorkspaceProjection";
+import type { OperationsWorkspace } from "@/src/capabilities/operations/workspace/OperationsWorkspace";
 
 interface OperationsWorkspaceViewProps {
-  readonly projection: OperationsWorkspaceProjection;
+  readonly workspace: OperationsWorkspace;
   readonly className?: string;
 }
 
@@ -45,17 +45,10 @@ function SectionTitle({
 }
 
 export default function OperationsWorkspaceView({
-  projection,
+  workspace,
   className,
 }: OperationsWorkspaceViewProps) {
-  const { operation } = projection;
-  const timelinePanel: TimelinePanel = {
-    events: projection.timeline,
-    emptyState: {
-      title: "No timeline events",
-      description: "Timeline events will appear here once operational activity is available.",
-    },
-  };
+  const { operation } = workspace;
 
   return (
     <section
@@ -112,13 +105,13 @@ export default function OperationsWorkspaceView({
           title="Operational Tasks"
           description="Read-only task presentation for the current operation."
         />
-        {projection.tasks.length === 0 ? (
+          {workspace.tasks.length === 0 ? (
           <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-400">
             No tasks available.
           </div>
         ) : (
           <div className="mt-4 grid gap-3 xl:grid-cols-2">
-            {projection.tasks.map((task) => (
+            {workspace.tasks.map((task) => (
               <article key={task.taskId} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
@@ -153,7 +146,11 @@ export default function OperationsWorkspaceView({
       </section>
 
       <div className="mt-4">
-        <TimelinePanelView panel={timelinePanel} />
+        <TimelinePanelView panel={workspace.timelinePanel} />
+      </div>
+
+      <div className="mt-4">
+        <ActivityFeedView feed={workspace.activityFeed} />
       </div>
     </section>
   );
