@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import InsightPanelView from '@/components/atlas/intelligence/InsightPanelView';
 import KPIPanelView from '@/components/atlas/intelligence/KPIPanelView';
 import ObservationPanelView from '@/components/atlas/intelligence/ObservationPanelView';
 import ScorecardPanelView from '@/components/atlas/intelligence/ScorecardPanelView';
@@ -21,6 +22,7 @@ const ExecutiveWorkspaceView: React.FC<ExecutiveWorkspaceViewProps> = ({ workspa
       <KPIPanelView panel={workspace.kpiPanel} />
       <ScorecardPanelView panel={workspace.scorecardPanel} />
       <ObservationPanelView panel={workspace.observationPanel} />
+      <InsightPanelView panel={workspace.insightPanel} />
     </section>
   );
 };
