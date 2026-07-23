@@ -6,6 +6,7 @@ import type { TimelinePanel } from "@/src/capabilities/operations/timeline/Timel
 export interface OperationsWorkspace {
   readonly operation: OperationsWorkspaceProjection["operation"];
   readonly tasks: OperationsWorkspaceProjection["tasks"];
+  readonly assignments: OperationsWorkspaceProjection["assignments"];
   readonly timelinePanel: TimelinePanel;
   readonly activityFeed: ActivityFeed;
 }
@@ -39,6 +40,7 @@ function toOperationsWorkspace(projection: OperationsWorkspaceProjection): Opera
   return {
     operation: projection.operation,
     tasks: projection.tasks,
+    assignments: projection.assignments,
     timelinePanel: toTimelinePanel(projection),
     activityFeed: toActivityFeed(projection),
   };

@@ -1,5 +1,7 @@
+import AssignmentPanelView from "@/components/atlas/operations/AssignmentPanelView";
 import ActivityFeedView from "@/components/atlas/operations/ActivityFeedView";
 import TimelinePanelView from "@/components/atlas/operations/TimelinePanelView";
+import type { AssignmentPanel } from "@/src/capabilities/operations/assignment/AssignmentPanel";
 import type { OperationsWorkspace } from "@/src/capabilities/operations/workspace/OperationsWorkspace";
 
 interface OperationsWorkspaceViewProps {
@@ -42,6 +44,16 @@ function SectionTitle({
       <p className="mt-2 text-sm text-slate-400">{description}</p>
     </div>
   );
+}
+
+function toAssignmentPanel(workspace: OperationsWorkspace): AssignmentPanel {
+  return {
+    assignments: workspace.assignments,
+    emptyState: {
+      title: "No assignments",
+      description: "Assignments will appear here once operational ownership is available.",
+    },
+  };
 }
 
 export default function OperationsWorkspaceView({
@@ -144,6 +156,10 @@ export default function OperationsWorkspaceView({
           </div>
         )}
       </section>
+
+      <div className="mt-4">
+        <AssignmentPanelView panel={toAssignmentPanel(workspace)} />
+      </div>
 
       <div className="mt-4">
         <TimelinePanelView panel={workspace.timelinePanel} />
