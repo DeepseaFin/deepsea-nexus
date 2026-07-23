@@ -17,6 +17,9 @@ import {
 import {
   getInstitutionalTimelineProjection,
 } from "@/src/capabilities/journey/adapters/getInstitutionalTimelineProjection";
+import {
+  getInstitutionalHealthProjection,
+} from "@/src/capabilities/journey/adapters/getInstitutionalHealthProjection";
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -94,6 +97,9 @@ export default async function JourneyPage() {
     projection.pipelineResult.journeyResult,
     projection.pipelineResult.decisionAuditRecord,
   );
+  const institutionalHealth = getInstitutionalHealthProjection(
+    projection.pipelineResult.journeyResult.artifacts.institutionHealth,
+  );
   const passport = projection.pipelineResult.journeyResult.artifacts.projectedBusinessPassport;
   const lineageBusinessId = passport.metadata.lineage.sourceReferences[0] ?? passport.passportId.toString();
 
@@ -119,6 +125,7 @@ export default async function JourneyPage() {
       executiveDecision={executiveDecision}
       explainability={explainability}
       institutionalTimeline={institutionalTimeline}
+      institutionalHealth={institutionalHealth}
     />
   );
 }

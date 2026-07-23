@@ -24,6 +24,7 @@ import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journ
 import type { ExecutiveDecisionProjection } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
 import type { ExplainabilityProjection } from "@/src/capabilities/journey/adapters/getExplainabilityProjection";
 import type { InstitutionalTimelineProjection } from "@/src/capabilities/journey/adapters/getInstitutionalTimelineProjection";
+import type { InstitutionalHealthProjection } from "@/src/capabilities/journey/adapters/getInstitutionalHealthProjection";
 import {
   getJourneyRecentDocumentsProjection,
   type JourneyRecentDocumentsViewModel,
@@ -31,6 +32,7 @@ import {
 import ExecutiveDecisionPanel from "@/components/atlas/journey/ExecutiveDecisionPanel";
 import ExplainabilityPanel from "@/components/atlas/journey/ExplainabilityPanel";
 import InstitutionalTimelinePanel from "@/components/atlas/journey/InstitutionalTimelinePanel";
+import InstitutionalHealthPanel from "@/components/atlas/journey/InstitutionalHealthPanel";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -54,6 +56,7 @@ type JourneyWorkspaceProps = {
   executiveDecision: ExecutiveDecisionProjection;
   explainability: ExplainabilityProjection;
   institutionalTimeline: InstitutionalTimelineProjection;
+  institutionalHealth: InstitutionalHealthProjection;
 };
 
 export default function JourneyWorkspace({
@@ -70,6 +73,7 @@ export default function JourneyWorkspace({
   executiveDecision,
   explainability,
   institutionalTimeline,
+  institutionalHealth,
 }: JourneyWorkspaceProps) {
   const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
   const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
@@ -184,6 +188,7 @@ export default function JourneyWorkspace({
               <InstitutionalAdvisorPanel />
               <ExecutiveDecisionPanel decision={executiveDecision} />
               <ExplainabilityPanel explainability={explainability} />
+              <InstitutionalHealthPanel health={institutionalHealth} />
               <JourneyActionCenterPanel />
             </section>
 
