@@ -1,8 +1,8 @@
 import { Building2, Handshake } from "lucide-react";
-import type { RelationshipWorkspace } from "@/src/capabilities/relationship/workspace/RelationshipWorkspace";
+import type { RelationshipWorkspaceProjection } from "@/src/capabilities/relationship/projections/RelationshipWorkspaceProjection";
 
 interface RelationshipWorkspaceViewProps {
-  readonly workspace: RelationshipWorkspace;
+  readonly projection: RelationshipWorkspaceProjection;
   readonly className?: string;
 }
 
@@ -26,10 +26,10 @@ function Field({
 }
 
 export default function RelationshipWorkspaceView({
-  workspace,
+  projection,
   className,
 }: RelationshipWorkspaceViewProps) {
-  const { relationship } = workspace;
+  const { relationship } = projection;
 
   return (
     <section className={withClassName("rounded-2xl border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] p-6 shadow-[0_14px_32px_rgba(2,6,23,0.22)]", className)} aria-label="Relationship workspace">
