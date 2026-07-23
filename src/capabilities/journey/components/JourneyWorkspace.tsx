@@ -3,10 +3,8 @@
 import EmptyState from "@/components/atlas/design-system/EmptyState";
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import EvidencePanel from "@/components/atlas/intelligence/EvidencePanel";
-import { JourneyStatus, type JourneyRecommendation, type JourneyState, type JourneyStep, type JourneyTimelineEvent } from "@/lib/journey";
-import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
-import type { IdentityProfile } from "@/lib/business-passport/domain/Profiles";
-import { useEffect, useState, type ComponentProps } from "react";
+import { JourneyStatus } from "@/lib/journey";
+import { useEffect, useState } from "react";
 import { useJourney } from "@/src/capabilities/journey/hooks/useJourney";
 import JourneyActionBar from "@/src/capabilities/journey/components/JourneyActionBar";
 import JourneyActionCenterPanel from "@/src/capabilities/journey/components/JourneyActionCenterPanel";
@@ -20,61 +18,40 @@ import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar
 import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
-import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
-import type { ExecutiveDecisionProjection } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
-import type { ExplainabilityProjection } from "@/src/capabilities/journey/adapters/getExplainabilityProjection";
-import type { InstitutionalTimelineProjection } from "@/src/capabilities/journey/adapters/getInstitutionalTimelineProjection";
-import type { InstitutionalHealthProjection } from "@/src/capabilities/journey/adapters/getInstitutionalHealthProjection";
 import {
   getJourneyRecentDocumentsProjection,
   type JourneyRecentDocumentsViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
+import type { JourneyWorkspaceProjection } from "@/src/capabilities/journey/projections/JourneyWorkspaceProjection";
 import ExecutiveDecisionPanel from "@/components/atlas/journey/ExecutiveDecisionPanel";
 import ExplainabilityPanel from "@/components/atlas/journey/ExplainabilityPanel";
 import InstitutionalTimelinePanel from "@/components/atlas/journey/InstitutionalTimelinePanel";
 import InstitutionalHealthPanel from "@/components/atlas/journey/InstitutionalHealthPanel";
 
-type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
-  readonly profiles: {
-    readonly identityProfile: IdentityProfile;
-  };
-};
-
-type JourneyWorkspaceEvidence = ComponentProps<typeof EvidencePanel>["evidence"];
-
 type JourneyWorkspaceProps = {
-  journeyState: JourneyState;
-  steps: readonly JourneyStep[];
-  recommendations: readonly JourneyRecommendation[];
-  missingItems: readonly string[];
-  nextAction: string;
-  actions: readonly string[];
-  timeline: readonly JourneyTimelineEvent[];
-  businessPassport: JourneyWorkspaceBusinessPassport;
-  evidence: JourneyWorkspaceEvidence;
-  knowledgeInsights: JourneyKnowledgeInsightsViewModel;
-  executiveDecision: ExecutiveDecisionProjection;
-  explainability: ExplainabilityProjection;
-  institutionalTimeline: InstitutionalTimelineProjection;
-  institutionalHealth: InstitutionalHealthProjection;
+  projection: JourneyWorkspaceProjection;
 };
 
 export default function JourneyWorkspace({
-  journeyState,
-  steps,
-  recommendations,
-  missingItems,
-  nextAction,
-  actions,
-  timeline,
-  businessPassport,
-  evidence,
-  knowledgeInsights,
-  executiveDecision,
-  explainability,
-  institutionalTimeline,
-  institutionalHealth,
+  projection,
 }: JourneyWorkspaceProps) {
+  const {
+    journeyState,
+    steps,
+    recommendations,
+    missingItems,
+    nextAction,
+    actions,
+    timeline,
+    businessPassport,
+    evidence,
+    knowledgeInsights,
+    executiveDecision,
+    explainability,
+    institutionalTimeline,
+    institutionalHealth,
+  } = projection;
+
   const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
   const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
 
