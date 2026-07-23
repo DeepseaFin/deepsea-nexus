@@ -1,3 +1,5 @@
+import TimelinePanelView from "@/components/atlas/operations/TimelinePanelView";
+import type { TimelinePanel } from "@/src/capabilities/operations/timeline/TimelinePanel";
 import type { OperationsWorkspaceProjection } from "@/src/capabilities/operations/projections/OperationsWorkspaceProjection";
 
 interface OperationsWorkspaceViewProps {
@@ -24,11 +26,36 @@ function Field({
   );
 }
 
+function SectionTitle({
+  eyebrow,
+  title,
+  description,
+}: {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">{eyebrow}</p>
+      <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-100">{title}</h2>
+      <p className="mt-2 text-sm text-slate-400">{description}</p>
+    </div>
+  );
+}
+
 export default function OperationsWorkspaceView({
   projection,
   className,
 }: OperationsWorkspaceViewProps) {
   const { operation } = projection;
+  const timelinePanel: TimelinePanel = {
+    events: projection.timeline,
+    emptyState: {
+      title: "No timeline events",
+      description: "Timeline events will appear here once operational activity is available.",
+    },
+  };
 
   return (
     <section
@@ -39,11 +66,11 @@ export default function OperationsWorkspaceView({
       aria-label="Operations workspace"
     >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Operations Workspace</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-100">Operational Execution Summary</h2>
-          <p className="mt-2 text-sm text-slate-400">Foundational presentation contract for institutional operations.</p>
-        </div>
+        <SectionTitle
+          eyebrow="Operations Workspace"
+          title="Operational Execution Summary"
+          description="Foundational presentation contract for institutional operations."
+        />
         <div className="flex items-center gap-2 rounded-full border border-cyan-700/40 bg-cyan-950/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-200">
           {operation.status}
         </div>
@@ -78,6 +105,56 @@ export default function OperationsWorkspaceView({
           </p>
         </div>
       </section>
+
+      <section className="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        <SectionTitle
+          eyebrow="Task Section"
+          title="Operational Tasks"
+          description="Read-only task presentation for the current operation."
+        />
+        {projection.tasks.length === 0 ? (
+          <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-400">
+            No tasks available.
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            {projection.tasks.map((task) => (
+              <article key={task.taskId} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-300">{task.taskType}</p>
+                    <h3 className="mt-1 text-sm font-semibold tracking-tight text-slate-100">{task.taskName}</h3>
+                  </div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{task.status}</p>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-slate-300">{task.description}</p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <Field label="Task ID" value={task.taskId} />
+                  <Field label="Operation ID" value={task.operationId} />
+                  <Field label="Assigned To" value={task.assignedTo} />
+                  <Field label="Due Date" value={task.dueDate} />
+                  <Field label="Priority" value={task.priority} />
+                  <Field label="Created Date" value={task.createdDate} />
+                  <Field label="Updated Date" value={task.updatedDate} />
+                </div>
+                <section className="mt-4 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <h4 className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Summary Metadata</h4>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <p className="text-xs text-slate-300">Source System: {task.summaryMetadata.sourceSystem}</p>
+                    <p className="text-xs text-slate-300">Source Reference: {task.summaryMetadata.sourceReference}</p>
+                    <p className="text-xs text-slate-300">Tag Count: {task.summaryMetadata.tags.length}</p>
+                    <p className="text-xs text-slate-300">Attribute Count: {task.summaryMetadata.attributeCount}</p>
+                  </div>
+                </section>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="mt-4">
+        <TimelinePanelView panel={timelinePanel} />
+      </div>
     </section>
   );
 }
