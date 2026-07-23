@@ -1,29 +1,13 @@
 import {
   JourneyStatus,
   JourneyStep,
-  type JourneyRecommendation,
   type JourneyState,
   type JourneyTimelineEvent,
 } from "@/lib/journey";
 import JourneyWorkspace from "@/src/capabilities/journey/components/JourneyWorkspace";
 import {
-  getJourneyBusinessPassportProjection,
-  type JourneyBusinessPassportViewModel,
-} from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
-import {
-  getJourneyEvidenceProjection,
-  type JourneyEvidenceViewModel,
-} from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
-import {
-  getJourneyKnowledgeInsightsProjection,
-  type JourneyKnowledgeInsightsViewModel,
-} from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
-
-type JourneyWorkspaceBusinessPassport = JourneyBusinessPassportViewModel;
-
-type JourneyWorkspaceEvidenceProjection = JourneyEvidenceViewModel;
-
-type JourneyWorkspaceKnowledgeInsights = JourneyKnowledgeInsightsViewModel;
+  getJourneyWorkspacePipelineProjection,
+} from "@/src/capabilities/journey/adapters/getJourneyWorkspacePipelineProjection";
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -36,36 +20,6 @@ const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.CreditReadiness,
   JourneyStep.Approval,
   JourneyStep.Completed,
-];
-
-const JOURNEY_STATE: JourneyState = {
-  journeyId: "JRN-2401",
-  businessId: "BUS-1190",
-  status: JourneyStatus.InProgress,
-  currentStep: JourneyStep.EvidenceValidation,
-  completedSteps: [
-    JourneyStep.BeginRelationship,
-    JourneyStep.Identity,
-    JourneyStep.DocumentCollection,
-    JourneyStep.OracleProcessing,
-  ],
-  startedAt: "2026-07-12T08:10:00Z",
-  lastUpdated: "2026-07-13T09:20:00Z",
-};
-
-const RECOMMENDATIONS: readonly JourneyRecommendation[] = [
-  {
-    title: "Confirm Evidence Set Completeness",
-    description: "Validate that mandatory corporate and financial evidence is present before knowledge generation.",
-    priority: "high",
-    generatedAt: "2026-07-13T09:18:00Z",
-  },
-  {
-    title: "Prepare Credit Readiness Notes",
-    description: "Draft exceptions and mitigation notes to accelerate downstream credit review.",
-    priority: "medium",
-    generatedAt: "2026-07-13T09:19:00Z",
-  },
 ];
 
 const TIMELINE: readonly JourneyTimelineEvent[] = [
@@ -101,37 +55,52 @@ const TIMELINE: readonly JourneyTimelineEvent[] = [
   },
 ];
 
-const MISSING_ITEMS: readonly string[] = [
-  "Counterparty aging report for Q2.",
-  "Signed board resolution addendum.",
-  "Insurance endorsement reference for active facility.",
-];
+function toJourneyStateFromPipeline(input: {
+  readonly journeyId: string;
+  readonly businessId: string;
+  readonly startedAt: string;
+  readonly lastUpdated: string;
+}): JourneyState {
+  return {
+    journeyId: input.journeyId,
+    businessId: input.businessId,
+    status: JourneyStatus.InProgress,
+    currentStep: JourneyStep.EvidenceValidation,
+    completedSteps: [
+      JourneyStep.BeginRelationship,
+      JourneyStep.Identity,
+      JourneyStep.DocumentCollection,
+      JourneyStep.OracleProcessing,
+    ],
+    startedAt: input.startedAt,
+    lastUpdated: input.lastUpdated,
+  };
+}
 
-const ACTIONS: readonly string[] = [
-  "Run evidence checklist review",
-  "Escalate missing board resolution",
-  "Prepare handoff for knowledge generation",
-];
+export default async function JourneyPage() {
+  const projection = await getJourneyWorkspacePipelineProjection();
+  const passport = projection.pipelineResult.journeyResult.artifacts.projectedBusinessPassport;
+  const lineageBusinessId = passport.metadata.lineage.sourceReferences[0] ?? passport.passportId.toString();
 
-const BUSINESS_PASSPORT: JourneyWorkspaceBusinessPassport = getJourneyBusinessPassportProjection();
+  const journeyState = toJourneyStateFromPipeline({
+    journeyId: projection.pipelineResult.journeyResult.journeyId,
+    businessId: lineageBusinessId,
+    startedAt: passport.metadata.audit.createdAt,
+    lastUpdated: passport.metadata.audit.updatedAt,
+  });
 
-const EVIDENCE: JourneyWorkspaceEvidenceProjection = getJourneyEvidenceProjection();
-
-const KNOWLEDGE_INSIGHTS: JourneyWorkspaceKnowledgeInsights = getJourneyKnowledgeInsightsProjection();
-
-export default function JourneyPage() {
   return (
     <JourneyWorkspace
-      journeyState={JOURNEY_STATE}
+      journeyState={journeyState}
       steps={JOURNEY_STEPS}
-      recommendations={RECOMMENDATIONS}
-      missingItems={MISSING_ITEMS}
-      nextAction="Complete evidence validation and route to Knowledge Generation."
-      actions={ACTIONS}
+      recommendations={projection.recommendations}
+      missingItems={projection.missingItems}
+      nextAction={projection.nextAction}
+      actions={projection.actions}
       timeline={TIMELINE}
-      businessPassport={BUSINESS_PASSPORT}
-      evidence={EVIDENCE}
-      knowledgeInsights={KNOWLEDGE_INSIGHTS}
+      businessPassport={projection.businessPassport}
+      evidence={projection.evidence}
+      knowledgeInsights={projection.knowledgeInsights}
     />
   );
 }
