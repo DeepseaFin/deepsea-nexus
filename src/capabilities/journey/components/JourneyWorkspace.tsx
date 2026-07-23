@@ -22,10 +22,12 @@ import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeli
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
 import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
 import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+import type { ExecutiveDecisionProjection } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
 import {
   getJourneyRecentDocumentsProjection,
   type JourneyRecentDocumentsViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
+import ExecutiveDecisionPanel from "@/components/atlas/journey/ExecutiveDecisionPanel";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -46,6 +48,7 @@ type JourneyWorkspaceProps = {
   businessPassport: JourneyWorkspaceBusinessPassport;
   evidence: JourneyWorkspaceEvidence;
   knowledgeInsights: JourneyKnowledgeInsightsViewModel;
+  executiveDecision: ExecutiveDecisionProjection;
 };
 
 export default function JourneyWorkspace({
@@ -59,6 +62,7 @@ export default function JourneyWorkspace({
   businessPassport,
   evidence,
   knowledgeInsights,
+  executiveDecision,
 }: JourneyWorkspaceProps) {
   const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
   const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
@@ -171,6 +175,7 @@ export default function JourneyWorkspace({
             <section aria-label="Knowledge and advisory" className="space-y-4">
               <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
               <InstitutionalAdvisorPanel />
+              <ExecutiveDecisionPanel decision={executiveDecision} />
               <JourneyActionCenterPanel />
             </section>
 
