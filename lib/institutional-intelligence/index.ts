@@ -8,3 +8,4 @@ export * from "@/lib/institutional-intelligence/services/InstitutionalGraphBuild
 
 export * from "@/lib/institutional-intelligence/signals";
 export * from "@/lib/institutional-intelligence/profile";
+export * from "@/lib/institutional-intelligence/health";
