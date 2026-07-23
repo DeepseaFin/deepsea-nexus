@@ -1,7 +1,7 @@
-import type { OperationsWorkspace } from "@/src/capabilities/operations/workspace/OperationsWorkspace";
+import type { OperationsWorkspaceProjection } from "@/src/capabilities/operations/projections/OperationsWorkspaceProjection";
 
 interface OperationsWorkspaceViewProps {
-  readonly workspace: OperationsWorkspace;
+  readonly projection: OperationsWorkspaceProjection;
   readonly className?: string;
 }
 
@@ -25,9 +25,11 @@ function Field({
 }
 
 export default function OperationsWorkspaceView({
-  workspace,
+  projection,
   className,
 }: OperationsWorkspaceViewProps) {
+  const { operation } = projection;
+
   return (
     <section
       className={withClassName(
@@ -43,18 +45,18 @@ export default function OperationsWorkspaceView({
           <p className="mt-2 text-sm text-slate-400">Foundational presentation contract for institutional operations.</p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-cyan-700/40 bg-cyan-950/30 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-200">
-          {workspace.status}
+          {operation.status}
         </div>
       </header>
 
       <div className="grid gap-3 xl:grid-cols-2">
-        <Field label="Operation Summary" value={workspace.operationSummary} />
-        <Field label="Relationship Identifier" value={workspace.relationshipIdentifier} />
-        <Field label="Operation Type" value={workspace.operationType} />
-        <Field label="Status" value={workspace.status} />
-        <Field label="Priority" value={workspace.priority} />
-        <Field label="Created Date" value={workspace.createdDate} />
-        <Field label="Updated Date" value={workspace.updatedDate} />
+        <Field label="Operation Summary" value={operation.operationName} />
+        <Field label="Relationship Identifier" value={operation.relationshipId} />
+        <Field label="Operation Type" value={operation.operationType} />
+        <Field label="Status" value={operation.status} />
+        <Field label="Priority" value={operation.priority} />
+        <Field label="Created Date" value={operation.createdDate} />
+        <Field label="Updated Date" value={operation.updatedDate} />
       </div>
 
       <section className="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -63,16 +65,16 @@ export default function OperationsWorkspaceView({
         </h3>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <p className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-            Source System: {workspace.summaryMetadata.sourceSystem}
+            Source System: {operation.summaryMetadata.sourceSystem}
           </p>
           <p className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-            Source Reference: {workspace.summaryMetadata.sourceReference}
+            Source Reference: {operation.summaryMetadata.sourceReference}
           </p>
           <p className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-            Tag Count: {workspace.summaryMetadata.tags.length}
+            Tag Count: {operation.summaryMetadata.tags.length}
           </p>
           <p className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-            Attribute Count: {workspace.summaryMetadata.attributeCount}
+            Attribute Count: {operation.summaryMetadata.attributeCount}
           </p>
         </div>
       </section>
