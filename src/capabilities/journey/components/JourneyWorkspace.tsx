@@ -23,11 +23,13 @@ import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/Ins
 import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
 import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 import type { ExecutiveDecisionProjection } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
+import type { ExplainabilityProjection } from "@/src/capabilities/journey/adapters/getExplainabilityProjection";
 import {
   getJourneyRecentDocumentsProjection,
   type JourneyRecentDocumentsViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
 import ExecutiveDecisionPanel from "@/components/atlas/journey/ExecutiveDecisionPanel";
+import ExplainabilityPanel from "@/components/atlas/journey/ExplainabilityPanel";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -49,6 +51,7 @@ type JourneyWorkspaceProps = {
   evidence: JourneyWorkspaceEvidence;
   knowledgeInsights: JourneyKnowledgeInsightsViewModel;
   executiveDecision: ExecutiveDecisionProjection;
+  explainability: ExplainabilityProjection;
 };
 
 export default function JourneyWorkspace({
@@ -63,6 +66,7 @@ export default function JourneyWorkspace({
   evidence,
   knowledgeInsights,
   executiveDecision,
+  explainability,
 }: JourneyWorkspaceProps) {
   const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
   const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
@@ -176,6 +180,7 @@ export default function JourneyWorkspace({
               <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
               <InstitutionalAdvisorPanel />
               <ExecutiveDecisionPanel decision={executiveDecision} />
+              <ExplainabilityPanel explainability={explainability} />
               <JourneyActionCenterPanel />
             </section>
 

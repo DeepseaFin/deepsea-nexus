@@ -11,6 +11,9 @@ import {
 import {
   getExecutiveDecisionProjection,
 } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
+import {
+  getExplainabilityProjection,
+} from "@/src/capabilities/journey/adapters/getExplainabilityProjection";
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   JourneyStep.BeginRelationship,
@@ -83,6 +86,7 @@ function toJourneyStateFromPipeline(input: {
 export default async function JourneyPage() {
   const projection = await getJourneyWorkspacePipelineProjection();
   const executiveDecision = getExecutiveDecisionProjection(projection.pipelineResult.decisionPackage);
+  const explainability = getExplainabilityProjection(projection.pipelineResult.explainabilityResult);
   const passport = projection.pipelineResult.journeyResult.artifacts.projectedBusinessPassport;
   const lineageBusinessId = passport.metadata.lineage.sourceReferences[0] ?? passport.passportId.toString();
 
@@ -106,6 +110,7 @@ export default async function JourneyPage() {
       evidence={projection.evidence}
       knowledgeInsights={projection.knowledgeInsights}
       executiveDecision={executiveDecision}
+      explainability={explainability}
     />
   );
 }
