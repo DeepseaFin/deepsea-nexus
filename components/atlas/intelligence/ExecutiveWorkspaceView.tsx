@@ -2,6 +2,7 @@
 
 import React from 'react';
 import KPIPanelView from '@/components/atlas/intelligence/KPIPanelView';
+import ObservationPanelView from '@/components/atlas/intelligence/ObservationPanelView';
 import ScorecardPanelView from '@/components/atlas/intelligence/ScorecardPanelView';
 import type { ExecutiveWorkspace } from '@/src/capabilities/intelligence/workspace/ExecutiveWorkspace';
 
@@ -19,6 +20,7 @@ const ExecutiveWorkspaceView: React.FC<ExecutiveWorkspaceViewProps> = ({ workspa
     <section className={withClassName('space-y-6', className)} aria-label="Executive workspace">
       <KPIPanelView panel={workspace.kpiPanel} />
       <ScorecardPanelView panel={workspace.scorecardPanel} />
+      <ObservationPanelView panel={workspace.observationPanel} />
     </section>
   );
 };
