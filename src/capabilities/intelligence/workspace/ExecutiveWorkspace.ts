@@ -1,8 +1,10 @@
 import ExecutiveWorkspaceView from "@/components/atlas/intelligence/ExecutiveWorkspaceView";
 import type { DecisionContextPanel } from "@/src/capabilities/intelligence/decision-context/DecisionContextPanel";
+import type { DecisionOptionPanel } from "@/src/capabilities/intelligence/decision-option/DecisionOptionPanel";
 import type { InsightPanel } from "@/src/capabilities/intelligence/insight/InsightPanel";
 import type { KPIPanel } from "@/src/capabilities/intelligence/kpi/KPIPanel";
 import type { DecisionContextProjection } from "@/src/capabilities/intelligence/projections/DecisionContextProjection";
+import type { DecisionOptionProjection } from "@/src/capabilities/intelligence/projections/DecisionOptionProjection";
 import type { InsightProjection } from "@/src/capabilities/intelligence/projections/InsightProjection";
 import type { KPIProjection } from "@/src/capabilities/intelligence/projections/KPIProjection";
 import type { ObservationProjection } from "@/src/capabilities/intelligence/projections/ObservationProjection";
@@ -16,6 +18,7 @@ export interface ExecutiveWorkspace {
   readonly observationPanel: ObservationPanel;
   readonly insightPanel: InsightPanel;
   readonly decisionContextPanel: DecisionContextPanel;
+  readonly decisionOptionPanel: DecisionOptionPanel;
 }
 
 interface ExecutiveWorkspaceProps {
@@ -24,6 +27,7 @@ interface ExecutiveWorkspaceProps {
   readonly observations: readonly ObservationProjection[];
   readonly insights: readonly InsightProjection[];
   readonly decisionContexts: readonly DecisionContextProjection[];
+  readonly decisionOptions: readonly DecisionOptionProjection[];
   readonly className?: string;
 }
 
@@ -84,12 +88,26 @@ function toDecisionContextPanel(
   };
 }
 
+function toDecisionOptionPanel(
+  decisionOptions: readonly DecisionOptionProjection[],
+): DecisionOptionPanel {
+  return {
+    decisionOptions,
+    totalDecisionOptions: decisionOptions.length,
+    emptyState: {
+      title: "No decision options available",
+      description: "Institutional decision options will appear here once option packages are available.",
+    },
+  };
+}
+
 function toExecutiveWorkspace(
   kpis: readonly KPIProjection[],
   scorecards: readonly ScorecardProjection[],
   observations: readonly ObservationProjection[],
   insights: readonly InsightProjection[],
   decisionContexts: readonly DecisionContextProjection[],
+  decisionOptions: readonly DecisionOptionProjection[],
 ): ExecutiveWorkspace {
   return {
     kpiPanel: toKPIPanel(kpis),
@@ -97,6 +115,7 @@ function toExecutiveWorkspace(
     observationPanel: toObservationPanel(observations),
     insightPanel: toInsightPanel(insights),
     decisionContextPanel: toDecisionContextPanel(decisionContexts),
+    decisionOptionPanel: toDecisionOptionPanel(decisionOptions),
   };
 }
 
@@ -106,7 +125,20 @@ export default function ExecutiveWorkspace({
   observations,
   insights,
   decisionContexts,
+  decisionOptions,
   className,
 }: ExecutiveWorkspaceProps) {
-  return <ExecutiveWorkspaceView workspace={toExecutiveWorkspace(kpis, scorecards, observations, insights, decisionContexts)} className={className} />;
+  return (
+    <ExecutiveWorkspaceView
+      workspace={toExecutiveWorkspace(
+        kpis,
+        scorecards,
+        observations,
+        insights,
+        decisionContexts,
+        decisionOptions,
+      )}
+      className={className}
+    />
+  );
 }
