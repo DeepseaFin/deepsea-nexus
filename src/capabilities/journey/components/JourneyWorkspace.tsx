@@ -20,16 +20,17 @@ import JourneySidebar from "@/src/capabilities/journey/components/JourneySidebar
 import JourneyStepCard from "@/src/capabilities/journey/components/JourneyStepCard";
 import JourneyTimeline from "@/src/capabilities/journey/components/JourneyTimeline";
 import InstitutionalAdvisorPanel from "@/src/capabilities/journey/components/InstitutionalAdvisorPanel";
-import JourneyTimelinePanel from "@/src/capabilities/journey/components/JourneyTimelinePanel";
 import type { JourneyKnowledgeInsightsViewModel } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 import type { ExecutiveDecisionProjection } from "@/src/capabilities/journey/adapters/getExecutiveDecisionProjection";
 import type { ExplainabilityProjection } from "@/src/capabilities/journey/adapters/getExplainabilityProjection";
+import type { InstitutionalTimelineProjection } from "@/src/capabilities/journey/adapters/getInstitutionalTimelineProjection";
 import {
   getJourneyRecentDocumentsProjection,
   type JourneyRecentDocumentsViewModel,
 } from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
 import ExecutiveDecisionPanel from "@/components/atlas/journey/ExecutiveDecisionPanel";
 import ExplainabilityPanel from "@/components/atlas/journey/ExplainabilityPanel";
+import InstitutionalTimelinePanel from "@/components/atlas/journey/InstitutionalTimelinePanel";
 
 type JourneyWorkspaceBusinessPassport = Pick<BusinessPassport, "status" | "metadata"> & {
   readonly profiles: {
@@ -52,6 +53,7 @@ type JourneyWorkspaceProps = {
   knowledgeInsights: JourneyKnowledgeInsightsViewModel;
   executiveDecision: ExecutiveDecisionProjection;
   explainability: ExplainabilityProjection;
+  institutionalTimeline: InstitutionalTimelineProjection;
 };
 
 export default function JourneyWorkspace({
@@ -67,6 +69,7 @@ export default function JourneyWorkspace({
   knowledgeInsights,
   executiveDecision,
   explainability,
+  institutionalTimeline,
 }: JourneyWorkspaceProps) {
   const [recentDocuments, setRecentDocuments] = useState<JourneyRecentDocumentsViewModel>([]);
   const [isRecentDocumentsLoading, setIsRecentDocumentsLoading] = useState(true);
@@ -187,7 +190,7 @@ export default function JourneyWorkspace({
             <div className="border-t border-slate-800/80" aria-hidden="true" />
 
             <section aria-label="Timeline and actions" className="space-y-4">
-              <JourneyTimelinePanel />
+              <InstitutionalTimelinePanel timeline={institutionalTimeline} />
               <JourneyActionBar
                 actions={workspace.actions}
                 isPaused={isPaused}
