@@ -1,10 +1,12 @@
 import ExecutiveWorkspaceView from "@/components/atlas/intelligence/ExecutiveWorkspaceView";
 import type { DecisionContextPanel } from "@/src/capabilities/intelligence/decision-context/DecisionContextPanel";
+import type { DecisionSupportPanel } from "@/src/capabilities/intelligence/decision-support/DecisionSupportPanel";
 import type { DecisionOptionPanel } from "@/src/capabilities/intelligence/decision-option/DecisionOptionPanel";
 import type { InsightPanel } from "@/src/capabilities/intelligence/insight/InsightPanel";
 import type { KPIPanel } from "@/src/capabilities/intelligence/kpi/KPIPanel";
 import type { RecommendationPanel } from "@/src/capabilities/intelligence/recommendation/RecommendationPanel";
 import type { DecisionContextProjection } from "@/src/capabilities/intelligence/projections/DecisionContextProjection";
+import type { DecisionSupportProjection } from "@/src/capabilities/intelligence/projections/DecisionSupportProjection";
 import type { DecisionOptionProjection } from "@/src/capabilities/intelligence/projections/DecisionOptionProjection";
 import type { InsightProjection } from "@/src/capabilities/intelligence/projections/InsightProjection";
 import type { KPIProjection } from "@/src/capabilities/intelligence/projections/KPIProjection";
@@ -22,6 +24,7 @@ export interface ExecutiveWorkspace {
   readonly decisionContextPanel: DecisionContextPanel;
   readonly decisionOptionPanel: DecisionOptionPanel;
   readonly recommendationPanel: RecommendationPanel;
+  readonly decisionSupportPanel: DecisionSupportPanel;
 }
 
 interface ExecutiveWorkspaceProps {
@@ -32,6 +35,7 @@ interface ExecutiveWorkspaceProps {
   readonly decisionContexts: readonly DecisionContextProjection[];
   readonly decisionOptions: readonly DecisionOptionProjection[];
   readonly recommendations: readonly RecommendationProjection[];
+  readonly decisionSupportItems: readonly DecisionSupportProjection[];
   readonly className?: string;
 }
 
@@ -118,6 +122,19 @@ function toRecommendationPanel(
   };
 }
 
+function toDecisionSupportPanel(
+  decisionSupportItems: readonly DecisionSupportProjection[],
+): DecisionSupportPanel {
+  return {
+    decisionSupportItems,
+    totalDecisionSupportItems: decisionSupportItems.length,
+    emptyState: {
+      title: "No decision support packages available",
+      description: "Institutional decision support packages will appear here once analysis packages are available.",
+    },
+  };
+}
+
 function toExecutiveWorkspace(
   kpis: readonly KPIProjection[],
   scorecards: readonly ScorecardProjection[],
@@ -126,6 +143,7 @@ function toExecutiveWorkspace(
   decisionContexts: readonly DecisionContextProjection[],
   decisionOptions: readonly DecisionOptionProjection[],
   recommendations: readonly RecommendationProjection[],
+  decisionSupportItems: readonly DecisionSupportProjection[],
 ): ExecutiveWorkspace {
   return {
     kpiPanel: toKPIPanel(kpis),
@@ -135,6 +153,7 @@ function toExecutiveWorkspace(
     decisionContextPanel: toDecisionContextPanel(decisionContexts),
     decisionOptionPanel: toDecisionOptionPanel(decisionOptions),
     recommendationPanel: toRecommendationPanel(recommendations),
+    decisionSupportPanel: toDecisionSupportPanel(decisionSupportItems),
   };
 }
 
@@ -146,6 +165,7 @@ export default function ExecutiveWorkspace({
   decisionContexts,
   decisionOptions,
   recommendations,
+  decisionSupportItems,
   className,
 }: ExecutiveWorkspaceProps) {
   return (
@@ -158,6 +178,7 @@ export default function ExecutiveWorkspace({
         decisionContexts,
         decisionOptions,
         recommendations,
+        decisionSupportItems,
       )}
       className={className}
     />
