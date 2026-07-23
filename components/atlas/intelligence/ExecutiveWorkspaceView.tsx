@@ -6,6 +6,7 @@ import DecisionOptionPanelView from '@/components/atlas/intelligence/DecisionOpt
 import InsightPanelView from '@/components/atlas/intelligence/InsightPanelView';
 import KPIPanelView from '@/components/atlas/intelligence/KPIPanelView';
 import ObservationPanelView from '@/components/atlas/intelligence/ObservationPanelView';
+import RecommendationPanelView from '@/components/atlas/intelligence/RecommendationPanelView';
 import ScorecardPanelView from '@/components/atlas/intelligence/ScorecardPanelView';
 import type { ExecutiveWorkspace } from '@/src/capabilities/intelligence/workspace/ExecutiveWorkspace';
 
@@ -27,6 +28,7 @@ const ExecutiveWorkspaceView: React.FC<ExecutiveWorkspaceViewProps> = ({ workspa
       <InsightPanelView panel={workspace.insightPanel} />
       <DecisionContextPanelView panel={workspace.decisionContextPanel} />
       <DecisionOptionPanelView panel={workspace.decisionOptionPanel} />
+      <RecommendationPanelView panel={workspace.recommendationPanel} />
     </section>
   );
 };

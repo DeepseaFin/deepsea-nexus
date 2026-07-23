@@ -3,11 +3,13 @@ import type { DecisionContextPanel } from "@/src/capabilities/intelligence/decis
 import type { DecisionOptionPanel } from "@/src/capabilities/intelligence/decision-option/DecisionOptionPanel";
 import type { InsightPanel } from "@/src/capabilities/intelligence/insight/InsightPanel";
 import type { KPIPanel } from "@/src/capabilities/intelligence/kpi/KPIPanel";
+import type { RecommendationPanel } from "@/src/capabilities/intelligence/recommendation/RecommendationPanel";
 import type { DecisionContextProjection } from "@/src/capabilities/intelligence/projections/DecisionContextProjection";
 import type { DecisionOptionProjection } from "@/src/capabilities/intelligence/projections/DecisionOptionProjection";
 import type { InsightProjection } from "@/src/capabilities/intelligence/projections/InsightProjection";
 import type { KPIProjection } from "@/src/capabilities/intelligence/projections/KPIProjection";
 import type { ObservationProjection } from "@/src/capabilities/intelligence/projections/ObservationProjection";
+import type { RecommendationProjection } from "@/src/capabilities/intelligence/projections/RecommendationProjection";
 import type { ScorecardPanel } from "@/src/capabilities/intelligence/scorecard/ScorecardPanel";
 import type { ObservationPanel } from "@/src/capabilities/intelligence/observation/ObservationPanel";
 import type { ScorecardProjection } from "@/src/capabilities/intelligence/projections/ScorecardProjection";
@@ -19,6 +21,7 @@ export interface ExecutiveWorkspace {
   readonly insightPanel: InsightPanel;
   readonly decisionContextPanel: DecisionContextPanel;
   readonly decisionOptionPanel: DecisionOptionPanel;
+  readonly recommendationPanel: RecommendationPanel;
 }
 
 interface ExecutiveWorkspaceProps {
@@ -28,6 +31,7 @@ interface ExecutiveWorkspaceProps {
   readonly insights: readonly InsightProjection[];
   readonly decisionContexts: readonly DecisionContextProjection[];
   readonly decisionOptions: readonly DecisionOptionProjection[];
+  readonly recommendations: readonly RecommendationProjection[];
   readonly className?: string;
 }
 
@@ -101,6 +105,19 @@ function toDecisionOptionPanel(
   };
 }
 
+function toRecommendationPanel(
+  recommendations: readonly RecommendationProjection[],
+): RecommendationPanel {
+  return {
+    recommendations,
+    totalRecommendations: recommendations.length,
+    emptyState: {
+      title: "No recommendations available",
+      description: "Institutional recommendations will appear here once recommendation packages are available.",
+    },
+  };
+}
+
 function toExecutiveWorkspace(
   kpis: readonly KPIProjection[],
   scorecards: readonly ScorecardProjection[],
@@ -108,6 +125,7 @@ function toExecutiveWorkspace(
   insights: readonly InsightProjection[],
   decisionContexts: readonly DecisionContextProjection[],
   decisionOptions: readonly DecisionOptionProjection[],
+  recommendations: readonly RecommendationProjection[],
 ): ExecutiveWorkspace {
   return {
     kpiPanel: toKPIPanel(kpis),
@@ -116,6 +134,7 @@ function toExecutiveWorkspace(
     insightPanel: toInsightPanel(insights),
     decisionContextPanel: toDecisionContextPanel(decisionContexts),
     decisionOptionPanel: toDecisionOptionPanel(decisionOptions),
+    recommendationPanel: toRecommendationPanel(recommendations),
   };
 }
 
@@ -126,6 +145,7 @@ export default function ExecutiveWorkspace({
   insights,
   decisionContexts,
   decisionOptions,
+  recommendations,
   className,
 }: ExecutiveWorkspaceProps) {
   return (
@@ -137,6 +157,7 @@ export default function ExecutiveWorkspace({
         insights,
         decisionContexts,
         decisionOptions,
+        recommendations,
       )}
       className={className}
     />
