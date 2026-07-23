@@ -6,3 +6,4 @@ export * from "@/lib/orchestration/JourneyStage";
 export * from "@/lib/orchestration/explainability";
 export * from "@/lib/orchestration/decision-package";
 export * from "@/lib/orchestration/workflow";
+export * from "@/lib/orchestration/audit";
