@@ -6,6 +6,7 @@ import {
 import type { PresentationViewModel } from "@/lib/presentation/PresentationViewModel";
 import { documentsPresenter } from "@/lib/presentation/presenters/DocumentsPresenter";
 import { businessPassportPresenter } from "@/lib/presentation/presenters/BusinessPassportPresenter";
+import { relationshipPresenter } from "@/lib/presentation/presenters/RelationshipPresenter";
 
 export type RegisteredPresentationAdapter = PresentationAdapter<unknown, PresentationViewModel>;
 
@@ -47,3 +48,4 @@ export const defaultPresentationRegistry = new PresentationRegistry();
 
 defaultPresentationRegistry.register(businessPassportPresenter);
 defaultPresentationRegistry.register(documentsPresenter);
+defaultPresentationRegistry.register(relationshipPresenter);

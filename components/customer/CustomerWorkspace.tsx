@@ -48,6 +48,7 @@ import type {
 } from "@/lib/customer/customer-workspace.types";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
+import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 
 export interface CustomerWorkspaceProps {
   readonly title?: string;
@@ -58,6 +59,7 @@ export interface CustomerWorkspaceProps {
   readonly layout?: CustomerWorkspaceLayoutConfig;
   readonly businessPassportProjection?: unknown;
   readonly documentsProjection?: unknown;
+  readonly relationshipProjection?: unknown;
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
@@ -80,6 +82,7 @@ export default function CustomerWorkspace({
   layout = customerWorkspaceLayout,
   businessPassportProjection,
   documentsProjection,
+  relationshipProjection,
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
@@ -118,26 +121,25 @@ export default function CustomerWorkspace({
     return result.ok ? result.viewModel : null;
   }, [documentsProjection]);
 
-  const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
-    if (!businessPassportViewModel) {
-      return {
-        businessPassportPanelModel: defaultPassportPanelModel,
-        documentsPanelModel,
-        relationshipPanelModel,
-        approvalPanelModel,
-        fundingPanelModel,
-        insightsPanelModel,
-        institutionalTimelineModel,
-        workflowPanelModel,
-      };
+  const relationshipViewModel = useMemo<RelationshipPresentationViewModel | null>(() => {
+    if (!relationshipProjection) {
+      return null;
     }
 
+    const composition = createCustomerWorkspaceComposition();
+    const result = composition.resolveRelationshipViewModel(relationshipProjection);
+
+    return result.ok ? result.viewModel : null;
+  }, [relationshipProjection]);
+
+  const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
     return {
       businessPassportPanelModel: defaultPassportPanelModel,
       businessPassportViewModel,
       documentsPanelModel,
       documentsViewModel,
       relationshipPanelModel,
+      relationshipViewModel,
       approvalPanelModel,
       fundingPanelModel,
       insightsPanelModel,
@@ -152,6 +154,7 @@ export default function CustomerWorkspace({
     fundingPanelModel,
     insightsPanelModel,
     institutionalTimelineModel,
+    relationshipViewModel,
     relationshipPanelModel,
     workflowPanelModel,
   ]);

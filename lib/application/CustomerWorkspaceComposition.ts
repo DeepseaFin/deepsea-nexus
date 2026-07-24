@@ -3,6 +3,7 @@ import type { PresentationRegistry } from "@/lib/presentation/PresentationRegist
 import type { PresentationResult } from "@/lib/presentation/PresentationResult";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
+import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 import { defaultPresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 
 export interface CustomerWorkspaceCompositionContext {
@@ -17,20 +18,26 @@ export interface CustomerWorkspaceComposition {
   resolveDocumentsViewModel: (
     projection: unknown,
   ) => PresentationResult<DocumentsPresentationViewModel>;
+  resolveRelationshipViewModel: (
+    projection: unknown,
+  ) => PresentationResult<RelationshipPresentationViewModel>;
 }
 
 export function createCustomerWorkspaceComposition(
   context: CustomerWorkspaceCompositionContext = {},
 ): CustomerWorkspaceComposition {
   const presentationRegistry = context.presentationRegistry ?? defaultPresentationRegistry;
-  const presentationContext: PresentationContext = context.presentationContext ?? {
-    capability: "business-passport",
-  };
+
+  const toPresentationContext = (capability: PresentationContext["capability"]): PresentationContext => ({
+    ...(context.presentationContext ?? {}),
+    capability,
+  });
 
   return {
     resolveBusinessPassportViewModel(
       projection: unknown,
     ): PresentationResult<BusinessPassportPresentationViewModel> {
+      const presentationContext = toPresentationContext("business-passport");
       const presenter = presentationRegistry.getByCapability("business-passport").find((adapter) => adapter.id === "presentation.business-passport.presenter");
 
       if (!presenter) {
@@ -53,6 +60,7 @@ export function createCustomerWorkspaceComposition(
     resolveDocumentsViewModel(
       projection: unknown,
     ): PresentationResult<DocumentsPresentationViewModel> {
+      const presentationContext = toPresentationContext("documents");
       const presenter = presentationRegistry.getByCapability("documents").find((adapter) => adapter.id === "presentation.documents.presenter");
 
       if (!presenter) {
@@ -71,6 +79,29 @@ export function createCustomerWorkspaceComposition(
 
       const result = presenter.adapt(projection as never, presentationContext);
       return result as PresentationResult<DocumentsPresentationViewModel>;
+    },
+    resolveRelationshipViewModel(
+      projection: unknown,
+    ): PresentationResult<RelationshipPresentationViewModel> {
+      const presentationContext = toPresentationContext("relationship");
+      const presenter = presentationRegistry.getByCapability("relationship").find((adapter) => adapter.id === "presentation.relationship.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "Relationship presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "Relationship projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<RelationshipPresentationViewModel>;
     },
   };
 }
