@@ -21,12 +21,14 @@ import type { RelationshipPanelModel } from "@/lib/customer/relationship/relatio
 import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.types";
 import type { WorkflowPanelModel } from "@/lib/customer/workflow/workflow.types";
 import type { CustomerWorkspaceTabId } from "@/lib/customer/customer-workspace.types";
+import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 
 export interface CustomerWorkspaceRegistryModels {
   readonly businessPassportPanelModel: PassportPanelModel;
   readonly businessPassportViewModel?: BusinessPassportPresentationViewModel;
   readonly documentsPanelModel: DocumentsPanelModel;
+  readonly documentsViewModel?: DocumentsPresentationViewModel;
   readonly relationshipPanelModel: RelationshipPanelModel;
   readonly approvalPanelModel: ApprovalPanelModel;
   readonly fundingPanelModel: FundingPanelModel;
@@ -63,7 +65,7 @@ export function createCustomerWorkspacePanelRegistry(
     "business-passport": () => (
       <BusinessPassportPanel viewModel={models.businessPassportViewModel} model={models.businessPassportPanelModel} />
     ),
-    documents: () => <DocumentsPanel model={models.documentsPanelModel} />,
+    documents: () => <DocumentsPanel viewModel={models.documentsViewModel} model={models.documentsPanelModel} />,
     relationship: () => <RelationshipPanel model={models.relationshipPanelModel} />,
     approvals: () => <ApprovalPanel model={models.approvalPanelModel} />,
     funding: () => <FundingPanel model={models.fundingPanelModel} />,

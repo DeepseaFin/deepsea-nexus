@@ -46,6 +46,7 @@ import type {
   CustomerWorkspaceLayoutConfig,
   CustomerWorkspaceTabId,
 } from "@/lib/customer/customer-workspace.types";
+import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 
 export interface CustomerWorkspaceProps {
@@ -56,6 +57,7 @@ export interface CustomerWorkspaceProps {
   readonly actions?: readonly CustomerWorkspaceAction[];
   readonly layout?: CustomerWorkspaceLayoutConfig;
   readonly businessPassportProjection?: unknown;
+  readonly documentsProjection?: unknown;
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
@@ -77,6 +79,7 @@ export default function CustomerWorkspace({
   actions = defaultCustomerActions,
   layout = customerWorkspaceLayout,
   businessPassportProjection,
+  documentsProjection,
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
@@ -104,6 +107,17 @@ export default function CustomerWorkspace({
     return result.ok ? result.viewModel : null;
   }, [businessPassportProjection]);
 
+  const documentsViewModel = useMemo<DocumentsPresentationViewModel | null>(() => {
+    if (!documentsProjection) {
+      return null;
+    }
+
+    const composition = createCustomerWorkspaceComposition();
+    const result = composition.resolveDocumentsViewModel(documentsProjection);
+
+    return result.ok ? result.viewModel : null;
+  }, [documentsProjection]);
+
   const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
     if (!businessPassportViewModel) {
       return {
@@ -122,6 +136,7 @@ export default function CustomerWorkspace({
       businessPassportPanelModel: defaultPassportPanelModel,
       businessPassportViewModel,
       documentsPanelModel,
+      documentsViewModel,
       relationshipPanelModel,
       approvalPanelModel,
       fundingPanelModel,
@@ -132,6 +147,7 @@ export default function CustomerWorkspace({
   }, [
     approvalPanelModel,
     businessPassportViewModel,
+    documentsViewModel,
     documentsPanelModel,
     fundingPanelModel,
     insightsPanelModel,
