@@ -10,6 +10,7 @@ import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHead
 import ApprovalPanel from "@/components/customer/approval/ApprovalPanel";
 import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
 import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
+import FundingPanel from "@/components/customer/funding/FundingPanel";
 import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
@@ -26,6 +27,8 @@ import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relat
 import type { RelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.types";
 import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
 import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
+import { defaultFundingPanelModel } from "@/lib/customer/funding/funding-panel.config";
+import type { FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -44,6 +47,7 @@ export interface CustomerWorkspaceProps {
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
+  readonly fundingPanelModel?: FundingPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -58,6 +62,7 @@ export default function CustomerWorkspace({
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
+  fundingPanelModel = defaultFundingPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -106,6 +111,8 @@ export default function CustomerWorkspace({
                 <RelationshipPanel model={relationshipPanelModel} />
               ) : activeTab.id === "approvals" ? (
                 <ApprovalPanel model={approvalPanelModel} />
+              ) : activeTab.id === "funding" ? (
+                <FundingPanel model={fundingPanelModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
