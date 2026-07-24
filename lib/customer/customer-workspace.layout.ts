@@ -28,24 +28,28 @@ export const defaultCustomerActions: readonly CustomerWorkspaceAction[] = [
     label: "Upload Documents",
     description: "Open document intake and classification",
     icon: FileUp,
+    eventType: "customer.action.upload-documents",
   },
   {
     id: "request-approval",
     label: "Request Approval",
     description: "Open approval request package flow",
     icon: FileWarning,
+    eventType: "customer.action.request-approval",
   },
   {
     id: "generate-report",
     label: "Generate Report",
     description: "Prepare customer workspace summary report",
     icon: Sparkles,
+    eventType: "customer.action.generate-report",
   },
   {
     id: "open-ai-assistant",
     label: "Open AI Assistant",
     description: "Open AI copilot context for this workspace",
     icon: Bot,
+    eventType: "customer.action.open-ai-assistant",
   },
 ];
 
@@ -94,6 +98,13 @@ export const customerWorkspaceLayout: CustomerWorkspaceLayoutConfig = {
       description:
         "Reserved panel for funding readiness, opportunity tracking, and liquidity planning components.",
       readinessLabel: "Ready for funding capability modules",
+    },
+    "ai-insights": {
+      id: "ai-insights",
+      heading: "AI Insights",
+      description:
+        "Reserved panel for recommendation intelligence, confidence signals, and suggested operational actions.",
+      readinessLabel: "Ready for intelligence service integration",
     },
     timeline: {
       id: "timeline",
@@ -212,6 +223,24 @@ export const customerWorkspaceLayout: CustomerWorkspaceLayoutConfig = {
           {
             id: "pipeline",
             label: "Pipeline",
+            value: "Ready",
+          },
+        ],
+      },
+    ],
+    "ai-insights": [
+      {
+        id: "insights-context",
+        title: "Insights Signals",
+        items: [
+          {
+            id: "recommendations",
+            label: "Recommendations",
+            value: "Ready",
+          },
+          {
+            id: "confidence",
+            label: "Confidence",
             value: "Ready",
           },
         ],

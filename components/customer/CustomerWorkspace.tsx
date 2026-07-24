@@ -1,24 +1,21 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import CustomerContent from "@/components/customer/CustomerContent";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
-import ApprovalPanel from "@/components/customer/approval/ApprovalPanel";
-import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
-import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
-import FundingPanel from "@/components/customer/funding/FundingPanel";
-import AiInsightsPanel from "@/components/customer/insights/AiInsightsPanel";
-import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
-import InstitutionalTimeline from "@/components/customer/timeline/InstitutionalTimeline";
-import CustomerHealthCard from "@/components/customer/workflow/CustomerHealthCard";
-import NextBestAction from "@/components/customer/workflow/NextBestAction";
-import PriorityBanner from "@/components/customer/workflow/PriorityBanner";
-import ReadinessProgress from "@/components/customer/workflow/ReadinessProgress";
-import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
+import {
+  CUSTOMER_WORKSPACE_NAVIGATE_TAB_EVENT,
+  type CustomerWorkspaceNavigateTabEventDetail,
+  dispatchCustomerWorkspaceActionEvent,
+} from "@/lib/customer/customer-workspace.events";
+import {
+  createCustomerWorkspacePanelRegistry,
+  type CustomerWorkspaceRegistryModels,
+} from "@/lib/customer/customer-workspace.registry";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -40,9 +37,10 @@ import { defaultAiInsightsModel } from "@/lib/customer/insights/insights.config"
 import type { AiInsightsModel } from "@/lib/customer/insights/insights.types";
 import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
 import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.types";
-import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
+import { defaultWorkflowPanelModel } from "@/lib/customer/workflow/workflow.config";
 import type { WorkflowPanelModel } from "@/lib/customer/workflow/workflow.types";
 import type {
+  CustomerWorkspaceActionEvent,
   CustomerSummaryModel,
   CustomerWorkspaceAction,
   CustomerWorkspaceLayoutConfig,
@@ -64,6 +62,9 @@ export interface CustomerWorkspaceProps {
   readonly insightsPanelModel?: AiInsightsModel;
   readonly institutionalTimelineModel?: InstitutionalTimelineModel;
   readonly workflowPanelModel?: WorkflowPanelModel;
+  readonly initialTabId?: CustomerWorkspaceTabId;
+  readonly onTabChange?: (tabId: CustomerWorkspaceTabId) => void;
+  readonly onAction?: (event: CustomerWorkspaceActionEvent) => void;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -82,9 +83,85 @@ export default function CustomerWorkspace({
   insightsPanelModel = defaultAiInsightsModel,
   institutionalTimelineModel = defaultInstitutionalTimelineModel,
   workflowPanelModel = defaultWorkflowPanelModel,
+  initialTabId,
+  onTabChange,
+  onAction,
   renderTabContent,
 }: CustomerWorkspaceProps) {
-  const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
+  const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(initialTabId ?? layout.defaultTabId);
+
+  const panelRef = useRef<HTMLDivElement | null>(null);
+
+  const registryModels: CustomerWorkspaceRegistryModels = useMemo(
+    () => ({
+      businessPassportPanelModel,
+      documentsPanelModel,
+      relationshipPanelModel,
+      approvalPanelModel,
+      fundingPanelModel,
+      insightsPanelModel,
+      institutionalTimelineModel,
+      workflowPanelModel,
+    }),
+    [
+      approvalPanelModel,
+      businessPassportPanelModel,
+      documentsPanelModel,
+      fundingPanelModel,
+      insightsPanelModel,
+      institutionalTimelineModel,
+      relationshipPanelModel,
+      workflowPanelModel,
+    ],
+  );
+
+  const panelRegistry = useMemo(() => createCustomerWorkspacePanelRegistry(registryModels), [registryModels]);
+
+  useEffect(() => {
+    if (!initialTabId) {
+      return;
+    }
+
+    setActiveTabId(initialTabId);
+  }, [initialTabId]);
+
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, [activeTabId]);
+
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const customEvent = event as CustomEvent<CustomerWorkspaceNavigateTabEventDetail>;
+      const nextTabId = customEvent.detail?.tabId;
+
+      if (!nextTabId) {
+        return;
+      }
+
+      const tabExists = layout.tabs.some((tab) => tab.id === nextTabId && !tab.disabled);
+      if (!tabExists) {
+        return;
+      }
+
+      setActiveTabId(nextTabId);
+      onTabChange?.(nextTabId);
+    };
+
+    window.addEventListener(CUSTOMER_WORKSPACE_NAVIGATE_TAB_EVENT, listener as EventListener);
+    return () => {
+      window.removeEventListener(CUSTOMER_WORKSPACE_NAVIGATE_TAB_EVENT, listener as EventListener);
+    };
+  }, [layout.tabs, onTabChange]);
+
+  const handleTabChange = (tabId: CustomerWorkspaceTabId) => {
+    setActiveTabId(tabId);
+    onTabChange?.(tabId);
+  };
+
+  const handleAction = (event: CustomerWorkspaceActionEvent) => {
+    onAction?.(event);
+    dispatchCustomerWorkspaceActionEvent(event);
+  };
 
   const activeTab = useMemo(
     () => layout.tabs.find((tab) => tab.id === activeTabId) ?? layout.tabs[0],
@@ -101,20 +178,23 @@ export default function CustomerWorkspace({
         subtitle={subtitle}
         customerId={customerId}
         actions={actions}
+        onAction={handleAction}
       />
 
       <CustomerSummaryCard summary={summary} />
 
-      <CustomerTabs tabs={layout.tabs} activeTabId={activeTab.id} onTabChange={setActiveTabId} />
+      <CustomerTabs tabs={layout.tabs} activeTabId={activeTab.id} onTabChange={handleTabChange} />
 
       <CustomerContent
         main={
           <AnimatePresence mode="wait">
             <motion.div
+              ref={panelRef}
               key={activeTab.id}
               id={`customer-panel-${activeTab.id}`}
               role="tabpanel"
               aria-labelledby={`customer-tab-${activeTab.id}`}
+              tabIndex={-1}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
@@ -122,32 +202,8 @@ export default function CustomerWorkspace({
             >
               {renderTabContent ? (
                 renderTabContent(activeTab.id)
-              ) : activeTab.id === "overview" ? (
-                <div className="space-y-4">
-                  <PriorityBanner config={workflowPanelConfig} model={workflowPanelModel.priorityBanner} />
-                  <CustomerHealthCard config={workflowPanelConfig} health={workflowPanelModel.health} />
-                  <ReadinessProgress config={workflowPanelConfig} items={workflowPanelModel.readiness} />
-                  <WorkflowStatus config={workflowPanelConfig} model={workflowPanelModel.workflowStatus} />
-                  <NextBestAction config={workflowPanelConfig} action={workflowPanelModel.nextBestAction} />
-                  <AiInsightsPanel
-                    model={{
-                      recommendations: workflowPanelModel.recommendations,
-                      opportunities: insightsPanelModel.opportunities,
-                    }}
-                  />
-                </div>
-              ) : activeTab.id === "business-passport" ? (
-                <BusinessPassportPanel model={businessPassportPanelModel} />
-              ) : activeTab.id === "documents" ? (
-                <DocumentsPanel model={documentsPanelModel} />
-              ) : activeTab.id === "relationship" ? (
-                <RelationshipPanel model={relationshipPanelModel} />
-              ) : activeTab.id === "approvals" ? (
-                <ApprovalPanel model={approvalPanelModel} />
-              ) : activeTab.id === "funding" ? (
-                <FundingPanel model={fundingPanelModel} />
-              ) : activeTab.id === "timeline" ? (
-                <InstitutionalTimeline model={institutionalTimelineModel} />
+              ) : panelRegistry[activeTab.id] ? (
+                panelRegistry[activeTab.id]()
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>

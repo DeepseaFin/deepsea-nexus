@@ -23,13 +23,18 @@ export const customerWorkspaceTabs: readonly CustomerWorkspaceTab[] = [
   },
   {
     id: "approvals",
-    label: "Approvals",
+    label: "Approval",
     description: "Approval workflows and decisions",
   },
   {
     id: "funding",
     label: "Funding",
     description: "Funding readiness and options",
+  },
+  {
+    id: "ai-insights",
+    label: "AI Insights",
+    description: "Cross-capability recommendations and opportunities",
   },
   {
     id: "timeline",

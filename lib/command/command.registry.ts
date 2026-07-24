@@ -3,12 +3,14 @@ import {
   Building2,
   CheckCircle2,
   ClipboardPlus,
+  Compass,
   FileUp,
   Files,
   FolderKanban,
   LayoutDashboard,
   LineChart,
 } from "lucide-react";
+import { dispatchCustomerWorkspaceTabNavigation } from "@/lib/customer/customer-workspace.events";
 import type {
   CommandDescriptor,
   CommandRegistry,
@@ -48,6 +50,20 @@ export const commandRegistryEntries: readonly CommandDescriptor[] = [
     category: "Documents",
     icon: FileUp,
     keywords: ["vault", "files"],
+    onSelect: () => dispatchCustomerWorkspaceTabNavigation({ tabId: "documents", source: "command-palette" }),
+  },
+  {
+    id: "open-business-passport",
+    title: "Open Business Passport",
+    description: "Navigate directly to the Business Passport tab.",
+    category: "Customers",
+    icon: Compass,
+    keywords: ["passport", "identity", "governance"],
+    onSelect: () =>
+      dispatchCustomerWorkspaceTabNavigation({
+        tabId: "business-passport",
+        source: "command-palette",
+      }),
   },
   {
     id: "open-deals",
@@ -64,6 +80,7 @@ export const commandRegistryEntries: readonly CommandDescriptor[] = [
     category: "Approvals",
     icon: CheckCircle2,
     keywords: ["request", "governance"],
+    onSelect: () => dispatchCustomerWorkspaceTabNavigation({ tabId: "approvals", source: "command-palette" }),
   },
   {
     id: "open-tasks",
@@ -88,6 +105,7 @@ export const commandRegistryEntries: readonly CommandDescriptor[] = [
     category: "Funding",
     icon: Files,
     keywords: ["capital", "liquidity"],
+    onSelect: () => dispatchCustomerWorkspaceTabNavigation({ tabId: "funding", source: "command-palette" }),
   },
 ];
 

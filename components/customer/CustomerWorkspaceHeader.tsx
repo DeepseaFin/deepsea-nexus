@@ -2,13 +2,17 @@
 
 import React from "react";
 import CustomerActionBar from "@/components/customer/CustomerActionBar";
-import type { CustomerWorkspaceAction } from "@/lib/customer/customer-workspace.types";
+import type {
+  CustomerWorkspaceAction,
+  CustomerWorkspaceActionEvent,
+} from "@/lib/customer/customer-workspace.types";
 
 export interface CustomerWorkspaceHeaderProps {
   readonly title: string;
   readonly subtitle: string;
   readonly customerId?: string;
   readonly actions: readonly CustomerWorkspaceAction[];
+  readonly onAction?: (event: CustomerWorkspaceActionEvent) => void;
 }
 
 export default function CustomerWorkspaceHeader({
@@ -16,6 +20,7 @@ export default function CustomerWorkspaceHeader({
   subtitle,
   customerId,
   actions,
+  onAction,
 }: CustomerWorkspaceHeaderProps) {
   return (
     <header className="rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 shadow-[0_14px_30px_rgba(2,6,23,0.24)] sm:p-5">
@@ -30,7 +35,21 @@ export default function CustomerWorkspaceHeader({
         </div>
 
         <div className="w-full lg:w-auto">
-          <CustomerActionBar actions={actions} />
+          <CustomerActionBar
+            actions={actions}
+            onAction={(action) => {
+              if (!action.eventType) {
+                return;
+              }
+
+              onAction?.({
+                actionId: action.id,
+                type: action.eventType,
+                customerId,
+                occurredAt: new Date().toISOString(),
+              });
+            }}
+          />
         </div>
       </div>
     </header>

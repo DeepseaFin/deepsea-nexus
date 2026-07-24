@@ -8,7 +8,21 @@ export type CustomerWorkspaceTabId =
   | "relationship"
   | "approvals"
   | "funding"
+  | "ai-insights"
   | "timeline";
+
+export type CustomerWorkspaceActionEventType =
+  | "customer.action.upload-documents"
+  | "customer.action.request-approval"
+  | "customer.action.generate-report"
+  | "customer.action.open-ai-assistant";
+
+export interface CustomerWorkspaceActionEvent {
+  readonly actionId: string;
+  readonly type: CustomerWorkspaceActionEventType;
+  readonly customerId?: string;
+  readonly occurredAt: string;
+}
 
 export interface CustomerWorkspaceTab {
   readonly id: CustomerWorkspaceTabId;
@@ -38,6 +52,7 @@ export interface CustomerWorkspaceAction {
   readonly label: string;
   readonly description?: string;
   readonly icon?: LucideIcon;
+  readonly eventType?: CustomerWorkspaceActionEventType;
   readonly disabled?: boolean;
   readonly onClick?: () => void;
 }
