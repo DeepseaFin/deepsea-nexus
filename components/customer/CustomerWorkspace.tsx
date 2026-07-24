@@ -14,6 +14,11 @@ import FundingPanel from "@/components/customer/funding/FundingPanel";
 import AiInsightsPanel from "@/components/customer/insights/AiInsightsPanel";
 import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
 import InstitutionalTimeline from "@/components/customer/timeline/InstitutionalTimeline";
+import CustomerHealthCard from "@/components/customer/workflow/CustomerHealthCard";
+import NextBestAction from "@/components/customer/workflow/NextBestAction";
+import PriorityBanner from "@/components/customer/workflow/PriorityBanner";
+import ReadinessProgress from "@/components/customer/workflow/ReadinessProgress";
+import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -35,6 +40,8 @@ import { defaultAiInsightsModel } from "@/lib/customer/insights/insights.config"
 import type { AiInsightsModel } from "@/lib/customer/insights/insights.types";
 import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
 import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.types";
+import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
+import type { WorkflowPanelModel } from "@/lib/customer/workflow/workflow.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -56,6 +63,7 @@ export interface CustomerWorkspaceProps {
   readonly fundingPanelModel?: FundingPanelModel;
   readonly insightsPanelModel?: AiInsightsModel;
   readonly institutionalTimelineModel?: InstitutionalTimelineModel;
+  readonly workflowPanelModel?: WorkflowPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -73,6 +81,7 @@ export default function CustomerWorkspace({
   fundingPanelModel = defaultFundingPanelModel,
   insightsPanelModel = defaultAiInsightsModel,
   institutionalTimelineModel = defaultInstitutionalTimelineModel,
+  workflowPanelModel = defaultWorkflowPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -114,7 +123,19 @@ export default function CustomerWorkspace({
               {renderTabContent ? (
                 renderTabContent(activeTab.id)
               ) : activeTab.id === "overview" ? (
-                <AiInsightsPanel model={insightsPanelModel} />
+                <div className="space-y-4">
+                  <PriorityBanner config={workflowPanelConfig} model={workflowPanelModel.priorityBanner} />
+                  <CustomerHealthCard config={workflowPanelConfig} health={workflowPanelModel.health} />
+                  <ReadinessProgress config={workflowPanelConfig} items={workflowPanelModel.readiness} />
+                  <WorkflowStatus config={workflowPanelConfig} model={workflowPanelModel.workflowStatus} />
+                  <NextBestAction config={workflowPanelConfig} action={workflowPanelModel.nextBestAction} />
+                  <AiInsightsPanel
+                    model={{
+                      recommendations: workflowPanelModel.recommendations,
+                      opportunities: insightsPanelModel.opportunities,
+                    }}
+                  />
+                </div>
               ) : activeTab.id === "business-passport" ? (
                 <BusinessPassportPanel model={businessPassportPanelModel} />
               ) : activeTab.id === "documents" ? (
