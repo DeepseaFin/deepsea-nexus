@@ -7,6 +7,8 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
+import { createCustomerWorkspaceComposition } from "@/lib/application/CustomerWorkspaceComposition";
+import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
 import {
   CUSTOMER_WORKSPACE_NAVIGATE_TAB_EVENT,
   type CustomerWorkspaceNavigateTabEventDetail,
@@ -23,10 +25,8 @@ import {
   defaultCustomerActions,
   defaultCustomerSummary,
 } from "@/lib/customer/customer-workspace.layout";
-import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
 import type { DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
-import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
 import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
 import type { RelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.types";
 import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
@@ -46,6 +46,7 @@ import type {
   CustomerWorkspaceLayoutConfig,
   CustomerWorkspaceTabId,
 } from "@/lib/customer/customer-workspace.types";
+import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 
 export interface CustomerWorkspaceProps {
   readonly title?: string;
@@ -54,7 +55,7 @@ export interface CustomerWorkspaceProps {
   readonly summary?: CustomerSummaryModel;
   readonly actions?: readonly CustomerWorkspaceAction[];
   readonly layout?: CustomerWorkspaceLayoutConfig;
-  readonly businessPassportPanelModel?: PassportPanelModel;
+  readonly businessPassportProjection?: unknown;
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
@@ -75,7 +76,7 @@ export default function CustomerWorkspace({
   summary = defaultCustomerSummary,
   actions = defaultCustomerActions,
   layout = customerWorkspaceLayout,
-  businessPassportPanelModel = defaultPassportPanelModel,
+  businessPassportProjection,
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
@@ -92,30 +93,57 @@ export default function CustomerWorkspace({
 
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const registryModels: CustomerWorkspaceRegistryModels = useMemo(
-    () => ({
-      businessPassportPanelModel,
-      documentsPanelModel,
-      relationshipPanelModel,
-      approvalPanelModel,
-      fundingPanelModel,
-      insightsPanelModel,
-      institutionalTimelineModel,
-      workflowPanelModel,
-    }),
-    [
-      approvalPanelModel,
-      businessPassportPanelModel,
-      documentsPanelModel,
-      fundingPanelModel,
-      insightsPanelModel,
-      institutionalTimelineModel,
-      relationshipPanelModel,
-      workflowPanelModel,
-    ],
-  );
+  const businessPassportViewModel = useMemo<BusinessPassportPresentationViewModel | null>(() => {
+    if (!businessPassportProjection) {
+      return null;
+    }
 
-  const panelRegistry = useMemo(() => createCustomerWorkspacePanelRegistry(registryModels), [registryModels]);
+    const composition = createCustomerWorkspaceComposition();
+    const result = composition.resolveBusinessPassportViewModel(businessPassportProjection);
+
+    return result.ok ? result.viewModel : null;
+  }, [businessPassportProjection]);
+
+  const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
+    if (!businessPassportViewModel) {
+      return {
+        businessPassportPanelModel: defaultPassportPanelModel,
+        documentsPanelModel,
+        relationshipPanelModel,
+        approvalPanelModel,
+        fundingPanelModel,
+        insightsPanelModel,
+        institutionalTimelineModel,
+        workflowPanelModel,
+      };
+    }
+
+    return {
+      businessPassportPanelModel: defaultPassportPanelModel,
+      businessPassportViewModel,
+      documentsPanelModel,
+      relationshipPanelModel,
+      approvalPanelModel,
+      fundingPanelModel,
+      insightsPanelModel,
+      institutionalTimelineModel,
+      workflowPanelModel,
+    };
+  }, [
+    approvalPanelModel,
+    businessPassportViewModel,
+    documentsPanelModel,
+    fundingPanelModel,
+    insightsPanelModel,
+    institutionalTimelineModel,
+    relationshipPanelModel,
+    workflowPanelModel,
+  ]);
+
+  const panelRegistry = useMemo(
+    () => createCustomerWorkspacePanelRegistry(registryModels),
+    [registryModels],
+  );
 
   useEffect(() => {
     if (!initialTabId) {

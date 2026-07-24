@@ -1,4 +1,5 @@
 import type { BusinessPassportProjection } from "@/lib/business-passport/projections/BusinessPassportProjection";
+import type { PassportId } from "@/lib/business-passport/value-objects/PassportId";
 import type { PresentationAdapter } from "@/lib/presentation/PresentationAdapter";
 import type { PresentationContext } from "@/lib/presentation/PresentationContext";
 import type { PresentationResult } from "@/lib/presentation/PresentationResult";
@@ -25,8 +26,11 @@ function isBusinessPassportProjection(projection: unknown): projection is Busine
   }
 
   const candidate = projection as Record<string, unknown>;
+  const passportId = candidate.passportId as PassportId | string | undefined;
+
   return (
-    typeof candidate.passportId === "string" &&
+    typeof passportId === "string" || (typeof passportId === "object" && passportId !== null)
+  ) &&
     typeof candidate.status === "string" &&
     typeof candidate.lifecycle === "string" &&
     typeof candidate.confidenceScore === "number" &&
@@ -35,6 +39,10 @@ function isBusinessPassportProjection(projection: unknown): projection is Busine
     typeof candidate.maturityLevel === "string" &&
     typeof candidate.updatedAt === "string"
   );
+}
+
+function stringifyPassportId(passportId: PassportId | string): string {
+  return typeof passportId === "string" ? passportId : passportId.toString();
 }
 
 function buildPresentationMetadata(context: PresentationContext): PresentationMetadata {
@@ -57,7 +65,7 @@ function buildPresentationMetadata(context: PresentationContext): PresentationMe
 
 function buildFields(projection: BusinessPassportProjection): readonly BusinessPassportPresentationField[] {
   return [
-    { label: "Passport ID", value: projection.passportId },
+    { label: "Passport ID", value: stringifyPassportId(projection.passportId) },
     { label: "Status", value: projection.status },
     { label: "Lifecycle", value: projection.lifecycle },
     { label: "Confidence Score", value: String(projection.confidenceScore) },
