@@ -11,3 +11,4 @@ export * from "@/src/capabilities/approval/ApprovalTransition";
 export * from "@/src/capabilities/approval/ApprovalService";
 export * from "@/src/capabilities/approval/ApprovalRole";
 export * from "@/src/capabilities/approval/ApprovalStatus";
+export * from "@/src/capabilities/approval/projections";
