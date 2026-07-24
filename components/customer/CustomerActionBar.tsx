@@ -10,7 +10,7 @@ export interface CustomerActionBarProps {
 
 export default function CustomerActionBar({ actions }: CustomerActionBarProps) {
   return (
-    <ActionBar className="justify-start md:justify-end" aria-label="Customer workspace actions">
+    <ActionBar className="justify-start md:justify-end">
       {actions.map((action) => {
         const Icon = action.icon;
 

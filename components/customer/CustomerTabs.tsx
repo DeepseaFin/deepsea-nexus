@@ -19,6 +19,7 @@ export default function CustomerTabs({ tabs, activeTabId, onTabChange }: Custome
           return (
             <button
               key={tab.id}
+              id={`customer-tab-${tab.id}`}
               role="tab"
               aria-selected={isActive}
               aria-controls={`customer-panel-${tab.id}`}

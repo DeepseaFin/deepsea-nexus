@@ -7,6 +7,7 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
+import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -14,6 +15,8 @@ import {
   defaultCustomerActions,
   defaultCustomerSummary,
 } from "@/lib/customer/customer-workspace.layout";
+import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
+import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -28,6 +31,7 @@ export interface CustomerWorkspaceProps {
   readonly summary?: CustomerSummaryModel;
   readonly actions?: readonly CustomerWorkspaceAction[];
   readonly layout?: CustomerWorkspaceLayoutConfig;
+  readonly businessPassportPanelModel?: PassportPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -38,6 +42,7 @@ export default function CustomerWorkspace({
   summary = defaultCustomerSummary,
   actions = defaultCustomerActions,
   layout = customerWorkspaceLayout,
+  businessPassportPanelModel = defaultPassportPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -78,6 +83,8 @@ export default function CustomerWorkspace({
             >
               {renderTabContent ? (
                 renderTabContent(activeTab.id)
+              ) : activeTab.id === "business-passport" ? (
+                <BusinessPassportPanel model={businessPassportPanelModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
