@@ -8,6 +8,7 @@ import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
 import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
+import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -16,6 +17,8 @@ import {
   defaultCustomerSummary,
 } from "@/lib/customer/customer-workspace.layout";
 import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
+import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
+import type { DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
 import type {
   CustomerSummaryModel,
@@ -32,6 +35,7 @@ export interface CustomerWorkspaceProps {
   readonly actions?: readonly CustomerWorkspaceAction[];
   readonly layout?: CustomerWorkspaceLayoutConfig;
   readonly businessPassportPanelModel?: PassportPanelModel;
+  readonly documentsPanelModel?: DocumentsPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -43,6 +47,7 @@ export default function CustomerWorkspace({
   actions = defaultCustomerActions,
   layout = customerWorkspaceLayout,
   businessPassportPanelModel = defaultPassportPanelModel,
+  documentsPanelModel = defaultDocumentsPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -85,6 +90,8 @@ export default function CustomerWorkspace({
                 renderTabContent(activeTab.id)
               ) : activeTab.id === "business-passport" ? (
                 <BusinessPassportPanel model={businessPassportPanelModel} />
+              ) : activeTab.id === "documents" ? (
+                <DocumentsPanel model={documentsPanelModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
