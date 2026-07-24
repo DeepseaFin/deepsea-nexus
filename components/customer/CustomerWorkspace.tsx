@@ -7,6 +7,7 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
+import ApprovalPanel from "@/components/customer/approval/ApprovalPanel";
 import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
 import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
 import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
@@ -23,6 +24,8 @@ import type { DocumentsPanelModel } from "@/lib/customer/documents/documents-pan
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
 import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
 import type { RelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.types";
+import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
+import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -40,6 +43,7 @@ export interface CustomerWorkspaceProps {
   readonly businessPassportPanelModel?: PassportPanelModel;
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
+  readonly approvalPanelModel?: ApprovalPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -53,6 +57,7 @@ export default function CustomerWorkspace({
   businessPassportPanelModel = defaultPassportPanelModel,
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
+  approvalPanelModel = defaultApprovalPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -99,6 +104,8 @@ export default function CustomerWorkspace({
                 <DocumentsPanel model={documentsPanelModel} />
               ) : activeTab.id === "relationship" ? (
                 <RelationshipPanel model={relationshipPanelModel} />
+              ) : activeTab.id === "approvals" ? (
+                <ApprovalPanel model={approvalPanelModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
