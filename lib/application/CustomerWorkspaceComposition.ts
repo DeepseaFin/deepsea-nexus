@@ -4,6 +4,7 @@ import type { PresentationResult } from "@/lib/presentation/PresentationResult";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
+import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 import { defaultPresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 
@@ -25,6 +26,9 @@ export interface CustomerWorkspaceComposition {
   resolveApprovalViewModel: (
     projection: unknown,
   ) => PresentationResult<ApprovalPresentationViewModel>;
+  resolveFundingViewModel: (
+    projection: unknown,
+  ) => PresentationResult<FundingPresentationViewModel>;
 }
 
 export function createCustomerWorkspaceComposition(
@@ -129,6 +133,29 @@ export function createCustomerWorkspaceComposition(
 
       const result = presenter.adapt(projection as never, presentationContext);
       return result as PresentationResult<ApprovalPresentationViewModel>;
+    },
+    resolveFundingViewModel(
+      projection: unknown,
+    ): PresentationResult<FundingPresentationViewModel> {
+      const presentationContext = toPresentationContext("funding");
+      const presenter = presentationRegistry.getByCapability("funding").find((adapter) => adapter.id === "presentation.funding.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "Funding presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "Funding projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<FundingPresentationViewModel>;
     },
   };
 }

@@ -9,21 +9,32 @@ import FundingSummaryCard from "@/components/customer/funding/FundingSummaryCard
 import FundingTimeline from "@/components/customer/funding/FundingTimeline";
 import { defaultFundingPanelModel, fundingPanelConfig } from "@/lib/customer/funding/funding-panel.config";
 import type { FundingPanelConfig, FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
+import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
 
 export interface FundingPanelProps {
   readonly config?: FundingPanelConfig;
+  readonly viewModel?: FundingPresentationViewModel;
   readonly model?: FundingPanelModel;
 }
 
-export default function FundingPanel({ config = fundingPanelConfig, model = defaultFundingPanelModel }: FundingPanelProps) {
+function buildFundingPanelModel(
+  viewModel: FundingPresentationViewModel | undefined,
+  fallbackModel: FundingPanelModel,
+): FundingPanelModel {
+  return viewModel?.payload.panelModel ?? fallbackModel;
+}
+
+export default function FundingPanel({ config = fundingPanelConfig, viewModel, model = defaultFundingPanelModel }: FundingPanelProps) {
+  const presentationModel = buildFundingPanelModel(viewModel, model);
+
   return (
     <div className="space-y-4">
       <FundingHeader config={config} />
-      <FundingSummaryCard config={config} summary={model.summary} />
-      <FundingReadinessCard config={config} readiness={model.readiness} />
-      <FacilityOverview config={config} facilities={model.facilities} />
-      <FundingTimeline config={config} events={model.timeline} />
-      <FundingActions config={config} actions={model.actions} />
+      <FundingSummaryCard config={config} summary={presentationModel.summary} />
+      <FundingReadinessCard config={config} readiness={presentationModel.readiness} />
+      <FacilityOverview config={config} facilities={presentationModel.facilities} />
+      <FundingTimeline config={config} events={presentationModel.timeline} />
+      <FundingActions config={config} actions={presentationModel.actions} />
     </div>
   );
 }

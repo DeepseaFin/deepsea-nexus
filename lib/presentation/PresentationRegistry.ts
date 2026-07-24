@@ -4,6 +4,7 @@ import {
   type PresentationCapability,
 } from "@/lib/presentation/PresentationContext";
 import type { PresentationViewModel } from "@/lib/presentation/PresentationViewModel";
+import { fundingPresenter } from "@/lib/presentation/presenters/FundingPresenter";
 import { approvalPresenter } from "@/lib/presentation/presenters/ApprovalPresenter";
 import { documentsPresenter } from "@/lib/presentation/presenters/DocumentsPresenter";
 import { businessPassportPresenter } from "@/lib/presentation/presenters/BusinessPassportPresenter";
@@ -51,3 +52,4 @@ defaultPresentationRegistry.register(businessPassportPresenter);
 defaultPresentationRegistry.register(documentsPresenter);
 defaultPresentationRegistry.register(relationshipPresenter);
 defaultPresentationRegistry.register(approvalPresenter);
+defaultPresentationRegistry.register(fundingPresenter);
