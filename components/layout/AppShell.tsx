@@ -2,8 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import CommandCenter from "@/components/command/CommandCenter";
 import ActionBar from "@/components/ui/ActionBar";
-import CommandPalette from "@/components/layout/CommandPalette";
 import NotificationCenter from "@/components/layout/NotificationCenter";
 import PageContainer, { type BreadcrumbItem } from "@/components/layout/PageContainer";
 import SideNavigation from "@/components/layout/SideNavigation";
@@ -33,11 +33,6 @@ export default function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setCommandPaletteOpen((open) => !open);
-      }
-
       if (event.key === "Escape") {
         setCommandPaletteOpen(false);
         setNotificationOpen(false);
@@ -124,7 +119,7 @@ export default function AppShell({ children }: AppShellProps) {
         </section>
       </div>
 
-      <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+      <CommandCenter open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
     </div>
   );
 }
