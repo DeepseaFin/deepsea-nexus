@@ -11,7 +11,9 @@ import ApprovalPanel from "@/components/customer/approval/ApprovalPanel";
 import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
 import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
 import FundingPanel from "@/components/customer/funding/FundingPanel";
+import AiInsightsPanel from "@/components/customer/insights/AiInsightsPanel";
 import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
+import InstitutionalTimeline from "@/components/customer/timeline/InstitutionalTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -29,6 +31,10 @@ import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-pane
 import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
 import { defaultFundingPanelModel } from "@/lib/customer/funding/funding-panel.config";
 import type { FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
+import { defaultAiInsightsModel } from "@/lib/customer/insights/insights.config";
+import type { AiInsightsModel } from "@/lib/customer/insights/insights.types";
+import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
+import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -48,6 +54,8 @@ export interface CustomerWorkspaceProps {
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
   readonly fundingPanelModel?: FundingPanelModel;
+  readonly insightsPanelModel?: AiInsightsModel;
+  readonly institutionalTimelineModel?: InstitutionalTimelineModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -63,6 +71,8 @@ export default function CustomerWorkspace({
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
   fundingPanelModel = defaultFundingPanelModel,
+  insightsPanelModel = defaultAiInsightsModel,
+  institutionalTimelineModel = defaultInstitutionalTimelineModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -103,6 +113,8 @@ export default function CustomerWorkspace({
             >
               {renderTabContent ? (
                 renderTabContent(activeTab.id)
+              ) : activeTab.id === "overview" ? (
+                <AiInsightsPanel model={insightsPanelModel} />
               ) : activeTab.id === "business-passport" ? (
                 <BusinessPassportPanel model={businessPassportPanelModel} />
               ) : activeTab.id === "documents" ? (
@@ -113,6 +125,8 @@ export default function CustomerWorkspace({
                 <ApprovalPanel model={approvalPanelModel} />
               ) : activeTab.id === "funding" ? (
                 <FundingPanel model={fundingPanelModel} />
+              ) : activeTab.id === "timeline" ? (
+                <InstitutionalTimeline model={institutionalTimelineModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
