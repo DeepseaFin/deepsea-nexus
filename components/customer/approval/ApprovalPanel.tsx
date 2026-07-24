@@ -9,24 +9,69 @@ import ApprovalStageTimeline from "@/components/customer/approval/ApprovalStageT
 import ApprovalSummaryCard from "@/components/customer/approval/ApprovalSummaryCard";
 import { approvalPanelConfig, defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
 import type { ApprovalPanelConfig, ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
+import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 
 export interface ApprovalPanelProps {
   readonly config?: ApprovalPanelConfig;
+  readonly viewModel?: ApprovalPresentationViewModel;
   readonly model?: ApprovalPanelModel;
+}
+
+function buildApprovalPanelModel(
+  viewModel: ApprovalPresentationViewModel | undefined,
+  fallbackModel: ApprovalPanelModel,
+): ApprovalPanelModel {
+  if (!viewModel) {
+    return fallbackModel;
+  }
+
+  const approvalProjection = viewModel.payload.approvalProjection;
+  const participants = fallbackModel.participants.map((item, index) => {
+    const projectedParticipant = approvalProjection.participants[index];
+
+    if (!projectedParticipant) {
+      return item;
+    }
+
+    return {
+      ...item,
+      participant: projectedParticipant,
+    };
+  });
+
+  return {
+    ...fallbackModel,
+    summary: {
+      ...fallbackModel.summary,
+      approval: {
+        ...fallbackModel.summary.approval,
+        approvalId: approvalProjection.approvalId,
+        title: approvalProjection.title,
+        status: approvalProjection.status,
+        currentStage: approvalProjection.currentStage,
+        currentDecision: approvalProjection.currentDecision,
+        createdAt: approvalProjection.metadata.generatedAt,
+      },
+    },
+    participants,
+  };
 }
 
 export default function ApprovalPanel({
   config = approvalPanelConfig,
+  viewModel,
   model = defaultApprovalPanelModel,
 }: ApprovalPanelProps) {
+  const presentationModel = buildApprovalPanelModel(viewModel, model);
+
   return (
     <div className="space-y-4">
-      <ApprovalHeader config={config} summary={model.summary} />
-      <ApprovalSummaryCard config={config} summary={model.summary} />
-      <ApprovalStageTimeline config={config} stages={model.stages} />
-      <ApprovalParticipants config={config} participants={model.participants} />
-      <ApprovalHistory config={config} events={model.history} />
-      <ApprovalDecisionCard config={config} action={model.nextAction} />
+      <ApprovalHeader config={config} summary={presentationModel.summary} />
+      <ApprovalSummaryCard config={config} summary={presentationModel.summary} />
+      <ApprovalStageTimeline config={config} stages={presentationModel.stages} />
+      <ApprovalParticipants config={config} participants={presentationModel.participants} />
+      <ApprovalHistory config={config} events={presentationModel.history} />
+      <ApprovalDecisionCard config={config} action={presentationModel.nextAction} />
     </div>
   );
 }

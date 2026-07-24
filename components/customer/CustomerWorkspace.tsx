@@ -47,6 +47,7 @@ import type {
   CustomerWorkspaceTabId,
 } from "@/lib/customer/customer-workspace.types";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
+import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 
@@ -60,6 +61,7 @@ export interface CustomerWorkspaceProps {
   readonly businessPassportProjection?: unknown;
   readonly documentsProjection?: unknown;
   readonly relationshipProjection?: unknown;
+  readonly approvalProjection?: unknown;
   readonly documentsPanelModel?: DocumentsPanelModel;
   readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly approvalPanelModel?: ApprovalPanelModel;
@@ -83,6 +85,7 @@ export default function CustomerWorkspace({
   businessPassportProjection,
   documentsProjection,
   relationshipProjection,
+  approvalProjection,
   documentsPanelModel = defaultDocumentsPanelModel,
   relationshipPanelModel = defaultRelationshipPanelModel,
   approvalPanelModel = defaultApprovalPanelModel,
@@ -132,6 +135,17 @@ export default function CustomerWorkspace({
     return result.ok ? result.viewModel : null;
   }, [relationshipProjection]);
 
+  const approvalViewModel = useMemo<ApprovalPresentationViewModel | null>(() => {
+    if (!approvalProjection) {
+      return null;
+    }
+
+    const composition = createCustomerWorkspaceComposition();
+    const result = composition.resolveApprovalViewModel(approvalProjection);
+
+    return result.ok ? result.viewModel : null;
+  }, [approvalProjection]);
+
   const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
     return {
       businessPassportPanelModel: defaultPassportPanelModel,
@@ -140,7 +154,7 @@ export default function CustomerWorkspace({
       documentsViewModel,
       relationshipPanelModel,
       relationshipViewModel,
-      approvalPanelModel,
+      approvalViewModel,
       fundingPanelModel,
       insightsPanelModel,
       institutionalTimelineModel,
@@ -157,6 +171,7 @@ export default function CustomerWorkspace({
     relationshipViewModel,
     relationshipPanelModel,
     workflowPanelModel,
+    approvalViewModel,
   ]);
 
   const panelRegistry = useMemo(

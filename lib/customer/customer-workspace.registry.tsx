@@ -22,6 +22,7 @@ import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timelin
 import type { WorkflowPanelModel } from "@/lib/customer/workflow/workflow.types";
 import type { CustomerWorkspaceTabId } from "@/lib/customer/customer-workspace.types";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
+import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 
@@ -32,6 +33,7 @@ export interface CustomerWorkspaceRegistryModels {
   readonly documentsViewModel?: DocumentsPresentationViewModel;
   readonly relationshipPanelModel: RelationshipPanelModel;
   readonly relationshipViewModel?: RelationshipPresentationViewModel;
+  readonly approvalViewModel?: ApprovalPresentationViewModel;
   readonly approvalPanelModel: ApprovalPanelModel;
   readonly fundingPanelModel: FundingPanelModel;
   readonly insightsPanelModel: AiInsightsModel;
@@ -69,7 +71,7 @@ export function createCustomerWorkspacePanelRegistry(
     ),
     documents: () => <DocumentsPanel viewModel={models.documentsViewModel} model={models.documentsPanelModel} />,
     relationship: () => <RelationshipPanel viewModel={models.relationshipViewModel} model={models.relationshipPanelModel} />,
-    approvals: () => <ApprovalPanel model={models.approvalPanelModel} />,
+    approvals: () => <ApprovalPanel viewModel={models.approvalViewModel} model={models.approvalPanelModel} />,
     funding: () => <FundingPanel model={models.fundingPanelModel} />,
     "ai-insights": () => <AiInsightsPanel model={models.insightsPanelModel} />,
     timeline: () => <InstitutionalTimeline model={models.institutionalTimelineModel} />,

@@ -1,6 +1,7 @@
 import type { PresentationContext } from "@/lib/presentation/PresentationContext";
 import type { PresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 import type { PresentationResult } from "@/lib/presentation/PresentationResult";
+import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
@@ -21,6 +22,9 @@ export interface CustomerWorkspaceComposition {
   resolveRelationshipViewModel: (
     projection: unknown,
   ) => PresentationResult<RelationshipPresentationViewModel>;
+  resolveApprovalViewModel: (
+    projection: unknown,
+  ) => PresentationResult<ApprovalPresentationViewModel>;
 }
 
 export function createCustomerWorkspaceComposition(
@@ -102,6 +106,29 @@ export function createCustomerWorkspaceComposition(
 
       const result = presenter.adapt(projection as never, presentationContext);
       return result as PresentationResult<RelationshipPresentationViewModel>;
+    },
+    resolveApprovalViewModel(
+      projection: unknown,
+    ): PresentationResult<ApprovalPresentationViewModel> {
+      const presentationContext = toPresentationContext("approval");
+      const presenter = presentationRegistry.getByCapability("approval").find((adapter) => adapter.id === "presentation.approval.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "Approval presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "Approval projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<ApprovalPresentationViewModel>;
     },
   };
 }
