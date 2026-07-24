@@ -9,6 +9,7 @@ import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
 import BusinessPassportPanel from "@/components/customer/business-passport/BusinessPassportPanel";
 import DocumentsPanel from "@/components/customer/documents/DocumentsPanel";
+import RelationshipPanel from "@/components/customer/relationship/RelationshipPanel";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -20,6 +21,8 @@ import { defaultPassportPanelModel } from "@/lib/customer/business-passport/pass
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
 import type { DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
+import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
+import type { RelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.types";
 import type {
   CustomerSummaryModel,
   CustomerWorkspaceAction,
@@ -36,6 +39,7 @@ export interface CustomerWorkspaceProps {
   readonly layout?: CustomerWorkspaceLayoutConfig;
   readonly businessPassportPanelModel?: PassportPanelModel;
   readonly documentsPanelModel?: DocumentsPanelModel;
+  readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
 
@@ -48,6 +52,7 @@ export default function CustomerWorkspace({
   layout = customerWorkspaceLayout,
   businessPassportPanelModel = defaultPassportPanelModel,
   documentsPanelModel = defaultDocumentsPanelModel,
+  relationshipPanelModel = defaultRelationshipPanelModel,
   renderTabContent,
 }: CustomerWorkspaceProps) {
   const [activeTabId, setActiveTabId] = useState<CustomerWorkspaceTabId>(layout.defaultTabId);
@@ -92,6 +97,8 @@ export default function CustomerWorkspace({
                 <BusinessPassportPanel model={businessPassportPanelModel} />
               ) : activeTab.id === "documents" ? (
                 <DocumentsPanel model={documentsPanelModel} />
+              ) : activeTab.id === "relationship" ? (
+                <RelationshipPanel model={relationshipPanelModel} />
               ) : (
                 <SectionCard title={tabPanelModel.heading} subtitle={activeTab.description}>
                   <p className="text-sm text-slate-300">{tabPanelModel.description}</p>
