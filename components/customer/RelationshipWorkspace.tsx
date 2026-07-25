@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
+import RelationshipDocumentExplorer from "@/components/customer/documents/RelationshipDocumentExplorer";
 import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
@@ -43,14 +44,7 @@ function defaultSectionSummary(
   }
 
   if (section === "documents") {
-    return (
-      <SectionCard
-        title="Document Explorer"
-        subtitle={`${viewModel.documentExplorer.totalDocuments} documents grouped`}
-      >
-        <p className="text-sm text-slate-300">Document explorer categories are ready for detailed section rendering.</p>
-      </SectionCard>
-    );
+    return <RelationshipDocumentExplorer explorer={viewModel.documentExplorer} />;
   }
 
   if (section === "evidence") {
