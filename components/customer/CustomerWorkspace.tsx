@@ -370,6 +370,10 @@ export default function CustomerWorkspace({
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,
     },
+    evidenceOverview: {
+      isLoading: loadingByTabId?.documents,
+      error: errorByTabId.documents,
+    },
     journey: {
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,

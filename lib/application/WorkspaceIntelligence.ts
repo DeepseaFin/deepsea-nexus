@@ -72,6 +72,19 @@ export interface InstitutionalHealthOverviewModel {
   readonly operationalStatus: InstitutionalHealthSignal;
 }
 
+export interface EvidenceOverviewModel {
+  readonly totalEvidenceItems: number;
+  readonly verifiedEvidence: number;
+  readonly pendingVerification: number;
+  readonly missingEvidence: number;
+  readonly recentlyUploadedEvidence: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly uploadedAt: string;
+  }[];
+  readonly evidenceQualityOrCompleteness: string | null;
+}
+
 export interface WorkspaceIntelligenceSource {
   readonly customer?: {
     readonly id?: string;
@@ -134,6 +147,7 @@ export interface OnboardingDashboardModel {
     readonly decision: string;
     readonly status: string;
   }[];
+  readonly evidenceOverview: EvidenceOverviewModel;
   readonly institutionalHealthOverview: InstitutionalHealthOverviewModel;
   readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
   readonly decisionSummary: InstitutionalDecisionSummaryModel;
@@ -244,6 +258,66 @@ function deriveInstitutionalHealthOverview(params: {
     fundingReadiness,
     relationshipHealth,
     operationalStatus,
+  };
+}
+
+function metricValueAsNumber(
+  summary: DocumentsPresentationViewModel["payload"]["panelModel"]["summary"],
+  label: "Total Documents" | "Verified" | "Pending" | "Missing",
+): number | null {
+  const metric = summary.find((item) => item.label === label);
+  if (!metric) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(metric.value.replace(/[^0-9]/g, ""), 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function deriveEvidenceOverviewModel(
+  documentsPanelModel: DocumentsPresentationViewModel["payload"]["panelModel"] | undefined,
+): EvidenceOverviewModel {
+  const evidenceSummary = documentsPanelModel?.evidenceSummary ?? [];
+  const totalFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Total Documents");
+  const verifiedFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Verified");
+  const pendingFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Pending");
+  const missingFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Missing");
+
+  const verifiedFromEvidence = evidenceSummary.filter((item) => item.status === "valid").length;
+  const pendingFromEvidence = evidenceSummary.filter((item) => item.status === "pending_validation").length;
+
+  const totalEvidenceItems =
+    totalFromSummary ??
+    evidenceSummary.length ??
+    0;
+  const verifiedEvidence = verifiedFromSummary ?? verifiedFromEvidence;
+  const pendingVerification = pendingFromSummary ?? pendingFromEvidence;
+  const missingEvidence =
+    missingFromSummary ??
+    Math.max(0, totalEvidenceItems - verifiedEvidence - pendingVerification);
+
+  const recentlyUploadedEvidence = [...evidenceSummary]
+    .sort((left, right) =>
+      new Date(right.metadata.uploadedAt).getTime() - new Date(left.metadata.uploadedAt).getTime(),
+    )
+    .slice(0, 3)
+    .map((item) => ({
+      id: item.evidenceId.toString(),
+      label: item.metadata.documentId,
+      uploadedAt: item.metadata.uploadedAt,
+    }));
+
+  const completenessPercent =
+    totalEvidenceItems > 0 ? Math.round((verifiedEvidence / totalEvidenceItems) * 100) : 0;
+
+  return {
+    totalEvidenceItems,
+    verifiedEvidence,
+    pendingVerification,
+    missingEvidence,
+    recentlyUploadedEvidence,
+    evidenceQualityOrCompleteness:
+      totalEvidenceItems > 0 ? `${completenessPercent}% verified completeness` : null,
   };
 }
 
@@ -374,6 +448,7 @@ export function composeWorkspaceIntelligence(
     workbench,
   });
   const requiredDocuments = documentsPanelModel?.missingDocuments ?? [];
+  const evidenceOverview = deriveEvidenceOverviewModel(documentsPanelModel);
   const pendingApprovals =
     lifecycle.approvals.state === "pending" && approvalProjection
       ? [
@@ -472,6 +547,7 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     requiredDocuments,
     pendingApprovals,
+    evidenceOverview,
     institutionalHealthOverview,
     fundingReadinessAssessment,
     decisionSummary,
