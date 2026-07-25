@@ -16,8 +16,16 @@ import {
   type CustomerLifecycleOrchestrationModel,
 } from "@/lib/application/CustomerLifecycleOrchestrator";
 import type { OnboardingProgressModel } from "@/lib/application/OnboardingProgress";
+import {
+  composeRelationshipManagerWorkbench,
+  type RelationshipManagerWorkbenchModel,
+} from "@/lib/application/RelationshipManagerWorkbench";
 
 export interface WorkspaceIntelligenceSource {
+  readonly customer?: {
+    readonly id?: string;
+    readonly name: string;
+  };
   readonly businessPassport?: BusinessPassportPresentationViewModel | null;
   readonly documents?: DocumentsPresentationViewModel | null;
   readonly relationship?: RelationshipPresentationViewModel | null;
@@ -55,6 +63,7 @@ export interface WorkspaceIntelligenceModel {
   }[];
   readonly lifecycle: CustomerLifecycleOrchestrationModel;
   readonly onboardingProgress: OnboardingProgressModel;
+  readonly workbench: RelationshipManagerWorkbenchModel;
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
 }
 
@@ -79,6 +88,10 @@ function toPrioritizedAction(event: InstitutionalEvent): {
 export function composeWorkspaceIntelligence(
   source: WorkspaceIntelligenceSource,
 ): WorkspaceIntelligenceModel {
+  const customer = source.customer ?? {
+    id: source.businessPassport?.payload.projection.passportId.toString(),
+    name: source.businessPassport?.payload.projection.passportId.toString() ?? "Customer",
+  };
   const approvalProjection = source.approvals?.payload.approvalProjection;
   const documentsPanelModel = source.documents?.payload.panelModel;
   const relationshipProjection = source.relationship?.payload.workspaceProjection;
@@ -107,6 +120,12 @@ export function composeWorkspaceIntelligence(
     workflow: source.workflow,
     institutionalEvents: eventQueue.toArray(),
   });
+  const workbench = composeRelationshipManagerWorkbench({
+    customer,
+    lifecycle,
+    institutionalEvents: eventQueue.toArray(),
+    aiRecommendations: aiPanelModel?.recommendations ?? [],
+  });
   const prioritizedActions = lifecycle.prioritizedEvents.map(toPrioritizedAction);
 
   return {
@@ -131,11 +150,16 @@ export function composeWorkspaceIntelligence(
       : [],
     aiRecommendations: aiPanelModel?.recommendations ?? [],
     timelineAlerts: timelinePanelModel?.events ?? [],
-    workflowNextAction: lifecycle.nextAction ?? workflowPanelModel?.nextBestAction ?? null,
+    workflowNextAction:
+      workbench.recommendedWorkItem?.action ??
+      lifecycle.nextAction ??
+      workflowPanelModel?.nextBestAction ??
+      null,
     institutionalEvents: eventQueue.toArray(),
     prioritizedActions,
     lifecycle,
     onboardingProgress: lifecycle.onboardingProgress,
+    workbench,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }

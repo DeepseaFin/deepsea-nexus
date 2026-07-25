@@ -7,6 +7,7 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import { createCustomerWorkspaceComposition } from "@/lib/application/CustomerWorkspaceComposition";
 import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
 import {
@@ -205,6 +206,10 @@ export default function CustomerWorkspace({
   const workspaceIntelligence = useMemo<WorkspaceIntelligenceModel>(
     () =>
       composition.composeWorkspaceIntelligence({
+        customer: {
+          id: customerId,
+          name: summary.customerName,
+        },
         businessPassport: businessPassportViewModel,
         documents: documentsViewModel,
         relationship: relationshipViewModel,
@@ -218,11 +223,13 @@ export default function CustomerWorkspace({
       aiInsightsViewModel,
       approvalViewModel,
       businessPassportViewModel,
+      customerId,
       composition,
       documentsViewModel,
       fundingViewModel,
       institutionalTimelineViewModel,
       relationshipViewModel,
+      summary.customerName,
       workflowViewModel,
     ],
   );
@@ -373,6 +380,35 @@ export default function CustomerWorkspace({
           {onboardingProgress.blockedStages.map((stage) => (
             <StatusChip key={stage.id} label={`${stage.label} blocked`} variant="warning" />
           ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Relationship Manager Work Queue"
+        subtitle="Top prioritized customer actions from lifecycle and workspace intelligence"
+      >
+        <div className="space-y-2.5">
+          {workspaceIntelligence.workbench.topItems.map((item) => (
+            <article key={item.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-100">{item.action.title}</p>
+                <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-slate-300">
+                  {item.priority}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-slate-300">{item.action.description}</p>
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                <span>Due: {item.dueStatus}</span>
+                <span>Customer: {item.customer.name}</span>
+                <span>Action: {item.action.actionLabel}</span>
+                <span>Context: {item.context}</span>
+              </div>
+            </article>
+          ))}
+
+          {workspaceIntelligence.workbench.topItems.length === 0 ? (
+            <PanelEmptyState message="No active work queue items for this customer context." />
+          ) : null}
         </div>
       </SectionCard>
 

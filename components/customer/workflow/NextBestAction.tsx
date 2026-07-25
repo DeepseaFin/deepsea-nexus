@@ -29,6 +29,7 @@ export interface NextBestActionProps {
 
 export default function NextBestAction({ config, intelligence }: NextBestActionProps) {
   const action =
+    intelligence.workbench.recommendedWorkItem?.action ??
     intelligence.lifecycle.nextAction ??
     intelligence.onboardingProgress.recommendedAction ??
     intelligence.prioritizedActions[0]?.action ??
