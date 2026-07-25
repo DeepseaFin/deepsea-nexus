@@ -68,6 +68,7 @@ export interface CustomerWorkspaceDataCompositionInput {
 }
 
 export interface CustomerWorkspaceDataLoadInput extends CustomerWorkspaceDataCompositionInput {
+  readonly repositoryComposition?: CustomerWorkspaceRepositoryComposition;
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly repositoryContext?: CustomerWorkspaceRepositoryContext;
   readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
@@ -77,6 +78,36 @@ export interface BusinessPassportRepositoryBinding {
   readonly repository: BusinessPassportRepository;
   readonly resolvePassportId?: (context: CustomerWorkspaceRepositoryContext) => PassportId | string | null | undefined;
   readonly toProjection?: (passport: BusinessPassport) => BusinessPassportProjection;
+}
+
+type RepositoryAdapterSubset = Partial<CustomerWorkspaceRepositoryAdapters>;
+
+interface DeferredRepositoryBinding {
+  // Placeholder DI hook for future repository-backed adapters.
+  // Implementations can expose one or more capability loaders by returning
+  // a partial set of CustomerWorkspaceRepositoryAdapters.
+  readonly toAdapters?: (context: CustomerWorkspaceRepositoryContext) => RepositoryAdapterSubset | Promise<RepositoryAdapterSubset>;
+}
+
+export type DocumentsRepositoryBinding = DeferredRepositoryBinding;
+export type EvidenceRepositoryBinding = DeferredRepositoryBinding;
+export type RelationshipRepositoryBinding = DeferredRepositoryBinding;
+export type ApprovalRepositoryBinding = DeferredRepositoryBinding;
+export type FundingRepositoryBinding = DeferredRepositoryBinding;
+export type TimelineRepositoryBinding = DeferredRepositoryBinding;
+
+export interface CustomerWorkspaceRepositoryComposition {
+  // Base adapter map for callers that already expose projection/model loaders.
+  readonly adapters?: CustomerWorkspaceRepositoryAdapters;
+  // Active repository-backed integration (EPIC 16 Sprint 1).
+  readonly businessPassport?: BusinessPassportRepositoryBinding;
+  // Reserved DI placeholders for upcoming repository integrations.
+  readonly documents?: DocumentsRepositoryBinding;
+  readonly evidence?: EvidenceRepositoryBinding;
+  readonly relationship?: RelationshipRepositoryBinding;
+  readonly approval?: ApprovalRepositoryBinding;
+  readonly funding?: FundingRepositoryBinding;
+  readonly timeline?: TimelineRepositoryBinding;
 }
 
 type LoaderEntry = {
@@ -116,8 +147,11 @@ function toRepositoryLoaderEntries(adapters?: CustomerWorkspaceRepositoryAdapter
 }
 
 export function getCustomerWorkspaceRepositoryLoadingState(
-  adapters?: CustomerWorkspaceRepositoryAdapters,
+  adaptersOrComposition?: CustomerWorkspaceRepositoryAdapters | CustomerWorkspaceRepositoryComposition,
 ): Partial<Record<CustomerWorkspaceTabId, boolean>> {
+  const adapters = adaptersOrComposition && "adapters" in adaptersOrComposition
+    ? adaptersOrComposition.adapters
+    : adaptersOrComposition;
   const loadingState: Partial<Record<CustomerWorkspaceTabId, boolean>> = {};
 
   for (const entry of toRepositoryLoaderEntries(adapters)) {
@@ -182,18 +216,60 @@ export function createBusinessPassportRepositoryBackedAdapters(
   };
 }
 
-export function composeCustomerWorkspaceRepositoryAdapters(input: {
+function toRepositoryComposition(input: {
+  readonly repositoryComposition?: CustomerWorkspaceRepositoryComposition;
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
-}): CustomerWorkspaceRepositoryAdapters {
-  const businessPassportRepositoryAdapters = input.businessPassportRepository
-    ? createBusinessPassportRepositoryBackedAdapters(input.businessPassportRepository)
-    : {};
+}): CustomerWorkspaceRepositoryComposition {
+  const compatibilityComposition: CustomerWorkspaceRepositoryComposition = {
+    adapters: input.repositoryAdapters,
+    businessPassport: input.businessPassportRepository,
+  };
 
   return {
-    ...input.repositoryAdapters,
-    ...businessPassportRepositoryAdapters,
+    ...compatibilityComposition,
+    ...(input.repositoryComposition ?? {}),
   };
+}
+
+// Repository composition flow:
+// 1) Start with base adapters if provided by caller.
+// 2) Layer Business Passport repository-backed adapter mapping.
+// 3) Layer future repository bindings through the same toAdapters contract.
+export async function composeCustomerWorkspaceRepositoryAdapters(
+  composition: CustomerWorkspaceRepositoryComposition | undefined,
+  context: CustomerWorkspaceRepositoryContext,
+): Promise<CustomerWorkspaceRepositoryAdapters> {
+  const mergedAdapters: RepositoryAdapterSubset = {
+    ...(composition?.adapters ?? {}),
+  };
+
+  if (composition?.businessPassport) {
+    Object.assign(
+      mergedAdapters,
+      createBusinessPassportRepositoryBackedAdapters(composition.businessPassport),
+    );
+  }
+
+  const deferredBindings = [
+    composition?.documents,
+    composition?.evidence,
+    composition?.relationship,
+    composition?.approval,
+    composition?.funding,
+    composition?.timeline,
+  ];
+
+  for (const binding of deferredBindings) {
+    if (!binding?.toAdapters) {
+      continue;
+    }
+
+    const adapters = await binding.toAdapters(context);
+    Object.assign(mergedAdapters, adapters);
+  }
+
+  return mergedAdapters as CustomerWorkspaceRepositoryAdapters;
 }
 
 async function loadRepositoryData(
@@ -349,10 +425,16 @@ export async function loadCustomerWorkspaceData(
     customerId: input.repositoryContext?.customerId ?? input.customerId,
   };
 
-  const repositoryAdapters = composeCustomerWorkspaceRepositoryAdapters({
+  const repositoryComposition = toRepositoryComposition({
+    repositoryComposition: input.repositoryComposition,
     repositoryAdapters: input.repositoryAdapters,
     businessPassportRepository: input.businessPassportRepository,
   });
+
+  const repositoryAdapters = await composeCustomerWorkspaceRepositoryAdapters(
+    repositoryComposition,
+    repositoryContext,
+  );
 
   const loaded = await loadRepositoryData(repositoryAdapters, repositoryContext);
   const resolved = mergeResolvedData(input.source, loaded.resolved);

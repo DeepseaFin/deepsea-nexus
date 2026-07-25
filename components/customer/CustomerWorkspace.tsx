@@ -18,12 +18,12 @@ import {
   type CustomerWorkspaceRegistryModels,
 } from "@/lib/customer/customer-workspace.registry";
 import {
-  composeCustomerWorkspaceRepositoryAdapters,
   composeCustomerWorkspaceData,
   getCustomerWorkspaceRepositoryLoadingState,
   loadCustomerWorkspaceData,
   type BusinessPassportRepositoryBinding,
   type CustomerWorkspaceDataComposition,
+  type CustomerWorkspaceRepositoryComposition,
   type CustomerWorkspaceSourceData,
 } from "@/lib/customer/customer-workspace.data";
 import SectionCard from "@/components/ui/SectionCard";
@@ -158,24 +158,21 @@ export default function CustomerWorkspace({
     useState<CustomerWorkspaceDataComposition | null>(null);
   const [repositoryLoadingByTabId, setRepositoryLoadingByTabId] =
     useState<Partial<Record<CustomerWorkspaceTabId, boolean>>>({});
+  const repositoryComposition = useMemo<CustomerWorkspaceRepositoryComposition | undefined>(() => {
+    if (!repositoryAdapters && !businessPassportRepository) {
+      return undefined;
+    }
+
+    return {
+      adapters: repositoryAdapters,
+      businessPassport: businessPassportRepository,
+    };
+  }, [businessPassportRepository, repositoryAdapters]);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!repositoryAdapters) {
-      if (!businessPassportRepository) {
-        return () => {
-          cancelled = true;
-        };
-      }
-    }
-
-    const effectiveRepositoryAdapters = composeCustomerWorkspaceRepositoryAdapters({
-      repositoryAdapters,
-      businessPassportRepository,
-    });
-
-    if (Object.keys(effectiveRepositoryAdapters).length === 0) {
+    if (!repositoryComposition) {
       return () => {
         cancelled = true;
       };
@@ -183,15 +180,14 @@ export default function CustomerWorkspace({
 
     void (async () => {
       setRepositoryWorkspaceData(null);
-      setRepositoryLoadingByTabId(getCustomerWorkspaceRepositoryLoadingState(effectiveRepositoryAdapters));
+      setRepositoryLoadingByTabId(getCustomerWorkspaceRepositoryLoadingState(repositoryComposition));
 
       try {
         const loadedData = await loadCustomerWorkspaceData({
           customerId,
           customerName: summary.customerName,
           source: sourceData,
-          repositoryAdapters,
-          businessPassportRepository,
+          repositoryComposition,
         });
 
         if (cancelled) {
@@ -224,14 +220,13 @@ export default function CustomerWorkspace({
     };
   }, [
     baselineWorkspaceData,
-    businessPassportRepository,
     customerId,
-    repositoryAdapters,
+    repositoryComposition,
     sourceData,
     summary.customerName,
   ]);
 
-  const workspaceData = repositoryAdapters || businessPassportRepository
+  const workspaceData = repositoryComposition
     ? (repositoryWorkspaceData ?? baselineWorkspaceData)
     : baselineWorkspaceData;
 
