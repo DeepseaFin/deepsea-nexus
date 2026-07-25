@@ -10,6 +10,10 @@ export interface CustomerSummaryCardProps {
 }
 
 export default function CustomerSummaryCard({ summary }: CustomerSummaryCardProps) {
+  const blockedStageText = summary.onboardingProgress?.blockedStageLabels.length
+    ? summary.onboardingProgress.blockedStageLabels.join(", ")
+    : "None";
+
   return (
     <SectionCard title="Customer Summary" subtitle="Snapshot of core relationship and risk context">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -50,6 +54,17 @@ export default function CustomerSummaryCard({ summary }: CustomerSummaryCardProp
         <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 sm:col-span-2 lg:col-span-2">
           <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Funding Potential</p>
           <p className="mt-1 text-sm font-medium text-slate-100">{summary.fundingPotential}</p>
+        </article>
+
+        <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 sm:col-span-2 lg:col-span-2">
+          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Onboarding Progress</p>
+          <p className="mt-1 text-sm font-medium text-slate-100">
+            {summary.onboardingProgress?.overallCompletionPercent ?? 0}% complete
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Current stage: {summary.onboardingProgress?.currentStageLabel ?? "Not available"}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">Blocked stages: {blockedStageText}</p>
         </article>
       </div>
     </SectionCard>

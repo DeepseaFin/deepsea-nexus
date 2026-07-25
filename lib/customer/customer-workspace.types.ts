@@ -45,6 +45,12 @@ export interface CustomerSummaryModel {
     readonly variant?: StatusChipProps["variant"];
   };
   readonly fundingPotential: string;
+  readonly onboardingProgress?: {
+    readonly overallCompletionPercent: number;
+    readonly currentStageLabel: string;
+    readonly blockedStageLabels: readonly string[];
+    readonly recommendedNextStageLabel: string;
+  };
 }
 
 export interface CustomerWorkspaceAction {

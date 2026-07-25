@@ -15,6 +15,7 @@ import {
   orchestrateCustomerLifecycle,
   type CustomerLifecycleOrchestrationModel,
 } from "@/lib/application/CustomerLifecycleOrchestrator";
+import type { OnboardingProgressModel } from "@/lib/application/OnboardingProgress";
 
 export interface WorkspaceIntelligenceSource {
   readonly businessPassport?: BusinessPassportPresentationViewModel | null;
@@ -53,6 +54,7 @@ export interface WorkspaceIntelligenceModel {
     readonly action: NextBestActionModel;
   }[];
   readonly lifecycle: CustomerLifecycleOrchestrationModel;
+  readonly onboardingProgress: OnboardingProgressModel;
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
 }
 
@@ -133,6 +135,7 @@ export function composeWorkspaceIntelligence(
     institutionalEvents: eventQueue.toArray(),
     prioritizedActions,
     lifecycle,
+    onboardingProgress: lifecycle.onboardingProgress,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }

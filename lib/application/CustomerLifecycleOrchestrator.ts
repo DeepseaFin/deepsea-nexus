@@ -9,6 +9,10 @@ import type { FundingPresentationViewModel } from "@/lib/presentation/presenters
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
 import { ApprovalDecision } from "@/src/capabilities/approval/ApprovalDecision";
+import {
+  composeOnboardingProgress,
+  type OnboardingProgressModel,
+} from "@/lib/application/OnboardingProgress";
 
 export interface CustomerLifecycleOrchestrationSource {
   readonly businessPassport?: BusinessPassportPresentationViewModel | null;
@@ -52,6 +56,7 @@ export interface CustomerLifecycleOrchestrationModel {
   readonly workflow: {
     readonly state: string;
   };
+  readonly onboardingProgress: OnboardingProgressModel;
   readonly prioritizedEvents: readonly InstitutionalEvent[];
   readonly nextAction: NextBestActionModel | null;
 }
@@ -214,9 +219,20 @@ export function orchestrateCustomerLifecycle(
   const approvals = deriveApprovalState(source.approvals);
   const funding = deriveFundingState(source.funding);
   const relationship = deriveRelationshipState(prioritizedEvents, source.relationship);
+  const onboardingProgress = composeOnboardingProgress({
+    businessPassportState: businessPassport.state,
+    documentState: documents.state,
+    approvalState: approvals.state,
+    fundingState: funding.state,
+    relationshipState: relationship.state,
+  });
 
   const workflowState = source.workflow?.payload.panelModel.workflowStatus.queueStatus ?? "unknown";
-  const nextAction = deriveNextAction(prioritizedEvents[0] ?? null) ?? source.workflow?.payload.panelModel.nextBestAction ?? null;
+  const nextAction =
+    onboardingProgress.recommendedAction ??
+    deriveNextAction(prioritizedEvents[0] ?? null) ??
+    source.workflow?.payload.panelModel.nextBestAction ??
+    null;
 
   return {
     phase: deriveLifecyclePhase(
@@ -234,6 +250,7 @@ export function orchestrateCustomerLifecycle(
     workflow: {
       state: workflowState,
     },
+    onboardingProgress,
     prioritizedEvents,
     nextAction,
   };

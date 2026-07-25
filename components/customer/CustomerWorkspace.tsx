@@ -343,6 +343,16 @@ export default function CustomerWorkspace({
 
   const sidebarSections = layout.sidebarSections[activeTab.id] ?? [];
   const tabPanelModel = layout.tabContent[activeTab.id];
+  const onboardingProgress = workspaceIntelligence.onboardingProgress;
+  const summaryWithOnboarding: CustomerSummaryModel = {
+    ...summary,
+    onboardingProgress: {
+      overallCompletionPercent: onboardingProgress.overallCompletionPercent,
+      currentStageLabel: onboardingProgress.currentStage.label,
+      blockedStageLabels: onboardingProgress.blockedStages.map((stage) => stage.label),
+      recommendedNextStageLabel: onboardingProgress.recommendedNextStage.label,
+    },
+  };
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -354,7 +364,19 @@ export default function CustomerWorkspace({
         onAction={handleAction}
       />
 
-      <CustomerSummaryCard summary={summary} />
+      <SectionCard
+        title="Current Onboarding Stage"
+        subtitle={`Recommended next stage: ${onboardingProgress.recommendedNextStage.label}`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusChip label={onboardingProgress.currentStage.label} variant="info" />
+          {onboardingProgress.blockedStages.map((stage) => (
+            <StatusChip key={stage.id} label={`${stage.label} blocked`} variant="warning" />
+          ))}
+        </div>
+      </SectionCard>
+
+      <CustomerSummaryCard summary={summaryWithOnboarding} />
 
       <CustomerTabs tabs={layout.tabs} activeTabId={activeTab.id} onTabChange={handleTabChange} />
 

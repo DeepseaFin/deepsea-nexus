@@ -20,6 +20,12 @@ export const defaultCustomerSummary: CustomerSummaryModel = {
     variant: "warning",
   },
   fundingPotential: "USD 48M",
+  onboardingProgress: {
+    overallCompletionPercent: 0,
+    currentStageLabel: "Business Passport",
+    blockedStageLabels: ["Business Passport"],
+    recommendedNextStageLabel: "Business Passport",
+  },
 };
 
 export const defaultCustomerActions: readonly CustomerWorkspaceAction[] = [
