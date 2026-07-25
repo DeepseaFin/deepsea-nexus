@@ -26,6 +26,28 @@ import {
   type OnboardingWorkflowModel,
 } from "@/lib/application/OnboardingWorkflow";
 
+export type FundingReadinessStatus =
+  | "Not Ready"
+  | "In Progress"
+  | "Ready for Review"
+  | "Funding Ready";
+
+export interface FundingReadinessAssessmentModel {
+  readonly score: number;
+  readonly status: FundingReadinessStatus;
+  readonly missingRequirements: readonly string[];
+  readonly pendingApprovals: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly currentStage: string;
+    readonly decision: string;
+    readonly status: string;
+  }[];
+  readonly outstandingDocuments: DocumentsPresentationViewModel["payload"]["panelModel"]["missingDocuments"];
+  readonly criticalBlockers: readonly OnboardingWorkflowTask[];
+  readonly recommendedNextAction: NextBestActionModel | null;
+}
+
 export interface WorkspaceIntelligenceSource {
   readonly customer?: {
     readonly id?: string;
@@ -88,6 +110,7 @@ export interface OnboardingDashboardModel {
     readonly decision: string;
     readonly status: string;
   }[];
+  readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
   readonly relationshipHealth:
     | {
         readonly relationshipName: string;
@@ -97,6 +120,68 @@ export interface OnboardingDashboardModel {
       }
     | null;
   readonly nextRecommendedAction: NextBestActionModel | null;
+}
+
+function parseReadinessScore(confidence: string | undefined): number | null {
+  if (!confidence) {
+    return null;
+  }
+
+  const numeric = Number.parseInt(confidence.replace(/[^0-9]/g, ""), 10);
+  if (Number.isNaN(numeric)) {
+    return null;
+  }
+
+  return Math.min(100, Math.max(0, numeric));
+}
+
+function inferFundingReadinessScore(params: {
+  readonly providedScore: number | null;
+  readonly outstandingDocumentCount: number;
+  readonly pendingApprovalCount: number;
+  readonly blockerCount: number;
+  readonly lifecycleFundingState: CustomerLifecycleOrchestrationModel["funding"]["state"];
+}): number {
+  if (params.providedScore !== null) {
+    return params.providedScore;
+  }
+
+  let score = 100;
+
+  score -= params.outstandingDocumentCount * 15;
+  score -= params.pendingApprovalCount * 20;
+  score -= params.blockerCount * 20;
+
+  if (params.lifecycleFundingState === "readiness-pending") {
+    score -= 10;
+  }
+
+  return Math.min(100, Math.max(0, score));
+}
+
+function deriveFundingReadinessStatus(params: {
+  readonly score: number;
+  readonly lifecycleFundingState: CustomerLifecycleOrchestrationModel["funding"]["state"];
+  readonly outstandingDocumentCount: number;
+  readonly pendingApprovalCount: number;
+  readonly blockerCount: number;
+}): FundingReadinessStatus {
+  const hasNoBlockingDependencies =
+    params.outstandingDocumentCount === 0 && params.pendingApprovalCount === 0 && params.blockerCount === 0;
+
+  if (params.lifecycleFundingState === "readiness-ready" && hasNoBlockingDependencies) {
+    return "Funding Ready";
+  }
+
+  if (params.score >= 75 && params.blockerCount === 0 && params.outstandingDocumentCount <= 1) {
+    return "Ready for Review";
+  }
+
+  if (params.score >= 40) {
+    return "In Progress";
+  }
+
+  return "Not Ready";
 }
 
 function toPrioritizedAction(event: InstitutionalEvent): {
@@ -189,6 +274,35 @@ export function composeWorkspaceIntelligence(
     lifecycle.nextAction ??
     workflowPanelModel?.nextBestAction ??
     null;
+  const providedReadinessScore = parseReadinessScore(fundingPanelModel?.readiness.confidence);
+  const fundingReadinessScore = inferFundingReadinessScore({
+    providedScore: providedReadinessScore,
+    outstandingDocumentCount: requiredDocuments.length,
+    pendingApprovalCount: pendingApprovals.length,
+    blockerCount: onboardingWorkflow.blockers.length,
+    lifecycleFundingState: lifecycle.funding.state,
+  });
+  const fundingReadinessStatus = deriveFundingReadinessStatus({
+    score: fundingReadinessScore,
+    lifecycleFundingState: lifecycle.funding.state,
+    outstandingDocumentCount: requiredDocuments.length,
+    pendingApprovalCount: pendingApprovals.length,
+    blockerCount: onboardingWorkflow.blockers.length,
+  });
+  const missingRequirements: readonly string[] = [
+    ...requiredDocuments.map((document) => document.documentName),
+    ...pendingApprovals.map((approval) => `Approval pending: ${approval.title}`),
+    ...onboardingWorkflow.blockers.map((blocker) => blocker.title),
+  ];
+  const fundingReadinessAssessment: FundingReadinessAssessmentModel = {
+    score: fundingReadinessScore,
+    status: fundingReadinessStatus,
+    missingRequirements,
+    pendingApprovals,
+    outstandingDocuments: requiredDocuments,
+    criticalBlockers: onboardingWorkflow.blockers,
+    recommendedNextAction: nextRecommendedAction,
+  };
   const onboardingDashboard: OnboardingDashboardModel = {
     currentLifecycleStage: lifecycle.phase,
     overallOnboardingProgress: lifecycle.onboardingProgress.currentStage.label,
@@ -197,6 +311,7 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     requiredDocuments,
     pendingApprovals,
+    fundingReadinessAssessment,
     relationshipHealth,
     nextRecommendedAction,
   };

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import FundingReadinessCard from "@/components/customer/onboarding/FundingReadinessCard";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import type { OnboardingDashboardModel } from "@/lib/application/WorkspaceIntelligence";
@@ -14,6 +15,7 @@ interface OnboardingDashboardSectionState {
 
 export interface OnboardingDashboardSectionStates {
   readonly journey?: OnboardingDashboardSectionState;
+  readonly fundingReadiness?: OnboardingDashboardSectionState;
   readonly blockers?: OnboardingDashboardSectionState;
   readonly requiredDocuments?: OnboardingDashboardSectionState;
   readonly pendingApprovals?: OnboardingDashboardSectionState;
@@ -90,6 +92,12 @@ function StatefulSection({ title, subtitle, state, children }: StatefulSectionPr
 export default function OnboardingDashboard({ model, sectionStates }: OnboardingDashboardProps) {
   return (
     <div className="space-y-4">
+      <FundingReadinessCard
+        model={model.fundingReadinessAssessment}
+        isLoading={sectionStates?.fundingReadiness?.isLoading}
+        error={sectionStates?.fundingReadiness?.error}
+      />
+
       <StatefulSection
         title="Customer Onboarding Dashboard"
         subtitle="Single-screen onboarding journey view with lifecycle, readiness, and action context"

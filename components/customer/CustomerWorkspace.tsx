@@ -370,6 +370,10 @@ export default function CustomerWorkspace({
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,
     },
+    fundingReadiness: {
+      isLoading: loadingByTabId?.funding,
+      error: errorByTabId.funding,
+    },
     blockers: {
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,
