@@ -330,6 +330,117 @@ async function processSingleDocument(params: {
   };
 }
 
+interface MockTradeLicenseAttributes {
+  readonly companyName: string;
+  readonly licenseNumber: string;
+  readonly jurisdiction: string;
+  readonly issueDate: string;
+  readonly expiryDate: string;
+}
+
+function readMetadataString(metadata: Record<string, unknown>, key: string): string | undefined {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function isTradeLicenseDocument(document: DocumentRecord): boolean {
+  const fingerprint = [document.document_type, document.file_name, document.original_file_name]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return fingerprint.includes("trade") && fingerprint.includes("license");
+}
+
+function toMockTradeLicenseAttributes(document: DocumentRecord): MockTradeLicenseAttributes {
+  const metadata = document.metadata ?? {};
+
+  return {
+    companyName: readMetadataString(metadata, "companyName")
+      ?? readMetadataString(metadata, "legalName")
+      ?? `Mock Company ${document.document_code}`,
+    licenseNumber: readMetadataString(metadata, "licenseNumber")
+      ?? readMetadataString(metadata, "registrationNumber")
+      ?? `TL-${document.document_code}`,
+    jurisdiction: readMetadataString(metadata, "jurisdiction") ?? "United Arab Emirates",
+    issueDate: readMetadataString(metadata, "issueDate") ?? document.uploaded_at,
+    expiryDate: readMetadataString(metadata, "expiryDate") ?? "2030-12-31T00:00:00.000Z",
+  };
+}
+
+function toTradeLicenseEvidenceReferences(
+  attributes: MockTradeLicenseAttributes,
+): readonly EvidenceReference[] {
+  return [
+    {
+      page: 1,
+      section: "legalName",
+      fragment: attributes.companyName,
+    },
+    {
+      page: 1,
+      section: "registrationNumber",
+      fragment: attributes.licenseNumber,
+    },
+    {
+      page: 1,
+      section: "jurisdiction",
+      fragment: attributes.jurisdiction,
+    },
+    {
+      page: 1,
+      section: "entityType",
+      fragment: "Limited Liability Company",
+    },
+    {
+      page: 1,
+      section: "issueDate",
+      fragment: attributes.issueDate,
+    },
+    {
+      page: 1,
+      section: "expiryDate",
+      fragment: attributes.expiryDate,
+    },
+  ];
+}
+
+async function processTradeLicenseDocument(params: {
+  readonly document: DocumentRecord;
+  readonly evidenceFactory: EvidenceFactory;
+  readonly evidenceService: EvidenceService;
+  readonly knowledgeMapper: EvidenceKnowledgeMapper;
+  readonly knowledgeService: KnowledgeService;
+}): Promise<DocumentIntelligenceDocumentResult> {
+  const attributes = toMockTradeLicenseAttributes(params.document);
+  const evidence = params.evidenceFactory.createFromOracleDocument(
+    {
+      documentId: params.document.id,
+      documentCode: params.document.document_code,
+      mimeType: params.document.mime_type,
+      checksum: params.document.checksum ?? `checksum:${params.document.id}`,
+      uploadedAt: params.document.uploaded_at,
+      uploadedBy: params.document.uploaded_by ?? "document-intelligence",
+    },
+    toTradeLicenseEvidenceReferences(attributes),
+  );
+
+  const evidenceValidation = params.evidenceService.validateEvidence(evidence, new Date().toISOString());
+  const knowledge = params.knowledgeMapper.mapEvidence(evidence);
+  const knowledgeValidation = params.knowledgeService.validateCollection(
+    knowledge.knowledgeCollection,
+    new Date().toISOString(),
+  );
+
+  return {
+    document: params.document,
+    evidence,
+    evidenceValidation,
+    knowledge,
+    knowledgeValidation,
+  };
+}
+
 function appendProcessingValidationIssues(
   context: ProcessingContext,
   stage: DocumentIntelligenceStageName,
@@ -548,6 +659,57 @@ export const defaultEvidenceExtractionStage: EvidenceExtractionStage = {
   },
 };
 
+export const TradeLicenseProcessingStage: EvidenceExtractionStage = {
+  name: "evidence-extraction",
+  canExecute(context: ProcessingContext): boolean {
+    return context.documents.length > 0;
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
+  async execute(
+    context: ProcessingContext,
+    dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
+  ): Promise<ProcessingOutcome> {
+    const documentResults = await Promise.all(
+      context.documents.map((document) => {
+        if (isTradeLicenseDocument(document)) {
+          return processTradeLicenseDocument({
+            document,
+            evidenceFactory: dependencies.evidenceFactory,
+            evidenceService: dependencies.evidenceService,
+            knowledgeMapper: dependencies.knowledgeMapper,
+            knowledgeService: dependencies.knowledgeService,
+          });
+        }
+
+        return processSingleDocument({
+          document,
+          evidenceFactory: dependencies.evidenceFactory,
+          evidenceService: dependencies.evidenceService,
+          knowledgeMapper: dependencies.knowledgeMapper,
+          knowledgeService: dependencies.knowledgeService,
+          ocrExtractor: dependencies.ocrExtractor,
+          aiExtractor: dependencies.aiExtractor,
+        });
+      }),
+    );
+
+    return {
+      context: appendProcessingValidationIssues(
+        {
+          ...context,
+          documentResults,
+          evidenceCollection: {
+            items: documentResults.map((item) => item.evidence),
+          },
+        },
+        "evidence-extraction",
+      ),
+    };
+  },
+};
+
 export const defaultKnowledgeTransformationStage: KnowledgeTransformationStage = {
   name: "knowledge-transformation",
   canExecute(context: ProcessingContext): boolean {
@@ -694,7 +856,7 @@ export function createDocumentIntelligenceOrchestrator(
   const stages: DocumentIntelligencePipelineStages = {
     validation: dependencies.stages?.validation ?? defaultValidationStage,
     classification: dependencies.stages?.classification ?? defaultClassificationStage,
-    evidenceExtraction: dependencies.stages?.evidenceExtraction ?? defaultEvidenceExtractionStage,
+    evidenceExtraction: dependencies.stages?.evidenceExtraction ?? TradeLicenseProcessingStage,
     knowledgeTransformation: dependencies.stages?.knowledgeTransformation ?? defaultKnowledgeTransformationStage,
     passportEnrichment: dependencies.stages?.passportEnrichment ?? defaultPassportEnrichmentStage,
   };
