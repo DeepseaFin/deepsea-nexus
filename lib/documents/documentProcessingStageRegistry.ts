@@ -46,6 +46,8 @@ class InMemoryDocumentProcessingStageRegistry implements DocumentProcessingStage
   }
 
   register(stage: ProcessingStage, options: StageRegistrationOptions = {}): void {
+    this.validateStageLifecycle(stage);
+
     this.registrations.set(stage.name, {
       stage,
       enabled: options.enabled ?? true,
@@ -135,6 +137,20 @@ class InMemoryDocumentProcessingStageRegistry implements DocumentProcessingStage
           throw new Error(`Stage ${stageName} must run after dependency ${dependency}`);
         }
       }
+    }
+  }
+
+  private validateStageLifecycle(stage: ProcessingStage): void {
+    if (typeof stage.canExecute !== "function") {
+      throw new Error(`Stage ${stage.name} must implement canExecute(context)`);
+    }
+
+    if (typeof stage.validate !== "function") {
+      throw new Error(`Stage ${stage.name} must implement validate(context)`);
+    }
+
+    if (typeof stage.execute !== "function") {
+      throw new Error(`Stage ${stage.name} must implement execute(context, dependencies)`);
     }
   }
 }

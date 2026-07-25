@@ -138,8 +138,23 @@ export interface ProcessingOutcome {
   readonly halt?: boolean;
 }
 
+export interface ProcessingStageMetrics {
+  readonly [metric: string]: number;
+}
+
+export interface ProcessingStageContribution {
+  readonly evidence?: readonly Evidence[];
+  readonly knowledge?: KnowledgeCollection;
+  readonly warnings?: readonly ProcessingWarning[];
+  readonly errors?: readonly ProcessingError[];
+  readonly metrics?: ProcessingStageMetrics;
+  readonly halt?: boolean;
+}
+
 export interface ProcessingStage {
   readonly name: DocumentIntelligenceStageName;
+  canExecute(context: ProcessingContext): boolean | Promise<boolean>;
+  validate(context: ProcessingContext): ProcessingStageContribution | Promise<ProcessingStageContribution>;
   execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
@@ -385,8 +400,53 @@ export interface DocumentIntelligenceOrchestratorRuntimeDependencies {
   readonly aiExtractor?: DocumentAiExtractor;
 }
 
+function mergeKnowledgeCollection(
+  base: KnowledgeCollection,
+  incoming: KnowledgeCollection,
+): KnowledgeCollection {
+  return {
+    facts: [...base.facts, ...incoming.facts],
+  };
+}
+
+function applyStageContribution(
+  context: ProcessingContext,
+  stage: ProcessingStage,
+  contribution: ProcessingStageContribution,
+): ProcessingContext {
+  const warningsWithStage = (contribution.warnings ?? []).map((warning) => ({
+    ...warning,
+    stage: warning.stage ?? stage.name,
+  }));
+
+  const errorsWithStage = (contribution.errors ?? []).map((error) => ({
+    ...error,
+    stage: error.stage ?? stage.name,
+  }));
+
+  return {
+    ...context,
+    evidenceCollection: contribution.evidence
+      ? {
+          items: [...context.evidenceCollection.items, ...contribution.evidence],
+        }
+      : context.evidenceCollection,
+    knowledgeCollection: contribution.knowledge
+      ? mergeKnowledgeCollection(context.knowledgeCollection, contribution.knowledge)
+      : context.knowledgeCollection,
+    processingWarnings: [...context.processingWarnings, ...warningsWithStage],
+    processingErrors: [...context.processingErrors, ...errorsWithStage],
+  };
+}
+
 export const defaultValidationStage: ValidationStage = {
   name: "validation",
+  canExecute(): boolean {
+    return true;
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
   async execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
@@ -425,6 +485,12 @@ export const defaultValidationStage: ValidationStage = {
 
 export const defaultClassificationStage: ClassificationStage = {
   name: "classification",
+  canExecute(): boolean {
+    return true;
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
   async execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
@@ -477,16 +543,16 @@ export const defaultClassificationStage: ClassificationStage = {
 
 export const defaultEvidenceExtractionStage: EvidenceExtractionStage = {
   name: "evidence-extraction",
+  canExecute(context: ProcessingContext): boolean {
+    return context.documents.length > 0;
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
   async execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
   ): Promise<ProcessingOutcome> {
-    if (context.documents.length === 0) {
-      return {
-        context,
-      };
-    }
-
     const documentResults = await Promise.all(
       context.documents.map((document) =>
         processSingleDocument({
@@ -518,6 +584,12 @@ export const defaultEvidenceExtractionStage: EvidenceExtractionStage = {
 
 export const defaultKnowledgeTransformationStage: KnowledgeTransformationStage = {
   name: "knowledge-transformation",
+  canExecute(context: ProcessingContext): boolean {
+    return context.documentResults.length > 0;
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
   async execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
@@ -543,6 +615,12 @@ export const defaultKnowledgeTransformationStage: KnowledgeTransformationStage =
 
 export const defaultPassportEnrichmentStage: PassportEnrichmentStage = {
   name: "passport-enrichment",
+  canExecute(context: ProcessingContext): boolean {
+    return Boolean(context.input.passportId);
+  },
+  validate(): ProcessingStageContribution {
+    return {};
+  },
   async execute(
     context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
@@ -604,11 +682,31 @@ async function runProcessingPipeline(params: {
   readonly runtimeDependencies: DocumentIntelligenceOrchestratorRuntimeDependencies;
 }): Promise<ProcessingContext> {
   let context = params.initialContext;
+  const stageMetrics: Partial<Record<DocumentIntelligenceStageName, ProcessingStageMetrics>> = {};
 
   const executionPlan = params.stageRegistry.getOrderedExecutionPlan();
   const orderedStages: readonly ProcessingStage[] = executionPlan.stages;
 
   for (const stage of orderedStages) {
+    const canExecute = await stage.canExecute(context);
+    if (!canExecute) {
+      continue;
+    }
+
+    const preExecutionContribution = await stage.validate(context);
+    context = applyStageContribution(context, stage, preExecutionContribution);
+
+    if (preExecutionContribution.metrics) {
+      stageMetrics[stage.name] = {
+        ...(stageMetrics[stage.name] ?? {}),
+        ...preExecutionContribution.metrics,
+      };
+    }
+
+    if (preExecutionContribution.halt) {
+      break;
+    }
+
     const outcome = await stage.execute(context, params.runtimeDependencies);
     context = outcome.context;
 
@@ -616,6 +714,8 @@ async function runProcessingPipeline(params: {
       break;
     }
   }
+
+  void stageMetrics;
 
   return context;
 }
