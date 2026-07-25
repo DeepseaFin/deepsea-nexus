@@ -374,6 +374,10 @@ export default function CustomerWorkspace({
       isLoading: loadingByTabId?.approvals,
       error: errorByTabId.approvals,
     },
+    approvalWorkflow: {
+      isLoading: loadingByTabId?.approvals,
+      error: errorByTabId.approvals,
+    },
     evidenceOverview: {
       isLoading: loadingByTabId?.documents,
       error: errorByTabId.documents,

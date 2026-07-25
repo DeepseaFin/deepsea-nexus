@@ -85,6 +85,24 @@ export interface CreditAssessmentOverviewModel {
   readonly recommendedNextAction: NextBestActionModel | null;
 }
 
+export interface ApprovalWorkflowOverviewModel {
+  readonly currentApprovalStage: string;
+  readonly stages: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly state: "completed" | "current" | "upcoming";
+  }[];
+  readonly completedApprovals: number;
+  readonly pendingApprovers: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly role: string;
+  }[];
+  readonly outstandingApprovalConditions: readonly string[];
+  readonly escalations: readonly string[];
+  readonly estimatedReadinessForFinalApproval: InstitutionalHealthSignal;
+}
+
 export interface EvidenceOverviewModel {
   readonly timeline: readonly {
     readonly id: string;
@@ -203,6 +221,7 @@ export interface OnboardingDashboardModel {
     readonly status: string;
   }[];
   readonly creditAssessmentOverview: CreditAssessmentOverviewModel;
+  readonly approvalWorkflowOverview: ApprovalWorkflowOverviewModel;
   readonly evidenceOverview: EvidenceOverviewModel;
   readonly institutionalHealthOverview: InstitutionalHealthOverviewModel;
   readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
@@ -377,6 +396,87 @@ function deriveCreditAssessmentOverview(params: {
     policyExceptions,
     decisionReadiness,
     recommendedNextAction: approvalAction,
+  };
+}
+
+function deriveApprovalWorkflowOverview(params: {
+  readonly approvalProjection: ApprovalPresentationViewModel["payload"]["approvalProjection"] | undefined;
+  readonly lifecycle: CustomerLifecycleOrchestrationModel;
+  readonly pendingApprovals: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly currentStage: string;
+    readonly decision: string;
+    readonly status: string;
+  }[];
+  readonly requiredDocuments: DocumentsPresentationViewModel["payload"]["panelModel"]["missingDocuments"];
+  readonly blockers: readonly OnboardingWorkflowTask[];
+}): ApprovalWorkflowOverviewModel {
+  const approval = params.approvalProjection;
+  const currentStage = approval?.currentStage ?? "Approval Intake";
+
+  const orderedStages = ["Approval Intake", "Credit Review", "Policy Review", "Final Decision"];
+  const normalizedCurrent = currentStage.toLowerCase();
+  const matchedStageIndex = orderedStages.findIndex((stage) => normalizedCurrent.includes(stage.toLowerCase()));
+  const currentIndex = matchedStageIndex >= 0 ? matchedStageIndex : 1;
+  const stages = orderedStages.map((label, index) => ({
+    id: label.toLowerCase().replace(/\s+/g, "-"),
+    label,
+    state:
+      index < currentIndex
+        ? ("completed" as const)
+        : index === currentIndex
+          ? ("current" as const)
+          : ("upcoming" as const),
+  }));
+
+  const pendingApprovers =
+    params.lifecycle.approvals.state === "pending"
+      ? (approval?.participants ?? [])
+          .filter(
+            (participant) =>
+              participant.actor.role === "approver" || participant.actor.role === "reviewer",
+          )
+          .map((participant) => ({
+            id: participant.actor.id,
+            name: participant.actor.name,
+            role: participant.actor.role,
+          }))
+      : [];
+
+  const outstandingApprovalConditions = [
+    ...params.requiredDocuments.map((document) => `Document required: ${document.documentName}`),
+    ...params.blockers.slice(0, 3).map((blocker) => blocker.title),
+  ];
+
+  const escalations =
+    approval?.participants
+      .flatMap((participant) =>
+        (participant.metadata.tags ?? [])
+          .filter((tag) => tag.toLowerCase().includes("escalat") || tag.toLowerCase().includes("urgent"))
+          .map((tag) => `${participant.actor.name}: ${tag}`),
+      )
+      .slice(0, 5) ?? [];
+
+  const estimatedReadinessForFinalApproval: InstitutionalHealthSignal =
+    params.lifecycle.approvals.state === "rejected"
+      ? { value: "Not Ready", variant: "danger" }
+      : outstandingApprovalConditions.length > 0
+        ? { value: "Conditions Outstanding", variant: "warning" }
+        : pendingApprovers.length > 0
+          ? { value: "Awaiting Approvers", variant: "warning" }
+          : params.pendingApprovals.length === 0
+            ? { value: "Ready", variant: "success" }
+            : { value: "In Progress", variant: "info" };
+
+  return {
+    currentApprovalStage: currentStage,
+    stages,
+    completedApprovals: params.lifecycle.approvals.state === "completed" ? 1 : 0,
+    pendingApprovers,
+    outstandingApprovalConditions,
+    escalations,
+    estimatedReadinessForFinalApproval,
   };
 }
 
@@ -734,6 +834,13 @@ export function composeWorkspaceIntelligence(
     workbench,
     nextRecommendedAction,
   });
+  const approvalWorkflowOverview = deriveApprovalWorkflowOverview({
+    approvalProjection,
+    lifecycle,
+    pendingApprovals,
+    requiredDocuments,
+    blockers: onboardingWorkflow.blockers,
+  });
   const providedReadinessScore = parseReadinessScore(fundingPanelModel?.readiness.confidence);
   const fundingReadinessScore = inferFundingReadinessScore({
     providedScore: providedReadinessScore,
@@ -808,6 +915,7 @@ export function composeWorkspaceIntelligence(
     requiredDocuments,
     pendingApprovals,
     creditAssessmentOverview,
+    approvalWorkflowOverview,
     evidenceOverview,
     institutionalHealthOverview,
     fundingReadinessAssessment,

@@ -2,6 +2,7 @@
 
 import React from "react";
 import CreditAssessmentCard from "@/components/customer/approval/CreditAssessmentCard";
+import ApprovalWorkflowCard from "@/components/customer/approval/ApprovalWorkflowCard";
 import EvidenceOverviewCard from "@/components/customer/evidence/EvidenceOverviewCard";
 import CustomerHealthCard from "@/components/customer/onboarding/CustomerHealthCard";
 import DecisionSummaryCard from "@/components/customer/onboarding/DecisionSummaryCard";
@@ -20,6 +21,7 @@ interface OnboardingDashboardSectionState {
 export interface OnboardingDashboardSectionStates {
   readonly customerHealth?: OnboardingDashboardSectionState;
   readonly creditAssessment?: OnboardingDashboardSectionState;
+  readonly approvalWorkflow?: OnboardingDashboardSectionState;
   readonly evidenceOverview?: OnboardingDashboardSectionState;
   readonly journey?: OnboardingDashboardSectionState;
   readonly fundingReadiness?: OnboardingDashboardSectionState;
@@ -110,6 +112,12 @@ export default function OnboardingDashboard({ model, sectionStates }: Onboarding
         model={model.creditAssessmentOverview}
         isLoading={sectionStates?.creditAssessment?.isLoading}
         error={sectionStates?.creditAssessment?.error}
+      />
+
+      <ApprovalWorkflowCard
+        model={model.approvalWorkflowOverview}
+        isLoading={sectionStates?.approvalWorkflow?.isLoading}
+        error={sectionStates?.approvalWorkflow?.error}
       />
 
       <EvidenceOverviewCard
