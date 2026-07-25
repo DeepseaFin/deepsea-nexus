@@ -25,6 +25,7 @@ import {
   type CustomerWorkspaceDataComposition,
   type CustomerWorkspaceRepositoryComposition,
   type CustomerWorkspaceSourceData,
+  type DocumentsRepositoryBinding,
 } from "@/lib/customer/customer-workspace.data";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
@@ -72,6 +73,7 @@ export interface CustomerWorkspaceProps {
   readonly workflowPanelModel?: WorkflowPanelModel;
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
+  readonly documentsRepository?: DocumentsRepositoryBinding;
   readonly loadingByTabId?: Partial<Record<CustomerWorkspaceTabId, boolean>>;
   readonly initialTabId?: CustomerWorkspaceTabId;
   readonly onTabChange?: (tabId: CustomerWorkspaceTabId) => void;
@@ -101,6 +103,7 @@ export default function CustomerWorkspace({
   workflowPanelModel,
   repositoryAdapters,
   businessPassportRepository,
+  documentsRepository,
   loadingByTabId,
   initialTabId,
   onTabChange,
@@ -159,15 +162,16 @@ export default function CustomerWorkspace({
   const [repositoryLoadingByTabId, setRepositoryLoadingByTabId] =
     useState<Partial<Record<CustomerWorkspaceTabId, boolean>>>({});
   const repositoryComposition = useMemo<CustomerWorkspaceRepositoryComposition | undefined>(() => {
-    if (!repositoryAdapters && !businessPassportRepository) {
+    if (!repositoryAdapters && !businessPassportRepository && !documentsRepository) {
       return undefined;
     }
 
     return {
       adapters: repositoryAdapters,
       businessPassport: businessPassportRepository,
+      documents: documentsRepository,
     };
-  }, [businessPassportRepository, repositoryAdapters]);
+  }, [businessPassportRepository, documentsRepository, repositoryAdapters]);
 
   useEffect(() => {
     let cancelled = false;

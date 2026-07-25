@@ -12,11 +12,21 @@ import type {
 } from "@/lib/customer/customer-workspace.repositories";
 import type { CustomerWorkspaceTabId } from "@/lib/customer/customer-workspace.types";
 import type { DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
+import type {
+  DocumentChecklistItem,
+  DocumentMetricItem,
+  DocumentStatusItem,
+  DocumentTimelineEvent,
+  DocumentUiStatus,
+  MissingDocumentItem,
+} from "@/lib/customer/documents/documents-panel.types";
 import type { FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
 import type { AiInsightsModel } from "@/lib/customer/insights/insights.types";
 import type { RelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.types";
 import type { InstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.types";
 import type { WorkflowPanelModel } from "@/lib/customer/workflow/workflow.types";
+import type { DocumentRecord } from "@/lib/documents/documentRepository";
+import type { DocumentsRepository } from "@/lib/documents/repositories/DocumentsRepository";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
@@ -72,12 +82,30 @@ export interface CustomerWorkspaceDataLoadInput extends CustomerWorkspaceDataCom
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly repositoryContext?: CustomerWorkspaceRepositoryContext;
   readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
+  readonly documentsRepository?: DocumentsRepositoryBinding;
 }
 
 export interface BusinessPassportRepositoryBinding {
   readonly repository: BusinessPassportRepository;
   readonly resolvePassportId?: (context: CustomerWorkspaceRepositoryContext) => PassportId | string | null | undefined;
   readonly toProjection?: (passport: BusinessPassport) => BusinessPassportProjection;
+}
+
+export interface DocumentsRepositoryBinding {
+  readonly repository: DocumentsRepository;
+  readonly filters?: (context: CustomerWorkspaceRepositoryContext) => {
+    readonly client_id?: string;
+    readonly deal_id?: string;
+    readonly entity_id?: string;
+    readonly status?: string;
+    readonly document_type?: string;
+    readonly uploaded_by?: string;
+    readonly limit?: number;
+  };
+  readonly toPanelModel?: (
+    records: readonly DocumentRecord[],
+    context: CustomerWorkspaceRepositoryContext,
+  ) => DocumentsPanelModel;
 }
 
 type RepositoryAdapterSubset = Partial<CustomerWorkspaceRepositoryAdapters>;
@@ -89,7 +117,6 @@ interface DeferredRepositoryBinding {
   readonly toAdapters?: (context: CustomerWorkspaceRepositoryContext) => RepositoryAdapterSubset | Promise<RepositoryAdapterSubset>;
 }
 
-export type DocumentsRepositoryBinding = DeferredRepositoryBinding;
 export type EvidenceRepositoryBinding = DeferredRepositoryBinding;
 export type RelationshipRepositoryBinding = DeferredRepositoryBinding;
 export type ApprovalRepositoryBinding = DeferredRepositoryBinding;
@@ -101,8 +128,9 @@ export interface CustomerWorkspaceRepositoryComposition {
   readonly adapters?: CustomerWorkspaceRepositoryAdapters;
   // Active repository-backed integration (EPIC 16 Sprint 1).
   readonly businessPassport?: BusinessPassportRepositoryBinding;
-  // Reserved DI placeholders for upcoming repository integrations.
+  // Active repository-backed integration (EPIC 16 Sprint 3).
   readonly documents?: DocumentsRepositoryBinding;
+  // Reserved DI placeholders for upcoming repository integrations.
   readonly evidence?: EvidenceRepositoryBinding;
   readonly relationship?: RelationshipRepositoryBinding;
   readonly approval?: ApprovalRepositoryBinding;
@@ -149,13 +177,24 @@ function toRepositoryLoaderEntries(adapters?: CustomerWorkspaceRepositoryAdapter
 export function getCustomerWorkspaceRepositoryLoadingState(
   adaptersOrComposition?: CustomerWorkspaceRepositoryAdapters | CustomerWorkspaceRepositoryComposition,
 ): Partial<Record<CustomerWorkspaceTabId, boolean>> {
-  const adapters = adaptersOrComposition && "adapters" in adaptersOrComposition
-    ? adaptersOrComposition.adapters
+  const composition = adaptersOrComposition && "adapters" in adaptersOrComposition
+    ? adaptersOrComposition
+    : undefined;
+  const adapters = composition
+    ? composition.adapters
     : adaptersOrComposition;
   const loadingState: Partial<Record<CustomerWorkspaceTabId, boolean>> = {};
 
   for (const entry of toRepositoryLoaderEntries(adapters)) {
     loadingState[entry.tabId] = true;
+  }
+
+  if (composition?.businessPassport) {
+    loadingState["business-passport"] = true;
+  }
+
+  if (composition?.documents?.repository) {
+    loadingState.documents = true;
   }
 
   return loadingState;
@@ -171,6 +210,101 @@ function toBusinessPassportProjection(passport: BusinessPassport): BusinessPassp
     institutionalPulseState: passport.institutionalPulse.state,
     maturityLevel: passport.maturity.level,
     updatedAt: passport.metadata.audit.updatedAt,
+  };
+}
+
+function toDocumentsUiStatus(status: string): DocumentUiStatus {
+  const normalized = status.trim().toUpperCase();
+
+  if (normalized.includes("VERIFY")) {
+    return "Verified";
+  }
+
+  if (normalized.includes("PROCESS")) {
+    return "Processing";
+  }
+
+  if (normalized.includes("REJECT")) {
+    return "Rejected";
+  }
+
+  if (normalized.includes("EXPIRE")) {
+    return "Expired";
+  }
+
+  return "Uploaded";
+}
+
+function summarizeDocuments(records: readonly DocumentRecord[]): readonly DocumentMetricItem[] {
+  const total = records.length;
+  const verified = records.filter((record) => toDocumentsUiStatus(record.status) === "Verified").length;
+  const processing = records.filter((record) => toDocumentsUiStatus(record.status) === "Processing").length;
+  const rejected = records.filter((record) => toDocumentsUiStatus(record.status) === "Rejected").length;
+  const expired = records.filter((record) => toDocumentsUiStatus(record.status) === "Expired").length;
+
+  return [
+    { id: "metric-total", label: "Total Documents", value: String(total) },
+    { id: "metric-verified", label: "Verified", value: String(verified) },
+    { id: "metric-pending", label: "Pending", value: String(processing) },
+    { id: "metric-missing", label: "Missing", value: String(rejected) },
+    { id: "metric-expiring", label: "Expiring", value: String(expired) },
+  ];
+}
+
+function toDocumentStatusItems(records: readonly DocumentRecord[]): readonly DocumentStatusItem[] {
+  return records.map((record) => ({
+    id: record.id,
+    document_code: record.document_code,
+    document_type: record.document_type,
+    status: record.status,
+    updated_at: record.updated_at,
+    title: record.original_file_name || record.file_name || record.document_type,
+    uiStatus: toDocumentsUiStatus(record.status),
+  }));
+}
+
+function toDocumentChecklist(records: readonly DocumentRecord[]): readonly DocumentChecklistItem[] {
+  return records.map((record) => ({
+    id: `checklist-${record.id}`,
+    documentName: record.document_type,
+    status: toDocumentsUiStatus(record.status),
+    required: true,
+    lastUpdated: record.updated_at,
+  }));
+}
+
+function toMissingDocuments(records: readonly DocumentRecord[]): readonly MissingDocumentItem[] {
+  return records
+    .filter((record) => {
+      const status = toDocumentsUiStatus(record.status);
+      return status === "Rejected" || status === "Expired";
+    })
+    .map((record) => ({
+      id: `missing-${record.id}`,
+      documentName: record.document_type,
+      reason: `Document status is ${record.status}.`,
+      dueLabel: "Action required",
+    }));
+}
+
+function toDocumentTimeline(records: readonly DocumentRecord[]): readonly DocumentTimelineEvent[] {
+  return records.map((record) => ({
+    id: `timeline-${record.id}`,
+    timestamp: record.updated_at,
+    title: `Document ${toDocumentsUiStatus(record.status)}`,
+    description: `${record.document_type} is currently ${record.status}.`,
+    actor: record.uploaded_by ?? "Document Pipeline",
+    relatedDocumentName: record.original_file_name || record.file_name,
+  }));
+}
+
+function toDocumentsPanelModel(records: readonly DocumentRecord[]): DocumentsPanelModel {
+  return {
+    summary: summarizeDocuments(records),
+    statuses: toDocumentStatusItems(records),
+    checklist: toDocumentChecklist(records),
+    missingDocuments: toMissingDocuments(records),
+    timeline: toDocumentTimeline(records),
   };
 }
 
@@ -216,14 +350,33 @@ export function createBusinessPassportRepositoryBackedAdapters(
   };
 }
 
+export function createDocumentsRepositoryBackedAdapters(
+  binding: DocumentsRepositoryBinding,
+): Pick<CustomerWorkspaceRepositoryAdapters, "documentsPanelModel"> {
+  return {
+    async documentsPanelModel(context: CustomerWorkspaceRepositoryContext): Promise<DocumentsPanelModel> {
+      const filters = binding.filters
+        ? binding.filters(context)
+        : {
+            client_id: context.customerId,
+          };
+
+      const records = await binding.repository.list(filters);
+      return binding.toPanelModel ? binding.toPanelModel(records, context) : toDocumentsPanelModel(records);
+    },
+  };
+}
+
 function toRepositoryComposition(input: {
   readonly repositoryComposition?: CustomerWorkspaceRepositoryComposition;
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
+  readonly documentsRepository?: DocumentsRepositoryBinding;
 }): CustomerWorkspaceRepositoryComposition {
   const compatibilityComposition: CustomerWorkspaceRepositoryComposition = {
     adapters: input.repositoryAdapters,
     businessPassport: input.businessPassportRepository,
+    documents: input.documentsRepository,
   };
 
   return {
@@ -251,8 +404,14 @@ export async function composeCustomerWorkspaceRepositoryAdapters(
     );
   }
 
+  if (composition?.documents?.repository) {
+    Object.assign(
+      mergedAdapters,
+      createDocumentsRepositoryBackedAdapters(composition.documents),
+    );
+  }
+
   const deferredBindings = [
-    composition?.documents,
     composition?.evidence,
     composition?.relationship,
     composition?.approval,
@@ -429,6 +588,7 @@ export async function loadCustomerWorkspaceData(
     repositoryComposition: input.repositoryComposition,
     repositoryAdapters: input.repositoryAdapters,
     businessPassportRepository: input.businessPassportRepository,
+    documentsRepository: input.documentsRepository,
   });
 
   const repositoryAdapters = await composeCustomerWorkspaceRepositoryAdapters(
