@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
+import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
 import RelationshipWorkspaceLayout from "@/components/customer/RelationshipWorkspaceLayout";
@@ -38,14 +39,7 @@ function defaultSectionSummary(
   }
 
   if (section === "timeline") {
-    return (
-      <SectionCard
-        title="Relationship Timeline"
-        subtitle={`${viewModel.timeline.events.length} events available`}
-      >
-        <p className="text-sm text-slate-300">Timeline data is ready for incremental timeline rendering.</p>
-      </SectionCard>
-    );
+    return <RelationshipTimeline timeline={viewModel.timeline} />;
   }
 
   if (section === "documents") {
