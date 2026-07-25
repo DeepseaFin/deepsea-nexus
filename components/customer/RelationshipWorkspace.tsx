@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
+import RelationshipActionCenter from "@/components/customer/actions/RelationshipActionCenter";
 import RelationshipDocumentExplorer from "@/components/customer/documents/RelationshipDocumentExplorer";
 import RelationshipEvidenceExplorer from "@/components/customer/evidence/RelationshipEvidenceExplorer";
 import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/RelationshipKnowledgeExplorer";
@@ -57,14 +58,7 @@ function defaultSectionSummary(
     return <RelationshipKnowledgeExplorer explorer={viewModel.knowledgeExplorer} />;
   }
 
-  return (
-    <SectionCard
-      title="Action Center"
-      subtitle={`${viewModel.actionCenter.totalActions} actions available`}
-    >
-      <p className="text-sm text-slate-300">Actions are grouped by category and priority for execution.</p>
-    </SectionCard>
-  );
+  return <RelationshipActionCenter actionCenter={viewModel.actionCenter} />;
 }
 
 export default function RelationshipWorkspace({
