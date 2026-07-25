@@ -94,6 +94,7 @@ export interface EvidenceOverviewModel {
   readonly evidenceQualityOrCompleteness: string | null;
   readonly qualityAssessment: EvidenceQualityAssessmentModel;
   readonly missingEvidenceAssessment: MissingEvidenceAssessmentModel;
+  readonly insights: EvidenceInsightsModel;
 }
 
 export interface EvidenceQualityAssessmentModel {
@@ -116,6 +117,14 @@ export interface MissingEvidenceAssessmentModel {
     readonly reason: string;
     readonly dueLabel: string | null;
   }[];
+}
+
+export interface EvidenceInsightsModel {
+  readonly strongestSupportingEvidence: readonly string[];
+  readonly weakOrIncompleteEvidence: readonly string[];
+  readonly recentlyImprovedEvidence: readonly string[];
+  readonly evidenceRequiringAttention: readonly string[];
+  readonly highPriorityEvidenceActions: readonly NextBestActionModel[];
 }
 
 export interface WorkspaceIntelligenceSource {
@@ -310,6 +319,8 @@ function metricValueAsNumber(
 function deriveEvidenceOverviewModel(
   documentsPanelModel: DocumentsPresentationViewModel["payload"]["panelModel"] | undefined,
   aiPanelModel: AiInsightsPresentationViewModel["payload"]["panelModel"] | undefined,
+  onboardingWorkflow: OnboardingWorkflowModel,
+  workbench: RelationshipManagerWorkbenchModel,
 ): EvidenceOverviewModel {
   const evidenceSummary = documentsPanelModel?.evidenceSummary ?? [];
   const totalFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Total Documents");
@@ -426,6 +437,47 @@ function deriveEvidenceOverviewModel(
     })),
   };
 
+  const strongestSupportingEvidence = evidenceSummary
+    .filter((item) => item.status === "valid")
+    .slice(0, 3)
+    .map((item) => item.metadata.documentId);
+
+  const weakOrIncompleteEvidence = [
+    ...missingEvidenceAssessment.missingMandatoryEvidence.map((item) => item.name),
+    ...evidenceSummary
+      .filter((item) => item.status === "pending_validation" || item.status === "invalid")
+      .slice(0, 3)
+      .map((item) => `${item.metadata.documentId} (${item.status.replace(/_/g, " ")})`),
+  ];
+
+  const recentlyImprovedEvidence = (documentsPanelModel?.timeline ?? [])
+    .filter((event) => {
+      const text = `${event.title} ${event.description}`.toLowerCase();
+      return text.includes("verified") || text.includes("passed") || text.includes("completed");
+    })
+    .slice(0, 3)
+    .map((event) => event.title);
+
+  const evidenceRequiringAttention = [
+    ...onboardingWorkflow.blockers.map((blocker) => blocker.title),
+    ...evidenceSummary
+      .filter((item) => item.status === "pending_validation" || item.status === "invalid")
+      .map((item) => item.metadata.documentId),
+  ];
+
+  const highPriorityEvidenceActions = workbench.topItems
+    .filter((item) => item.priority === "critical" || item.priority === "high")
+    .slice(0, 3)
+    .map((item) => item.action);
+
+  const insights: EvidenceInsightsModel = {
+    strongestSupportingEvidence,
+    weakOrIncompleteEvidence,
+    recentlyImprovedEvidence,
+    evidenceRequiringAttention,
+    highPriorityEvidenceActions,
+  };
+
   return {
     timeline,
     totalEvidenceItems,
@@ -437,6 +489,7 @@ function deriveEvidenceOverviewModel(
       totalEvidenceItems > 0 ? `${completenessPercent}% verified completeness` : null,
     qualityAssessment,
     missingEvidenceAssessment,
+    insights,
   };
 }
 
@@ -567,7 +620,12 @@ export function composeWorkspaceIntelligence(
     workbench,
   });
   const requiredDocuments = documentsPanelModel?.missingDocuments ?? [];
-  const evidenceOverview = deriveEvidenceOverviewModel(documentsPanelModel, aiPanelModel);
+  const evidenceOverview = deriveEvidenceOverviewModel(
+    documentsPanelModel,
+    aiPanelModel,
+    onboardingWorkflow,
+    workbench,
+  );
   const pendingApprovals =
     lifecycle.approvals.state === "pending" && approvalProjection
       ? [

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import EvidenceInsightsCard from "@/components/customer/evidence/EvidenceInsightsCard";
 import EvidenceQualityCard from "@/components/customer/evidence/EvidenceQualityCard";
 import EvidenceTimeline from "@/components/customer/evidence/EvidenceTimeline";
 import MissingEvidenceCard from "@/components/customer/evidence/MissingEvidenceCard";
@@ -55,6 +56,12 @@ export default function EvidenceOverviewCard({ model, isLoading, error }: Eviden
       subtitle="Evidence inventory and verification status across onboarding"
     >
       <div className="space-y-4">
+        <EvidenceInsightsCard
+          model={model.insights}
+          isLoading={isLoading}
+          error={error}
+        />
+
         <EvidenceQualityCard
           model={model.qualityAssessment}
           isLoading={isLoading}
