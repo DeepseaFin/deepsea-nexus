@@ -20,6 +20,7 @@ export interface MockInvoiceExtraction {
   readonly invoiceAmount: string;
   readonly paymentTerms: string;
   readonly dueDate: string;
+  readonly purchaseOrderReference?: string;
 }
 
 function readMetadataString(metadata: Record<string, unknown>, key: string): string | undefined {
@@ -38,6 +39,9 @@ function isInvoiceDocument(document: DocumentRecord): boolean {
 
 function buildMockInvoiceExtraction(document: DocumentRecord): MockInvoiceExtraction {
   const metadata = document.metadata ?? {};
+  const purchaseOrderReference = readMetadataString(metadata, "purchaseOrderReference")
+    ?? readMetadataString(metadata, "poReference")
+    ?? readMetadataString(metadata, "purchaseOrder");
 
   return {
     invoiceNumber: readMetadataString(metadata, "invoiceNumber") ?? `INV-${document.document_code}`,
@@ -53,11 +57,12 @@ function buildMockInvoiceExtraction(document: DocumentRecord): MockInvoiceExtrac
     invoiceAmount: readMetadataString(metadata, "invoiceAmount") ?? "85000.00",
     paymentTerms: readMetadataString(metadata, "paymentTerms") ?? "Net 30",
     dueDate: readMetadataString(metadata, "dueDate") ?? "2026-12-31T00:00:00.000Z",
+    purchaseOrderReference,
   };
 }
 
 function toInvoiceReferences(extraction: MockInvoiceExtraction): readonly EvidenceReference[] {
-  return [
+  const references: EvidenceReference[] = [
     {
       page: 1,
       section: "invoiceNumber",
@@ -98,6 +103,16 @@ function toInvoiceReferences(extraction: MockInvoiceExtraction): readonly Eviden
       section: "dueDate",
       fragment: extraction.dueDate,
     },
+    {
+      page: 1,
+      section: "tradeActivity",
+      fragment: `${extraction.seller} issued ${extraction.invoiceNumber} to ${extraction.buyer}`,
+    },
+    {
+      page: 1,
+      section: "receivablesSignal",
+      fragment: `${extraction.invoiceAmount} ${extraction.currency} due ${extraction.dueDate} (${extraction.paymentTerms})`,
+    },
     // Compatibility mappings for current passport enrichment contracts.
     {
       page: 1,
@@ -125,6 +140,16 @@ function toInvoiceReferences(extraction: MockInvoiceExtraction): readonly Eviden
       fragment: extraction.dueDate,
     },
   ];
+
+  if (extraction.purchaseOrderReference) {
+    references.push({
+      page: 1,
+      section: "purchaseOrderReference",
+      fragment: extraction.purchaseOrderReference,
+    });
+  }
+
+  return references;
 }
 
 function toFallbackReferences(document: DocumentRecord): readonly EvidenceReference[] {
