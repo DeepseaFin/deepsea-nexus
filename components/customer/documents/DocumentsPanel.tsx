@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import DocumentChecklist from "@/components/customer/documents/DocumentChecklist";
 import DocumentsHeader from "@/components/customer/documents/DocumentsHeader";
 import DocumentStatusList from "@/components/customer/documents/DocumentStatusList";
@@ -15,6 +16,8 @@ export interface DocumentsPanelProps {
   readonly config?: DocumentsPanelConfig;
   readonly viewModel?: DocumentsPresentationViewModel;
   readonly model?: DocumentsPanelModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function buildDocumentsPanelModel(
@@ -28,7 +31,17 @@ export default function DocumentsPanel({
   config = documentsPanelConfig,
   viewModel,
   model = defaultDocumentsPanelModel,
+  isLoading = false,
+  error,
 }: DocumentsPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.header.title} subtitle={config.header.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.header.title} subtitle={config.header.subtitle} message={error} />;
+  }
+
   const panelModel = buildDocumentsPanelModel(viewModel, model);
   const headerModel = viewModel
     ? {

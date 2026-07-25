@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { DocumentChecklistItem } from "@/lib/customer/documents/documents-panel.types";
 
@@ -67,7 +68,7 @@ export default function DocumentChecklist({ title, subtitle, items }: DocumentCh
           </li>
         ))}
 
-        {items.length === 0 ? <li className="text-sm text-slate-400">No checklist items provided.</li> : null}
+        {items.length === 0 ? <PanelEmptyState asListItem message="No checklist items provided." /> : null}
       </ul>
     </SectionCard>
   );

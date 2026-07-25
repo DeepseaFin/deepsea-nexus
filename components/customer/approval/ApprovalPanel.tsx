@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import ApprovalDecisionCard from "@/components/customer/approval/ApprovalDecisionCard";
 import ApprovalHeader from "@/components/customer/approval/ApprovalHeader";
 import ApprovalHistory from "@/components/customer/approval/ApprovalHistory";
@@ -15,6 +16,8 @@ export interface ApprovalPanelProps {
   readonly config?: ApprovalPanelConfig;
   readonly viewModel?: ApprovalPresentationViewModel;
   readonly model?: ApprovalPanelModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function buildApprovalPanelModel(
@@ -61,7 +64,17 @@ export default function ApprovalPanel({
   config = approvalPanelConfig,
   viewModel,
   model = defaultApprovalPanelModel,
+  isLoading = false,
+  error,
 }: ApprovalPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
+
   const presentationModel = buildApprovalPanelModel(viewModel, model);
 
   return (

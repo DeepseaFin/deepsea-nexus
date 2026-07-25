@@ -4,21 +4,49 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AiRecommendationCard from "@/components/customer/insights/AiRecommendationCard";
 import OpportunityCard from "@/components/customer/insights/OpportunityCard";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import { aiInsightsConfig, defaultAiInsightsModel } from "@/lib/customer/insights/insights.config";
 import type { AiInsightsConfig, AiInsightsModel } from "@/lib/customer/insights/insights.types";
+import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
 
 export interface AiInsightsPanelProps {
   readonly config?: AiInsightsConfig;
+  readonly viewModel?: AiInsightsPresentationViewModel;
   readonly model?: AiInsightsModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
-export default function AiInsightsPanel({ config = aiInsightsConfig, model = defaultAiInsightsModel }: AiInsightsPanelProps) {
+function buildAiInsightsModel(
+  viewModel: AiInsightsPresentationViewModel | undefined,
+  fallbackModel: AiInsightsModel,
+): AiInsightsModel {
+  return viewModel?.payload.panelModel ?? fallbackModel;
+}
+
+export default function AiInsightsPanel({
+  config = aiInsightsConfig,
+  viewModel,
+  model = defaultAiInsightsModel,
+  isLoading = false,
+  error,
+}: AiInsightsPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
+
+  const presentationModel = buildAiInsightsModel(viewModel, model);
+
   return (
     <div className="space-y-4">
       <SectionCard title={config.title} subtitle={config.subtitle}>
         <p className="text-sm text-slate-300">
-          Presentation-only recommendation surface prepared for future live AI and intelligence services.
+          {presentationModel.recommendations.length} recommendations and {presentationModel.opportunities.length} opportunities are available for this customer.
         </p>
       </SectionCard>
 
@@ -31,7 +59,7 @@ export default function AiInsightsPanel({ config = aiInsightsConfig, model = def
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {model.recommendations.map((recommendation) => (
+              {presentationModel.recommendations.map((recommendation) => (
               <AiRecommendationCard key={recommendation.id} recommendation={recommendation} />
             ))}
           </motion.div>
@@ -40,7 +68,7 @@ export default function AiInsightsPanel({ config = aiInsightsConfig, model = def
 
       <SectionCard title={config.opportunitiesTitle} subtitle={config.opportunitiesSubtitle}>
         <div className="space-y-2.5">
-          {model.opportunities.map((opportunity) => (
+          {presentationModel.opportunities.map((opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
           ))}
         </div>

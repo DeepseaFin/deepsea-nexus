@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Lightbulb } from "lucide-react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   PassportPanelConfig,
@@ -71,9 +72,7 @@ export default function BusinessPassportInsights({
           </article>
         ))}
 
-        {recommendations.length === 0 ? (
-          <p className="text-sm text-slate-400">No recommendations provided for this workspace context.</p>
-        ) : null}
+        {recommendations.length === 0 ? <PanelEmptyState message="No recommendations provided for this workspace context." /> : null}
       </div>
     </SectionCard>
   );

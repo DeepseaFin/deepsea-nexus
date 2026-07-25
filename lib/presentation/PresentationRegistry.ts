@@ -4,11 +4,14 @@ import {
   type PresentationCapability,
 } from "@/lib/presentation/PresentationContext";
 import type { PresentationViewModel } from "@/lib/presentation/PresentationViewModel";
+import { aiInsightsPresenter } from "@/lib/presentation/presenters/AiInsightsPresenter";
 import { fundingPresenter } from "@/lib/presentation/presenters/FundingPresenter";
 import { approvalPresenter } from "@/lib/presentation/presenters/ApprovalPresenter";
 import { documentsPresenter } from "@/lib/presentation/presenters/DocumentsPresenter";
 import { businessPassportPresenter } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import { relationshipPresenter } from "@/lib/presentation/presenters/RelationshipPresenter";
+import { institutionalTimelinePresenter } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
+import { workflowPresenter } from "@/lib/presentation/presenters/WorkflowPresenter";
 
 export type RegisteredPresentationAdapter = PresentationAdapter<unknown, PresentationViewModel>;
 
@@ -53,3 +56,6 @@ defaultPresentationRegistry.register(documentsPresenter);
 defaultPresentationRegistry.register(relationshipPresenter);
 defaultPresentationRegistry.register(approvalPresenter);
 defaultPresentationRegistry.register(fundingPresenter);
+defaultPresentationRegistry.register(aiInsightsPresenter);
+defaultPresentationRegistry.register(institutionalTimelinePresenter);
+defaultPresentationRegistry.register(workflowPresenter);

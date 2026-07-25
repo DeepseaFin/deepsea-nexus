@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   FacilityOverviewItem,
@@ -44,7 +45,7 @@ export default function FacilityOverview({ config, facilities }: FacilityOvervie
           </article>
         ))}
 
-        {facilities.length === 0 ? <p className="text-sm text-slate-400">No facilities provided.</p> : null}
+        {facilities.length === 0 ? <PanelEmptyState message="No facilities provided." /> : null}
       </div>
     </SectionCard>
   );

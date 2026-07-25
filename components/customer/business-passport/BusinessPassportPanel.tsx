@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import BusinessPassportHeader from "@/components/customer/business-passport/BusinessPassportHeader";
 import BusinessPassportInsights from "@/components/customer/business-passport/BusinessPassportInsights";
 import BusinessPassportProgress from "@/components/customer/business-passport/BusinessPassportProgress";
@@ -23,6 +24,8 @@ export interface BusinessPassportPanelProps {
   readonly model?: PassportPanelModel;
   readonly config?: PassportPanelConfig;
   readonly statusStates?: readonly PassportPanelStatus[];
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function buildPresentationModel(
@@ -58,7 +61,17 @@ export default function BusinessPassportPanel({
   model = defaultPassportPanelModel,
   config = passportPanelConfig,
   statusStates = defaultPassportPanelStates,
+  isLoading = false,
+  error,
 }: BusinessPassportPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.heading} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.heading} subtitle={config.subtitle} message={error} />;
+  }
+
   const presentationModel = viewModel ? buildPresentationModel(viewModel, model) : model;
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { MissingDocumentItem } from "@/lib/customer/documents/documents-panel.types";
 
@@ -24,7 +25,7 @@ export default function MissingDocumentsCard({ title, subtitle, items }: Missing
           </article>
         ))}
 
-        {items.length === 0 ? <p className="text-sm text-slate-400">No missing documents in this context.</p> : null}
+        {items.length === 0 ? <PanelEmptyState message="No missing documents in this context." /> : null}
       </div>
     </SectionCard>
   );

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import TimelineEvent from "@/components/customer/timeline/TimelineEvent";
 import TimelineFilter from "@/components/customer/timeline/TimelineFilter";
@@ -15,25 +16,41 @@ import type {
   TimelineConfig,
   TimelineFilterValue,
 } from "@/lib/customer/timeline/timeline.types";
+import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
 
 export interface InstitutionalTimelineProps {
   readonly config?: TimelineConfig;
+  readonly viewModel?: InstitutionalTimelinePresentationViewModel;
   readonly model?: InstitutionalTimelineModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 export default function InstitutionalTimeline({
   config = institutionalTimelineConfig,
+  viewModel,
   model = defaultInstitutionalTimelineModel,
+  isLoading = false,
+  error,
 }: InstitutionalTimelineProps) {
   const [activeFilter, setActiveFilter] = useState<TimelineFilterValue>("All");
+  const presentationModel = viewModel?.payload.panelModel ?? model;
 
   const visibleEvents = useMemo(() => {
     if (activeFilter === "All") {
-      return model.events;
+      return presentationModel.events;
     }
 
-    return model.events.filter((event) => event.filter === activeFilter);
-  }, [activeFilter, model.events]);
+    return presentationModel.events.filter((event) => event.filter === activeFilter);
+  }, [activeFilter, presentationModel.events]);
+
+  if (isLoading) {
+    return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
 
   return (
     <div className="space-y-4">
@@ -46,7 +63,7 @@ export default function InstitutionalTimeline({
         />
       </SectionCard>
 
-      <TimelineSummary title={config.summaryTitle} subtitle={config.summarySubtitle} metrics={model.summary} />
+      <TimelineSummary title={config.summaryTitle} subtitle={config.summarySubtitle} metrics={presentationModel.summary} />
 
       <SectionCard title={config.timelineTitle} subtitle={config.timelineSubtitle}>
         <AnimatePresence mode="wait">
@@ -63,9 +80,7 @@ export default function InstitutionalTimeline({
               <TimelineEvent key={event.id} event={event} />
             ))}
 
-            {visibleEvents.length === 0 ? (
-              <li className="text-sm text-slate-400">No events for the selected filter.</li>
-            ) : null}
+            {visibleEvents.length === 0 ? <PanelEmptyState asListItem message="No events for the selected filter." /> : null}
           </motion.ol>
         </AnimatePresence>
       </SectionCard>

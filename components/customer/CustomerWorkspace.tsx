@@ -49,6 +49,9 @@ import type {
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
+import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
+import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
+import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 
@@ -71,6 +74,7 @@ export interface CustomerWorkspaceProps {
   readonly insightsPanelModel?: AiInsightsModel;
   readonly institutionalTimelineModel?: InstitutionalTimelineModel;
   readonly workflowPanelModel?: WorkflowPanelModel;
+  readonly loadingByTabId?: Partial<Record<CustomerWorkspaceTabId, boolean>>;
   readonly initialTabId?: CustomerWorkspaceTabId;
   readonly onTabChange?: (tabId: CustomerWorkspaceTabId) => void;
   readonly onAction?: (event: CustomerWorkspaceActionEvent) => void;
@@ -96,6 +100,7 @@ export default function CustomerWorkspace({
   insightsPanelModel = defaultAiInsightsModel,
   institutionalTimelineModel = defaultInstitutionalTimelineModel,
   workflowPanelModel = defaultWorkflowPanelModel,
+  loadingByTabId,
   initialTabId,
   onTabChange,
   onAction,
@@ -105,60 +110,119 @@ export default function CustomerWorkspace({
 
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const businessPassportViewModel = useMemo<BusinessPassportPresentationViewModel | null>(() => {
+  const composition = useMemo(() => createCustomerWorkspaceComposition(), []);
+
+  const businessPassportPresentation = useMemo(() => {
     if (!businessPassportProjection) {
-      return null;
+      return { viewModel: null, error: undefined as string | undefined };
     }
 
-    const composition = createCustomerWorkspaceComposition();
     const result = composition.resolveBusinessPassportViewModel(businessPassportProjection);
 
-    return result.ok ? result.viewModel : null;
-  }, [businessPassportProjection]);
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [businessPassportProjection, composition]);
 
-  const documentsViewModel = useMemo<DocumentsPresentationViewModel | null>(() => {
-    if (!documentsProjection) {
-      return null;
-    }
+  const documentsPresentation = useMemo(() => {
+    const documentsInput = documentsProjection ?? documentsPanelModel;
+    const result = composition.resolveDocumentsViewModel(documentsInput);
 
-    const composition = createCustomerWorkspaceComposition();
-    const result = composition.resolveDocumentsViewModel(documentsProjection);
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, documentsProjection, documentsPanelModel]);
 
-    return result.ok ? result.viewModel : null;
-  }, [documentsProjection]);
-
-  const relationshipViewModel = useMemo<RelationshipPresentationViewModel | null>(() => {
+  const relationshipPresentation = useMemo(() => {
     if (!relationshipProjection) {
-      return null;
+      return { viewModel: null, error: undefined as string | undefined };
     }
 
-    const composition = createCustomerWorkspaceComposition();
     const result = composition.resolveRelationshipViewModel(relationshipProjection);
 
-    return result.ok ? result.viewModel : null;
-  }, [relationshipProjection]);
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, relationshipProjection]);
 
-  const approvalViewModel = useMemo<ApprovalPresentationViewModel | null>(() => {
+  const approvalPresentation = useMemo(() => {
     if (!approvalProjection) {
-      return null;
+      return { viewModel: null, error: undefined as string | undefined };
     }
 
-    const composition = createCustomerWorkspaceComposition();
     const result = composition.resolveApprovalViewModel(approvalProjection);
 
-    return result.ok ? result.viewModel : null;
-  }, [approvalProjection]);
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [approvalProjection, composition]);
 
-  const fundingViewModel = useMemo<FundingPresentationViewModel | null>(() => {
-    if (!fundingProjection) {
-      return null;
-    }
+  const fundingPresentation = useMemo(() => {
+    const fundingInput = fundingProjection ?? fundingPanelModel;
+    const result = composition.resolveFundingViewModel(fundingInput);
 
-    const composition = createCustomerWorkspaceComposition();
-    const result = composition.resolveFundingViewModel(fundingProjection);
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, fundingProjection, fundingPanelModel]);
 
-    return result.ok ? result.viewModel : null;
-  }, [fundingProjection]);
+  const aiInsightsPresentation = useMemo(() => {
+    const result = composition.resolveAiInsightsViewModel(insightsPanelModel);
+
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, insightsPanelModel]);
+
+  const institutionalTimelinePresentation = useMemo(() => {
+    const result = composition.resolveInstitutionalTimelineViewModel(institutionalTimelineModel);
+
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, institutionalTimelineModel]);
+
+  const workflowPresentation = useMemo(() => {
+    const result = composition.resolveWorkflowViewModel(workflowPanelModel);
+
+    return result.ok
+      ? { viewModel: result.viewModel, error: undefined as string | undefined }
+      : { viewModel: null, error: result.reason };
+  }, [composition, workflowPanelModel]);
+
+  const businessPassportViewModel: BusinessPassportPresentationViewModel | null =
+    businessPassportPresentation.viewModel;
+  const documentsViewModel: DocumentsPresentationViewModel | null = documentsPresentation.viewModel;
+  const relationshipViewModel: RelationshipPresentationViewModel | null = relationshipPresentation.viewModel;
+  const approvalViewModel: ApprovalPresentationViewModel | null = approvalPresentation.viewModel;
+  const fundingViewModel: FundingPresentationViewModel | null = fundingPresentation.viewModel;
+  const aiInsightsViewModel: AiInsightsPresentationViewModel | null = aiInsightsPresentation.viewModel;
+  const institutionalTimelineViewModel: InstitutionalTimelinePresentationViewModel | null =
+    institutionalTimelinePresentation.viewModel;
+  const workflowViewModel: WorkflowPresentationViewModel | null = workflowPresentation.viewModel;
+
+  const errorByTabId = useMemo<Partial<Record<CustomerWorkspaceTabId, string>>>(
+    () => ({
+      "business-passport": businessPassportPresentation.error,
+      documents: documentsPresentation.error,
+      relationship: relationshipPresentation.error,
+      approvals: approvalPresentation.error,
+      funding: fundingPresentation.error,
+      "ai-insights": aiInsightsPresentation.error,
+      timeline: institutionalTimelinePresentation.error,
+      overview: workflowPresentation.error,
+    }),
+    [
+      approvalPresentation.error,
+      aiInsightsPresentation.error,
+      businessPassportPresentation.error,
+      documentsPresentation.error,
+      fundingPresentation.error,
+      institutionalTimelinePresentation.error,
+      relationshipPresentation.error,
+      workflowPresentation.error,
+    ],
+  );
 
   const registryModels: CustomerWorkspaceRegistryModels = useMemo(() => {
     return {
@@ -168,12 +232,18 @@ export default function CustomerWorkspace({
       documentsViewModel,
       relationshipPanelModel,
       relationshipViewModel,
+      approvalPanelModel,
       approvalViewModel,
       fundingViewModel,
+      aiInsightsViewModel,
+      institutionalTimelineViewModel,
+      workflowViewModel,
       fundingPanelModel,
       insightsPanelModel,
       institutionalTimelineModel,
       workflowPanelModel,
+      loadingByTabId,
+      errorByTabId,
     };
   }, [
     approvalPanelModel,
@@ -188,20 +258,17 @@ export default function CustomerWorkspace({
     workflowPanelModel,
     approvalViewModel,
     fundingViewModel,
+    aiInsightsViewModel,
+    institutionalTimelineViewModel,
+    workflowViewModel,
+    loadingByTabId,
+    errorByTabId,
   ]);
 
   const panelRegistry = useMemo(
     () => createCustomerWorkspacePanelRegistry(registryModels),
     [registryModels],
   );
-
-  useEffect(() => {
-    if (!initialTabId) {
-      return;
-    }
-
-    setActiveTabId(initialTabId);
-  }, [initialTabId]);
 
   useEffect(() => {
     panelRef.current?.focus();

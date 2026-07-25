@@ -41,7 +41,8 @@ export default function NextBestAction({ config, action }: NextBestActionProps) 
 
         <button
           type="button"
-          className="mt-3 rounded-md border border-cyan-700/50 bg-cyan-900/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-500/60"
+          aria-label={`Execute action: ${action.actionLabel}`}
+          className="mt-3 rounded-md border border-cyan-700/50 bg-cyan-900/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         >
           {action.actionLabel}
         </button>

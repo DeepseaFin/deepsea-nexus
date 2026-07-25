@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipNextAction,
@@ -46,7 +47,7 @@ export default function NextActionsCard({ config, actions }: NextActionsCardProp
           </li>
         ))}
 
-        {actions.length === 0 ? <li className="text-sm text-slate-400">No actions configured for this context.</li> : null}
+        {actions.length === 0 ? <PanelEmptyState asListItem message="No actions configured for this context." /> : null}
       </ul>
     </SectionCard>
   );

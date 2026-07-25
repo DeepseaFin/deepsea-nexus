@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipPanelConfig,
@@ -44,7 +45,7 @@ export default function RelationshipTimeline({ config, timeline }: RelationshipT
           </li>
         ))}
 
-        {timeline.length === 0 ? <li className="text-sm text-slate-400">No relationship events provided.</li> : null}
+        {timeline.length === 0 ? <PanelEmptyState asListItem message="No relationship events provided." /> : null}
       </ol>
     </SectionCard>
   );

@@ -1,11 +1,14 @@
 import type { PresentationContext } from "@/lib/presentation/PresentationContext";
 import type { PresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 import type { PresentationResult } from "@/lib/presentation/PresentationResult";
+import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
+import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
+import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
 import { defaultPresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 
 export interface CustomerWorkspaceCompositionContext {
@@ -29,6 +32,15 @@ export interface CustomerWorkspaceComposition {
   resolveFundingViewModel: (
     projection: unknown,
   ) => PresentationResult<FundingPresentationViewModel>;
+  resolveAiInsightsViewModel: (
+    projection: unknown,
+  ) => PresentationResult<AiInsightsPresentationViewModel>;
+  resolveInstitutionalTimelineViewModel: (
+    projection: unknown,
+  ) => PresentationResult<InstitutionalTimelinePresentationViewModel>;
+  resolveWorkflowViewModel: (
+    projection: unknown,
+  ) => PresentationResult<WorkflowPresentationViewModel>;
 }
 
 export function createCustomerWorkspaceComposition(
@@ -156,6 +168,75 @@ export function createCustomerWorkspaceComposition(
 
       const result = presenter.adapt(projection as never, presentationContext);
       return result as PresentationResult<FundingPresentationViewModel>;
+    },
+    resolveAiInsightsViewModel(
+      projection: unknown,
+    ): PresentationResult<AiInsightsPresentationViewModel> {
+      const presentationContext = toPresentationContext("ai-insights");
+      const presenter = presentationRegistry.getByCapability("ai-insights").find((adapter) => adapter.id === "presentation.ai-insights.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "AI Insights presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "AI Insights projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<AiInsightsPresentationViewModel>;
+    },
+    resolveInstitutionalTimelineViewModel(
+      projection: unknown,
+    ): PresentationResult<InstitutionalTimelinePresentationViewModel> {
+      const presentationContext = toPresentationContext("timeline");
+      const presenter = presentationRegistry.getByCapability("timeline").find((adapter) => adapter.id === "presentation.institutional-timeline.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "Institutional Timeline presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "Institutional Timeline projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<InstitutionalTimelinePresentationViewModel>;
+    },
+    resolveWorkflowViewModel(
+      projection: unknown,
+    ): PresentationResult<WorkflowPresentationViewModel> {
+      const presentationContext = toPresentationContext("workflow");
+      const presenter = presentationRegistry.getByCapability("workflow").find((adapter) => adapter.id === "presentation.workflow.presenter");
+
+      if (!presenter) {
+        return {
+          ok: false,
+          reason: "Workflow presenter is not registered.",
+        };
+      }
+
+      if (!presenter.canAdapt || !presenter.canAdapt(projection, presentationContext)) {
+        return {
+          ok: false,
+          reason: "Workflow projection cannot be adapted.",
+        };
+      }
+
+      const result = presenter.adapt(projection as never, presentationContext);
+      return result as PresentationResult<WorkflowPresentationViewModel>;
     },
   };
 }

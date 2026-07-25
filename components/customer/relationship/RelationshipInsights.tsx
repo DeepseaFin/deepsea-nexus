@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipInsightRecommendation,
@@ -27,7 +28,7 @@ export default function RelationshipInsights({ config, insights }: RelationshipI
           </article>
         ))}
 
-        {insights.length === 0 ? <p className="text-sm text-slate-400">No insights provided for this relationship.</p> : null}
+        {insights.length === 0 ? <PanelEmptyState message="No insights provided for this relationship." /> : null}
       </div>
     </SectionCard>
   );

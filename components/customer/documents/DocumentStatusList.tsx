@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { DocumentStatusItem } from "@/lib/customer/documents/documents-panel.types";
 
@@ -64,7 +65,7 @@ export default function DocumentStatusList({ title, subtitle, items }: DocumentS
           </article>
         ))}
 
-        {items.length === 0 ? <p className="text-sm text-slate-400">No document status items provided.</p> : null}
+        {items.length === 0 ? <PanelEmptyState message="No document status items provided." /> : null}
       </div>
     </SectionCard>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import FacilityOverview from "@/components/customer/funding/FacilityOverview";
 import FundingActions from "@/components/customer/funding/FundingActions";
 import FundingHeader from "@/components/customer/funding/FundingHeader";
@@ -15,6 +16,8 @@ export interface FundingPanelProps {
   readonly config?: FundingPanelConfig;
   readonly viewModel?: FundingPresentationViewModel;
   readonly model?: FundingPanelModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function buildFundingPanelModel(
@@ -24,7 +27,21 @@ function buildFundingPanelModel(
   return viewModel?.payload.panelModel ?? fallbackModel;
 }
 
-export default function FundingPanel({ config = fundingPanelConfig, viewModel, model = defaultFundingPanelModel }: FundingPanelProps) {
+export default function FundingPanel({
+  config = fundingPanelConfig,
+  viewModel,
+  model = defaultFundingPanelModel,
+  isLoading = false,
+  error,
+}: FundingPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
+
   const presentationModel = buildFundingPanelModel(viewModel, model);
 
   return (

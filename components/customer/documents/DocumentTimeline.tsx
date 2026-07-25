@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { DocumentTimelineEvent } from "@/lib/customer/documents/documents-panel.types";
 
@@ -42,7 +43,7 @@ export default function DocumentTimeline({ title, subtitle, events }: DocumentTi
           </li>
         ))}
 
-        {events.length === 0 ? <li className="text-sm text-slate-400">No timeline events available.</li> : null}
+        {events.length === 0 ? <PanelEmptyState asListItem message="No timeline events available." /> : null}
       </ol>
     </SectionCard>
   );

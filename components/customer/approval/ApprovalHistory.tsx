@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { ApprovalHistoryEvent, ApprovalPanelConfig } from "@/lib/customer/approval/approval-panel.types";
 
@@ -47,7 +48,7 @@ export default function ApprovalHistory({ config, events }: ApprovalHistoryProps
           </li>
         ))}
 
-        {events.length === 0 ? <li className="text-sm text-slate-400">No history events provided.</li> : null}
+        {events.length === 0 ? <PanelEmptyState asListItem message="No history events provided." /> : null}
       </ol>
     </SectionCard>
   );

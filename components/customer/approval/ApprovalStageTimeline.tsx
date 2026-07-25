@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { ApprovalPanelConfig, ApprovalStageItem } from "@/lib/customer/approval/approval-panel.types";
 
@@ -46,7 +47,7 @@ export default function ApprovalStageTimeline({ config, stages }: ApprovalStageT
           </li>
         ))}
 
-        {stages.length === 0 ? <li className="text-sm text-slate-400">No approval stages provided.</li> : null}
+        {stages.length === 0 ? <PanelEmptyState asListItem message="No approval stages provided." /> : null}
       </ol>
     </SectionCard>
   );

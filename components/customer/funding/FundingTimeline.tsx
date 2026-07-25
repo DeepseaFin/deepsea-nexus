@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
-import type { FundingPanelConfig } from "@/lib/customer/funding/funding-panel.types";
-import type { WorkflowEvent } from "@/lib/workflows/WorkflowEvent";
+import type { FundingPanelConfig, FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
 
 function formatDateTime(value: string): string {
   const parsed = new Date(value);
@@ -23,7 +23,7 @@ function formatDateTime(value: string): string {
 
 export interface FundingTimelineProps {
   readonly config: FundingPanelConfig;
-  readonly events: readonly WorkflowEvent[];
+  readonly events: FundingPanelModel["timeline"];
 }
 
 export default function FundingTimeline({ config, events }: FundingTimelineProps) {
@@ -34,7 +34,7 @@ export default function FundingTimeline({ config, events }: FundingTimelineProps
           <li key={event.eventId} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
             <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{formatDateTime(event.occurredAt)}</p>
             <p className="mt-1 text-sm font-semibold text-slate-100">{event.metadata.eventLabel ?? event.type}</p>
-            <p className="mt-1 text-sm text-slate-300">{event.message ?? "No message provided."}</p>
+            <p className="mt-1 text-sm text-slate-300">{event.message}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-500">
               <span>Actor: {event.actorId}</span>
               <span>Type: {event.type}</span>
@@ -42,7 +42,7 @@ export default function FundingTimeline({ config, events }: FundingTimelineProps
           </li>
         ))}
 
-        {events.length === 0 ? <li className="text-sm text-slate-400">No timeline events provided.</li> : null}
+        {events.length === 0 ? <PanelEmptyState asListItem message="No timeline events provided." /> : null}
       </ol>
     </SectionCard>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import NextActionsCard from "@/components/customer/relationship/NextActionsCard";
 import RelationshipHeader from "@/components/customer/relationship/RelationshipHeader";
 import RelationshipHealthCard from "@/components/customer/relationship/RelationshipHealthCard";
@@ -21,6 +22,8 @@ export interface RelationshipPanelProps {
   readonly config?: RelationshipPanelConfig;
   readonly viewModel?: RelationshipPresentationViewModel;
   readonly model?: RelationshipPanelModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function buildRelationshipPanelModel(
@@ -61,7 +64,17 @@ export default function RelationshipPanel({
   config = relationshipPanelConfig,
   viewModel,
   model = defaultRelationshipPanelModel,
+  isLoading = false,
+  error,
 }: RelationshipPanelProps) {
+  if (isLoading) {
+    return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;
+  }
+
+  if (error) {
+    return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
+
   const presentationModel = buildRelationshipPanelModel(viewModel, model);
 
   return (

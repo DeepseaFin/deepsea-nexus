@@ -17,8 +17,6 @@ export default function CustomerTabs({ tabs, activeTabId, onTabChange }: Custome
     .filter((entry) => !entry.tab.disabled)
     .map((entry) => entry.index);
 
-  const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
-
   const moveFocus = (targetIndex: number) => {
     const nextTab = tabs[targetIndex];
     if (!nextTab || nextTab.disabled) {
@@ -95,7 +93,7 @@ export default function CustomerTabs({ tabs, activeTabId, onTabChange }: Custome
                 isActive
                   ? "border border-cyan-600/50 bg-cyan-900/30 text-cyan-100"
                   : "border border-transparent text-slate-400 hover:border-slate-700 hover:text-slate-200"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {tab.label}
             </button>

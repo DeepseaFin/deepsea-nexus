@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   ApprovalPanelConfig,
@@ -59,7 +60,7 @@ export default function ApprovalParticipants({ config, participants }: ApprovalP
           </li>
         ))}
 
-        {participants.length === 0 ? <li className="text-sm text-slate-400">No participants configured.</li> : null}
+        {participants.length === 0 ? <PanelEmptyState asListItem message="No participants configured." /> : null}
       </ul>
     </SectionCard>
   );

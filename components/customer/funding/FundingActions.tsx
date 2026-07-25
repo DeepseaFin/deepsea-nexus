@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { FundingActionItem, FundingPanelConfig } from "@/lib/customer/funding/funding-panel.types";
 
@@ -31,7 +32,7 @@ export default function FundingActions({ config, actions }: FundingActionsProps)
         ))}
       </div>
 
-      {actions.length === 0 ? <p className="text-sm text-slate-400">No actions configured.</p> : null}
+      {actions.length === 0 ? <PanelEmptyState message="No actions configured." /> : null}
     </SectionCard>
   );
 }
