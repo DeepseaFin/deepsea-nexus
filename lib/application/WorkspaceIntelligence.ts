@@ -92,6 +92,30 @@ export interface EvidenceOverviewModel {
     readonly uploadedAt: string;
   }[];
   readonly evidenceQualityOrCompleteness: string | null;
+  readonly qualityAssessment: EvidenceQualityAssessmentModel;
+  readonly missingEvidenceAssessment: MissingEvidenceAssessmentModel;
+}
+
+export interface EvidenceQualityAssessmentModel {
+  readonly evidenceCompleteness: {
+    readonly value: string;
+    readonly variant: StatusChipProps["variant"];
+  };
+  readonly verificationCoverage: {
+    readonly value: string;
+    readonly variant: StatusChipProps["variant"];
+  };
+  readonly evidenceFreshness: string | null;
+  readonly overallEvidenceConfidence: string | null;
+}
+
+export interface MissingEvidenceAssessmentModel {
+  readonly missingMandatoryEvidence: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly reason: string;
+    readonly dueLabel: string | null;
+  }[];
 }
 
 export interface WorkspaceIntelligenceSource {
@@ -285,6 +309,7 @@ function metricValueAsNumber(
 
 function deriveEvidenceOverviewModel(
   documentsPanelModel: DocumentsPresentationViewModel["payload"]["panelModel"] | undefined,
+  aiPanelModel: AiInsightsPresentationViewModel["payload"]["panelModel"] | undefined,
 ): EvidenceOverviewModel {
   const evidenceSummary = documentsPanelModel?.evidenceSummary ?? [];
   const totalFromSummary = metricValueAsNumber(documentsPanelModel?.summary ?? [], "Total Documents");
@@ -351,6 +376,56 @@ function deriveEvidenceOverviewModel(
   const completenessPercent =
     totalEvidenceItems > 0 ? Math.round((verifiedEvidence / totalEvidenceItems) * 100) : 0;
 
+  const verificationCoveragePercent =
+    totalEvidenceItems > 0 ? Math.round((verifiedEvidence / totalEvidenceItems) * 100) : 0;
+
+  const latestUpload = evidenceSummary
+    .map((item) => new Date(item.metadata.uploadedAt).getTime())
+    .filter((value) => !Number.isNaN(value))
+    .sort((left, right) => right - left)[0];
+
+  const freshnessDays =
+    latestUpload !== undefined
+      ? Math.floor((Date.now() - latestUpload) / (1000 * 60 * 60 * 24))
+      : null;
+
+  const qualityAssessment: EvidenceQualityAssessmentModel = {
+    evidenceCompleteness: {
+      value: `${completenessPercent}%`,
+      variant:
+        completenessPercent >= 80
+          ? "success"
+          : completenessPercent >= 50
+            ? "warning"
+            : "danger",
+    },
+    verificationCoverage: {
+      value: `${verificationCoveragePercent}%`,
+      variant:
+        verificationCoveragePercent >= 80
+          ? "success"
+          : verificationCoveragePercent >= 50
+            ? "warning"
+            : "danger",
+    },
+    evidenceFreshness:
+      freshnessDays !== null
+        ? freshnessDays === 0
+          ? "Updated today"
+          : `${freshnessDays} day${freshnessDays === 1 ? "" : "s"} ago`
+        : null,
+    overallEvidenceConfidence: aiPanelModel?.recommendations[0]?.confidence ?? null,
+  };
+
+  const missingEvidenceAssessment: MissingEvidenceAssessmentModel = {
+    missingMandatoryEvidence: (documentsPanelModel?.missingDocuments ?? []).map((document) => ({
+      id: document.id,
+      name: document.documentName,
+      reason: document.reason,
+      dueLabel: document.dueLabel ?? null,
+    })),
+  };
+
   return {
     timeline,
     totalEvidenceItems,
@@ -360,6 +435,8 @@ function deriveEvidenceOverviewModel(
     recentlyUploadedEvidence,
     evidenceQualityOrCompleteness:
       totalEvidenceItems > 0 ? `${completenessPercent}% verified completeness` : null,
+    qualityAssessment,
+    missingEvidenceAssessment,
   };
 }
 
@@ -490,7 +567,7 @@ export function composeWorkspaceIntelligence(
     workbench,
   });
   const requiredDocuments = documentsPanelModel?.missingDocuments ?? [];
-  const evidenceOverview = deriveEvidenceOverviewModel(documentsPanelModel);
+  const evidenceOverview = deriveEvidenceOverviewModel(documentsPanelModel, aiPanelModel);
   const pendingApprovals =
     lifecycle.approvals.state === "pending" && approvalProjection
       ? [

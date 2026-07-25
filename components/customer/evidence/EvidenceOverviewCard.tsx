@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import EvidenceQualityCard from "@/components/customer/evidence/EvidenceQualityCard";
 import EvidenceTimeline from "@/components/customer/evidence/EvidenceTimeline";
+import MissingEvidenceCard from "@/components/customer/evidence/MissingEvidenceCard";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
@@ -52,6 +54,20 @@ export default function EvidenceOverviewCard({ model, isLoading, error }: Eviden
       title="Evidence Overview"
       subtitle="Evidence inventory and verification status across onboarding"
     >
+      <div className="space-y-4">
+        <EvidenceQualityCard
+          model={model.qualityAssessment}
+          isLoading={isLoading}
+          error={error}
+        />
+
+        <MissingEvidenceCard
+          model={model.missingEvidenceAssessment}
+          isLoading={isLoading}
+          error={error}
+        />
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
           <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Total Evidence</p>
