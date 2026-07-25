@@ -73,6 +73,15 @@ export interface InstitutionalHealthOverviewModel {
 }
 
 export interface EvidenceOverviewModel {
+  readonly timeline: readonly {
+    readonly id: string;
+    readonly evidenceReceivedDate: string;
+    readonly source: string;
+    readonly verificationStatus: string;
+    readonly supportingBusinessCapability: string | null;
+    readonly expiryDate: string | null;
+    readonly mostRecentActivity: string;
+  }[];
   readonly totalEvidenceItems: number;
   readonly verifiedEvidence: number;
   readonly pendingVerification: number;
@@ -307,10 +316,43 @@ function deriveEvidenceOverviewModel(
       uploadedAt: item.metadata.uploadedAt,
     }));
 
+  const mostRecentTimelineEvent = [...(documentsPanelModel?.timeline ?? [])].sort(
+    (left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime(),
+  )[0];
+
+  const timeline = [...evidenceSummary]
+    .sort((left, right) =>
+      new Date(right.metadata.uploadedAt).getTime() - new Date(left.metadata.uploadedAt).getTime(),
+    )
+    .map((item) => {
+      const statusLabel = item.status.replace(/_/g, " ");
+      const source = item.metadata.sourceSystem;
+      const supportingBusinessCapability = source.includes("oracle")
+        ? "Document Intelligence"
+        : source.includes("approval")
+          ? "Approvals"
+          : source.includes("funding")
+            ? "Funding"
+            : null;
+
+      return {
+        id: item.evidenceId.toString(),
+        evidenceReceivedDate: item.metadata.uploadedAt,
+        source,
+        verificationStatus: statusLabel,
+        supportingBusinessCapability,
+        expiryDate: null,
+        mostRecentActivity: mostRecentTimelineEvent
+          ? `${mostRecentTimelineEvent.title} (${mostRecentTimelineEvent.timestamp})`
+          : `Status: ${statusLabel}`,
+      };
+    });
+
   const completenessPercent =
     totalEvidenceItems > 0 ? Math.round((verifiedEvidence / totalEvidenceItems) * 100) : 0;
 
   return {
+    timeline,
     totalEvidenceItems,
     verifiedEvidence,
     pendingVerification,

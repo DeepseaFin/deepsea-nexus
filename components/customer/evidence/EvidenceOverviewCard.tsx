@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import EvidenceTimeline from "@/components/customer/evidence/EvidenceTimeline";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
@@ -98,6 +99,13 @@ export default function EvidenceOverviewCard({ model, isLoading, error }: Eviden
         ) : (
           <PanelEmptyState message="No recent evidence uploads are available." />
         )}
+      </article>
+
+      <article className="mt-4 rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+        <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Institutional Evidence Timeline</p>
+        <div className="mt-2">
+          <EvidenceTimeline items={model.timeline} isLoading={isLoading} error={error} />
+        </div>
       </article>
     </SectionCard>
   );
