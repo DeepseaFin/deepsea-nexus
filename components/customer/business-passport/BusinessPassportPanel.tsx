@@ -11,7 +11,6 @@ import BusinessPassportSections from "@/components/customer/business-passport/Bu
 import BusinessPassportStatusCard from "@/components/customer/business-passport/BusinessPassportStatusCard";
 import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
 import {
-  defaultPassportPanelModel,
   defaultPassportPanelStates,
   passportPanelConfig,
 } from "@/lib/customer/business-passport/passport-panel.config";
@@ -87,7 +86,7 @@ function buildPresentationModel(
 
 export default function BusinessPassportPanel({
   viewModel,
-  model = defaultPassportPanelModel,
+  model,
   config = passportPanelConfig,
   statusStates = defaultPassportPanelStates,
   isLoading = false,
@@ -101,10 +100,32 @@ export default function BusinessPassportPanel({
     return <PanelErrorState title={config.heading} subtitle={config.subtitle} message={error} />;
   }
 
-  if (!viewModel) {
+  if (!viewModel && !model) {
     return (
       <SectionCard title={config.heading} subtitle={config.subtitle}>
         <PanelEmptyState message="Business Passport data is not available in the current presentation context." />
+      </SectionCard>
+    );
+  }
+
+  if (!viewModel && model) {
+    return (
+      <div className="space-y-4">
+        <BusinessPassportHeader config={config} model={model} />
+
+        <BusinessPassportStatusCard config={config} status={model.panelStatus} states={statusStates} />
+
+        <BusinessPassportProgress config={config} model={model} />
+
+        <BusinessPassportInsights config={config} recommendations={model.insights} />
+      </div>
+    );
+  }
+
+  if (!viewModel || !model) {
+    return (
+      <SectionCard title={config.heading} subtitle={config.subtitle}>
+        <PanelEmptyState message="Business Passport projection is unavailable for this workspace." />
       </SectionCard>
     );
   }

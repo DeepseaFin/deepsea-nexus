@@ -70,57 +70,57 @@ export const customerWorkspaceLayout: CustomerWorkspaceLayoutConfig = {
       id: "overview",
       heading: "Customer Overview",
       description:
-        "Unified customer context surface for metrics, health, and next actions. This area is ready for capability modules.",
-      readinessLabel: "Ready for capability composition",
+        "Unified customer context surface for metrics, health, and next actions across onboarding and decision workflows.",
+      readinessLabel: "Operational overview active",
     },
     "business-passport": {
       id: "business-passport",
       heading: "Business Passport",
       description:
-        "Reserved panel for Business Passport identity profile integration with canonical institution and governance data.",
-      readinessLabel: "Ready for Business Passport integration",
+        "Business identity profile, governance posture, and lifecycle confidence for institutional decisioning.",
+      readinessLabel: "Business Passport context active",
     },
     documents: {
       id: "documents",
       heading: "Documents",
       description:
-        "Reserved panel for document vault, ingestion, classification, and evidence intelligence components.",
-      readinessLabel: "Ready for Document Intelligence integration",
+        "Document vault, ingestion, classification, and evidence intelligence for onboarding and approvals.",
+      readinessLabel: "Document intelligence active",
     },
     relationship: {
       id: "relationship",
       heading: "Relationship",
       description:
-        "Reserved panel for relationship coverage, contacts, and interaction narratives across internal teams.",
-      readinessLabel: "Ready for relationship capability modules",
+        "Relationship coverage, key contacts, and interaction narratives across institutional teams.",
+      readinessLabel: "Relationship context active",
     },
     approvals: {
       id: "approvals",
       heading: "Approvals",
       description:
-        "Reserved panel for approval workstreams, governance stages, and pending decision context.",
-      readinessLabel: "Ready for approval capability modules",
+        "Approval workstreams, governance stages, and pending decision context for execution.",
+      readinessLabel: "Approval workflow active",
     },
     funding: {
       id: "funding",
       heading: "Funding",
       description:
-        "Reserved panel for funding readiness, opportunity tracking, and liquidity planning components.",
-      readinessLabel: "Ready for funding capability modules",
+        "Funding readiness, opportunity tracking, and liquidity planning for customer outcomes.",
+      readinessLabel: "Funding readiness context active",
     },
     "ai-insights": {
       id: "ai-insights",
       heading: "AI Insights",
       description:
-        "Reserved panel for recommendation intelligence, confidence signals, and suggested operational actions.",
-      readinessLabel: "Ready for intelligence service integration",
+        "Recommendation intelligence, confidence signals, and suggested operational actions.",
+      readinessLabel: "Intelligence guidance active",
     },
     timeline: {
       id: "timeline",
       heading: "Timeline",
       description:
-        "Reserved panel for chronological milestones, events, and audit-visible relationship progression.",
-      readinessLabel: "Ready for timeline and event projections",
+        "Chronological milestones, institutional events, and audit-visible relationship progression.",
+      readinessLabel: "Event timeline active",
     },
   },
   sidebarSections: {
@@ -132,17 +132,17 @@ export const customerWorkspaceLayout: CustomerWorkspaceLayoutConfig = {
           {
             id: "passport",
             label: "Business Passport",
-            value: "Integration slot prepared",
+            value: "Identity and lifecycle signals available",
           },
           {
             id: "document-intel",
             label: "Document Intelligence",
-            value: "Integration slot prepared",
+            value: "Evidence and classification context available",
           },
           {
             id: "approvals",
             label: "Approvals",
-            value: "Panel placeholder configured",
+            value: "Governance decision context available",
           },
         ],
       },
@@ -155,12 +155,12 @@ export const customerWorkspaceLayout: CustomerWorkspaceLayoutConfig = {
           {
             id: "entity-profile",
             label: "Entity Profile",
-            value: "Awaiting capability composition",
+            value: "Profile and status signals available",
           },
           {
             id: "governance",
             label: "Governance",
-            value: "Awaiting capability composition",
+            value: "Governance posture signals available",
           },
         ],
       },

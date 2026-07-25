@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import DocumentChecklist from "@/components/customer/documents/DocumentChecklist";
 import DocumentsHeader from "@/components/customer/documents/DocumentsHeader";
 import DocumentStatusList from "@/components/customer/documents/DocumentStatusList";
 import DocumentSummaryCard from "@/components/customer/documents/DocumentSummaryCard";
 import DocumentTimeline from "@/components/customer/documents/DocumentTimeline";
 import MissingDocumentsCard from "@/components/customer/documents/MissingDocumentsCard";
-import { defaultDocumentsPanelModel, documentsPanelConfig } from "@/lib/customer/documents/documents-panel.config";
+import { documentsPanelConfig } from "@/lib/customer/documents/documents-panel.config";
 import type { DocumentsPanelConfig, DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
+import SectionCard from "@/components/ui/SectionCard";
 
 export interface DocumentsPanelProps {
   readonly config?: DocumentsPanelConfig;
@@ -22,15 +23,15 @@ export interface DocumentsPanelProps {
 
 function buildDocumentsPanelModel(
   viewModel: DocumentsPresentationViewModel | undefined,
-  fallbackModel: DocumentsPanelModel,
-): DocumentsPanelModel {
-  return viewModel?.payload.panelModel ?? fallbackModel;
+  fallbackModel: DocumentsPanelModel | undefined,
+): DocumentsPanelModel | null {
+  return viewModel?.payload.panelModel ?? fallbackModel ?? null;
 }
 
 export default function DocumentsPanel({
   config = documentsPanelConfig,
   viewModel,
-  model = defaultDocumentsPanelModel,
+  model,
   isLoading = false,
   error,
 }: DocumentsPanelProps) {
@@ -43,6 +44,14 @@ export default function DocumentsPanel({
   }
 
   const panelModel = buildDocumentsPanelModel(viewModel, model);
+  if (!panelModel) {
+    return (
+      <SectionCard title={config.header.title} subtitle={config.header.subtitle}>
+        <PanelEmptyState message="Document data is not available in the current workspace context." />
+      </SectionCard>
+    );
+  }
+
   const headerModel = viewModel
     ? {
         ...config.header,

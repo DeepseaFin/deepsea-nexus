@@ -4,9 +4,9 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AiRecommendationCard from "@/components/customer/insights/AiRecommendationCard";
 import OpportunityCard from "@/components/customer/insights/OpportunityCard";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
-import { aiInsightsConfig, defaultAiInsightsModel } from "@/lib/customer/insights/insights.config";
+import { aiInsightsConfig } from "@/lib/customer/insights/insights.config";
 import type { AiInsightsConfig, AiInsightsModel } from "@/lib/customer/insights/insights.types";
 import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
 
@@ -20,15 +20,15 @@ export interface AiInsightsPanelProps {
 
 function buildAiInsightsModel(
   viewModel: AiInsightsPresentationViewModel | undefined,
-  fallbackModel: AiInsightsModel,
-): AiInsightsModel {
-  return viewModel?.payload.panelModel ?? fallbackModel;
+  fallbackModel: AiInsightsModel | undefined,
+): AiInsightsModel | null {
+  return viewModel?.payload.panelModel ?? fallbackModel ?? null;
 }
 
 export default function AiInsightsPanel({
   config = aiInsightsConfig,
   viewModel,
-  model = defaultAiInsightsModel,
+  model,
   isLoading = false,
   error,
 }: AiInsightsPanelProps) {
@@ -41,6 +41,13 @@ export default function AiInsightsPanel({
   }
 
   const presentationModel = buildAiInsightsModel(viewModel, model);
+  if (!presentationModel) {
+    return (
+      <SectionCard title={config.title} subtitle={config.subtitle}>
+        <PanelEmptyState message="Insights are not available in the current workspace context." />
+      </SectionCard>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import ApprovalDecisionCard from "@/components/customer/approval/ApprovalDecisionCard";
 import ApprovalHeader from "@/components/customer/approval/ApprovalHeader";
 import ApprovalHistory from "@/components/customer/approval/ApprovalHistory";
 import ApprovalParticipants from "@/components/customer/approval/ApprovalParticipants";
 import ApprovalStageTimeline from "@/components/customer/approval/ApprovalStageTimeline";
 import ApprovalSummaryCard from "@/components/customer/approval/ApprovalSummaryCard";
-import { approvalPanelConfig, defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
+import { approvalPanelConfig } from "@/lib/customer/approval/approval-panel.config";
 import type { ApprovalPanelConfig, ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
+import SectionCard from "@/components/ui/SectionCard";
 
 export interface ApprovalPanelProps {
   readonly config?: ApprovalPanelConfig;
@@ -22,14 +23,24 @@ export interface ApprovalPanelProps {
 
 function buildApprovalPanelModel(
   viewModel: ApprovalPresentationViewModel | undefined,
-  fallbackModel: ApprovalPanelModel,
-): ApprovalPanelModel {
+  fallbackModel: ApprovalPanelModel | undefined,
+): ApprovalPanelModel | null {
+  if (!fallbackModel && !viewModel) {
+    return null;
+  }
+
+  const model = fallbackModel;
+
   if (!viewModel) {
-    return fallbackModel;
+    return model ?? null;
+  }
+
+  if (!model) {
+    return null;
   }
 
   const approvalProjection = viewModel.payload.approvalProjection;
-  const participants = fallbackModel.participants.map((item, index) => {
+  const participants = model.participants.map((item, index) => {
     const projectedParticipant = approvalProjection.participants[index];
 
     if (!projectedParticipant) {
@@ -43,11 +54,11 @@ function buildApprovalPanelModel(
   });
 
   return {
-    ...fallbackModel,
+    ...model,
     summary: {
-      ...fallbackModel.summary,
+      ...model.summary,
       approval: {
-        ...fallbackModel.summary.approval,
+        ...model.summary.approval,
         approvalId: approvalProjection.approvalId,
         title: approvalProjection.title,
         status: approvalProjection.status,
@@ -63,7 +74,7 @@ function buildApprovalPanelModel(
 export default function ApprovalPanel({
   config = approvalPanelConfig,
   viewModel,
-  model = defaultApprovalPanelModel,
+  model,
   isLoading = false,
   error,
 }: ApprovalPanelProps) {
@@ -76,6 +87,13 @@ export default function ApprovalPanel({
   }
 
   const presentationModel = buildApprovalPanelModel(viewModel, model);
+  if (!presentationModel) {
+    return (
+      <SectionCard title={config.title} subtitle={config.subtitle}>
+        <PanelEmptyState message="Approval data is not available in the current workspace context." />
+      </SectionCard>
+    );
+  }
 
   return (
     <div className="space-y-4">

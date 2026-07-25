@@ -11,7 +11,8 @@ import NextBestAction from "@/components/customer/workflow/NextBestAction";
 import PriorityBanner from "@/components/customer/workflow/PriorityBanner";
 import ReadinessProgress from "@/components/customer/workflow/ReadinessProgress";
 import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import SectionCard from "@/components/ui/SectionCard";
 import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
 import { workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
 import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
@@ -33,22 +34,22 @@ import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/p
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 
 export interface CustomerWorkspaceRegistryModels {
-  readonly businessPassportPanelModel: PassportPanelModel;
+  readonly businessPassportPanelModel?: PassportPanelModel;
   readonly businessPassportViewModel?: BusinessPassportPresentationViewModel;
-  readonly documentsPanelModel: DocumentsPanelModel;
+  readonly documentsPanelModel?: DocumentsPanelModel;
   readonly documentsViewModel?: DocumentsPresentationViewModel;
-  readonly relationshipPanelModel: RelationshipPanelModel;
+  readonly relationshipPanelModel?: RelationshipPanelModel;
   readonly relationshipViewModel?: RelationshipPresentationViewModel;
   readonly approvalViewModel?: ApprovalPresentationViewModel;
   readonly fundingViewModel?: FundingPresentationViewModel;
   readonly aiInsightsViewModel?: AiInsightsPresentationViewModel;
   readonly institutionalTimelineViewModel?: InstitutionalTimelinePresentationViewModel;
   readonly workflowViewModel?: WorkflowPresentationViewModel;
-  readonly approvalPanelModel: ApprovalPanelModel;
-  readonly fundingPanelModel: FundingPanelModel;
-  readonly insightsPanelModel: AiInsightsModel;
-  readonly institutionalTimelineModel: InstitutionalTimelineModel;
-  readonly workflowPanelModel: WorkflowPanelModel;
+  readonly approvalPanelModel?: ApprovalPanelModel;
+  readonly fundingPanelModel?: FundingPanelModel;
+  readonly insightsPanelModel?: AiInsightsModel;
+  readonly institutionalTimelineModel?: InstitutionalTimelineModel;
+  readonly workflowPanelModel?: WorkflowPanelModel;
   readonly workspaceIntelligence: WorkspaceIntelligenceModel;
   readonly loadingByTabId?: Partial<Record<CustomerWorkspaceTabId, boolean>>;
   readonly errorByTabId?: Partial<Record<CustomerWorkspaceTabId, string>>;
@@ -84,23 +85,35 @@ export function createCustomerWorkspacePanelRegistry(
         );
       }
 
+      const workflowPanelModel = models.workflowViewModel?.payload.panelModel ?? models.workflowPanelModel;
+      if (!workflowPanelModel) {
+        return (
+          <SectionCard
+            title={workflowPanelConfig.workflowStatusTitle}
+            subtitle={workflowPanelConfig.workflowStatusSubtitle}
+          >
+            <PanelEmptyState message="Workflow overview is not available in the current workspace context." />
+          </SectionCard>
+        );
+      }
+
       return (
         <div className="space-y-4">
           <PriorityBanner
             config={workflowPanelConfig}
-            model={models.workflowViewModel?.payload.panelModel.priorityBanner ?? models.workflowPanelModel.priorityBanner}
+            model={workflowPanelModel.priorityBanner}
           />
           <CustomerHealthCard
             config={workflowPanelConfig}
-            health={models.workflowViewModel?.payload.panelModel.health ?? models.workflowPanelModel.health}
+            health={workflowPanelModel.health}
           />
           <ReadinessProgress
             config={workflowPanelConfig}
-            items={models.workflowViewModel?.payload.panelModel.readiness ?? models.workflowPanelModel.readiness}
+            items={workflowPanelModel.readiness}
           />
           <WorkflowStatus
             config={workflowPanelConfig}
-            model={models.workflowViewModel?.payload.panelModel.workflowStatus ?? models.workflowPanelModel.workflowStatus}
+            model={workflowPanelModel.workflowStatus}
           />
           <NextBestAction
             config={workflowPanelConfig}

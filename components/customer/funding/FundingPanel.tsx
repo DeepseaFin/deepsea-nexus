@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import FacilityOverview from "@/components/customer/funding/FacilityOverview";
 import FundingActions from "@/components/customer/funding/FundingActions";
 import FundingHeader from "@/components/customer/funding/FundingHeader";
 import FundingReadinessCard from "@/components/customer/funding/FundingReadinessCard";
 import FundingSummaryCard from "@/components/customer/funding/FundingSummaryCard";
 import FundingTimeline from "@/components/customer/funding/FundingTimeline";
-import { defaultFundingPanelModel, fundingPanelConfig } from "@/lib/customer/funding/funding-panel.config";
+import { fundingPanelConfig } from "@/lib/customer/funding/funding-panel.config";
 import type { FundingPanelConfig, FundingPanelModel } from "@/lib/customer/funding/funding-panel.types";
 import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
+import SectionCard from "@/components/ui/SectionCard";
 
 export interface FundingPanelProps {
   readonly config?: FundingPanelConfig;
@@ -22,15 +23,15 @@ export interface FundingPanelProps {
 
 function buildFundingPanelModel(
   viewModel: FundingPresentationViewModel | undefined,
-  fallbackModel: FundingPanelModel,
-): FundingPanelModel {
-  return viewModel?.payload.panelModel ?? fallbackModel;
+  fallbackModel: FundingPanelModel | undefined,
+): FundingPanelModel | null {
+  return viewModel?.payload.panelModel ?? fallbackModel ?? null;
 }
 
 export default function FundingPanel({
   config = fundingPanelConfig,
   viewModel,
-  model = defaultFundingPanelModel,
+  model,
   isLoading = false,
   error,
 }: FundingPanelProps) {
@@ -43,6 +44,13 @@ export default function FundingPanel({
   }
 
   const presentationModel = buildFundingPanelModel(viewModel, model);
+  if (!presentationModel) {
+    return (
+      <SectionCard title={config.title} subtitle={config.subtitle}>
+        <PanelEmptyState message="Funding data is not available in the current workspace context." />
+      </SectionCard>
+    );
+  }
 
   return (
     <div className="space-y-4">

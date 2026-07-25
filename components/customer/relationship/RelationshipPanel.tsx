@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import NextActionsCard from "@/components/customer/relationship/NextActionsCard";
 import RelationshipHeader from "@/components/customer/relationship/RelationshipHeader";
 import RelationshipHealthCard from "@/components/customer/relationship/RelationshipHealthCard";
@@ -9,7 +9,6 @@ import RelationshipInsights from "@/components/customer/relationship/Relationshi
 import RelationshipSummary from "@/components/customer/relationship/RelationshipSummary";
 import RelationshipTimeline from "@/components/customer/relationship/RelationshipTimeline";
 import {
-  defaultRelationshipPanelModel,
   relationshipPanelConfig,
 } from "@/lib/customer/relationship/relationship-panel.config";
 import type {
@@ -17,6 +16,7 @@ import type {
   RelationshipPanelModel,
 } from "@/lib/customer/relationship/relationship-panel.types";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
+import SectionCard from "@/components/ui/SectionCard";
 
 export interface RelationshipPanelProps {
   readonly config?: RelationshipPanelConfig;
@@ -28,20 +28,30 @@ export interface RelationshipPanelProps {
 
 function buildRelationshipPanelModel(
   viewModel: RelationshipPresentationViewModel | undefined,
-  fallbackModel: RelationshipPanelModel,
-): RelationshipPanelModel {
+  fallbackModel: RelationshipPanelModel | undefined,
+): RelationshipPanelModel | null {
+  if (!fallbackModel && !viewModel) {
+    return null;
+  }
+
+  const model = fallbackModel;
+
   if (!viewModel) {
-    return fallbackModel;
+    return model ?? null;
+  }
+
+  if (!model) {
+    return null;
   }
 
   const workspaceProjection = viewModel.payload.workspaceProjection;
 
   return {
-    ...fallbackModel,
+    ...model,
     summary: {
-      ...fallbackModel.summary,
+      ...model.summary,
       relationship: {
-        ...fallbackModel.summary.relationship,
+        ...model.summary.relationship,
         relationshipId: workspaceProjection.relationship.relationshipId,
         institutionId: workspaceProjection.relationship.institutionId,
         relationshipName: workspaceProjection.relationship.relationshipName,
@@ -63,7 +73,7 @@ function buildRelationshipPanelModel(
 export default function RelationshipPanel({
   config = relationshipPanelConfig,
   viewModel,
-  model = defaultRelationshipPanelModel,
+  model,
   isLoading = false,
   error,
 }: RelationshipPanelProps) {
@@ -76,6 +86,13 @@ export default function RelationshipPanel({
   }
 
   const presentationModel = buildRelationshipPanelModel(viewModel, model);
+  if (!presentationModel) {
+    return (
+      <SectionCard title={config.title} subtitle={config.subtitle}>
+        <PanelEmptyState message="Relationship data is not available in the current workspace context." />
+      </SectionCard>
+    );
+  }
 
   return (
     <div className="space-y-4">

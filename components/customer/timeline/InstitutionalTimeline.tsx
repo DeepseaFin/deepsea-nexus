@@ -8,7 +8,6 @@ import TimelineEvent from "@/components/customer/timeline/TimelineEvent";
 import TimelineFilter from "@/components/customer/timeline/TimelineFilter";
 import TimelineSummary from "@/components/customer/timeline/TimelineSummary";
 import {
-  defaultInstitutionalTimelineModel,
   institutionalTimelineConfig,
 } from "@/lib/customer/timeline/timeline.config";
 import type {
@@ -29,7 +28,7 @@ export interface InstitutionalTimelineProps {
 export default function InstitutionalTimeline({
   config = institutionalTimelineConfig,
   viewModel,
-  model = defaultInstitutionalTimelineModel,
+  model,
   isLoading = false,
   error,
 }: InstitutionalTimelineProps) {
@@ -50,6 +49,14 @@ export default function InstitutionalTimeline({
 
   if (error) {
     return <PanelErrorState title={config.title} subtitle={config.subtitle} message={error} />;
+  }
+
+  if (!presentationModel) {
+    return (
+      <SectionCard title={config.title} subtitle={config.subtitle}>
+        <PanelEmptyState message="Institutional timeline data is not available in the current workspace context." />
+      </SectionCard>
+    );
   }
 
   return (
