@@ -18,6 +18,7 @@ import {
   createCustomerWorkspacePanelRegistry,
   type CustomerWorkspaceRegistryModels,
 } from "@/lib/customer/customer-workspace.registry";
+import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -201,6 +202,31 @@ export default function CustomerWorkspace({
     institutionalTimelinePresentation.viewModel;
   const workflowViewModel: WorkflowPresentationViewModel | null = workflowPresentation.viewModel;
 
+  const workspaceIntelligence = useMemo<WorkspaceIntelligenceModel>(
+    () =>
+      composition.composeWorkspaceIntelligence({
+        businessPassport: businessPassportViewModel,
+        documents: documentsViewModel,
+        relationship: relationshipViewModel,
+        approvals: approvalViewModel,
+        funding: fundingViewModel,
+        aiInsights: aiInsightsViewModel,
+        timeline: institutionalTimelineViewModel,
+        workflow: workflowViewModel,
+      }),
+    [
+      aiInsightsViewModel,
+      approvalViewModel,
+      businessPassportViewModel,
+      composition,
+      documentsViewModel,
+      fundingViewModel,
+      institutionalTimelineViewModel,
+      relationshipViewModel,
+      workflowViewModel,
+    ],
+  );
+
   const errorByTabId = useMemo<Partial<Record<CustomerWorkspaceTabId, string>>>(
     () => ({
       "business-passport": businessPassportPresentation.error,
@@ -242,6 +268,7 @@ export default function CustomerWorkspace({
       insightsPanelModel,
       institutionalTimelineModel,
       workflowPanelModel,
+      workspaceIntelligence,
       loadingByTabId,
       errorByTabId,
     };
@@ -261,6 +288,7 @@ export default function CustomerWorkspace({
     aiInsightsViewModel,
     institutionalTimelineViewModel,
     workflowViewModel,
+    workspaceIntelligence,
     loadingByTabId,
     errorByTabId,
   ]);

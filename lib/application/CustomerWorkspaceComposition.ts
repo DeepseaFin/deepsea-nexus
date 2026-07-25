@@ -9,6 +9,11 @@ import type { FundingPresentationViewModel } from "@/lib/presentation/presenters
 import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
+import {
+  composeWorkspaceIntelligence,
+  type WorkspaceIntelligenceModel,
+  type WorkspaceIntelligenceSource,
+} from "@/lib/application/WorkspaceIntelligence";
 import { defaultPresentationRegistry } from "@/lib/presentation/PresentationRegistry";
 
 export interface CustomerWorkspaceCompositionContext {
@@ -41,6 +46,9 @@ export interface CustomerWorkspaceComposition {
   resolveWorkflowViewModel: (
     projection: unknown,
   ) => PresentationResult<WorkflowPresentationViewModel>;
+  composeWorkspaceIntelligence: (
+    source: WorkspaceIntelligenceSource,
+  ) => WorkspaceIntelligenceModel;
 }
 
 export function createCustomerWorkspaceComposition(
@@ -237,6 +245,9 @@ export function createCustomerWorkspaceComposition(
 
       const result = presenter.adapt(projection as never, presentationContext);
       return result as PresentationResult<WorkflowPresentationViewModel>;
+    },
+    composeWorkspaceIntelligence(source: WorkspaceIntelligenceSource): WorkspaceIntelligenceModel {
+      return composeWorkspaceIntelligence(source);
     },
   };
 }

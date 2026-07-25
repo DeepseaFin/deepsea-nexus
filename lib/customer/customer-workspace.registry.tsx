@@ -12,6 +12,7 @@ import PriorityBanner from "@/components/customer/workflow/PriorityBanner";
 import ReadinessProgress from "@/components/customer/workflow/ReadinessProgress";
 import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
 import { PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
 import { workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
 import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
@@ -48,6 +49,7 @@ export interface CustomerWorkspaceRegistryModels {
   readonly insightsPanelModel: AiInsightsModel;
   readonly institutionalTimelineModel: InstitutionalTimelineModel;
   readonly workflowPanelModel: WorkflowPanelModel;
+  readonly workspaceIntelligence: WorkspaceIntelligenceModel;
   readonly loadingByTabId?: Partial<Record<CustomerWorkspaceTabId, boolean>>;
   readonly errorByTabId?: Partial<Record<CustomerWorkspaceTabId, string>>;
 }
@@ -102,7 +104,7 @@ export function createCustomerWorkspacePanelRegistry(
           />
           <NextBestAction
             config={workflowPanelConfig}
-            action={models.workflowViewModel?.payload.panelModel.nextBestAction ?? models.workflowPanelModel.nextBestAction}
+            intelligence={models.workspaceIntelligence}
           />
           <AiInsightsPanel
             viewModel={models.aiInsightsViewModel}
