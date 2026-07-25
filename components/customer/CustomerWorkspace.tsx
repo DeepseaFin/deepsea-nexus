@@ -366,6 +366,10 @@ export default function CustomerWorkspace({
   };
 
   const onboardingDashboardStates = {
+    decisionBoard: {
+      isLoading: loadingByTabId?.overview,
+      error: errorByTabId.overview,
+    },
     customerHealth: {
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,

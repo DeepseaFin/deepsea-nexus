@@ -3,6 +3,7 @@
 import React from "react";
 import CreditAssessmentCard from "@/components/customer/approval/CreditAssessmentCard";
 import ApprovalWorkflowCard from "@/components/customer/approval/ApprovalWorkflowCard";
+import DecisionBoardCard from "@/components/customer/approval/DecisionBoardCard";
 import EvidenceOverviewCard from "@/components/customer/evidence/EvidenceOverviewCard";
 import CustomerHealthCard from "@/components/customer/onboarding/CustomerHealthCard";
 import DecisionSummaryCard from "@/components/customer/onboarding/DecisionSummaryCard";
@@ -20,6 +21,7 @@ interface OnboardingDashboardSectionState {
 
 export interface OnboardingDashboardSectionStates {
   readonly customerHealth?: OnboardingDashboardSectionState;
+  readonly decisionBoard?: OnboardingDashboardSectionState;
   readonly creditAssessment?: OnboardingDashboardSectionState;
   readonly approvalWorkflow?: OnboardingDashboardSectionState;
   readonly evidenceOverview?: OnboardingDashboardSectionState;
@@ -102,6 +104,12 @@ function StatefulSection({ title, subtitle, state, children }: StatefulSectionPr
 export default function OnboardingDashboard({ model, sectionStates }: OnboardingDashboardProps) {
   return (
     <div className="space-y-4">
+      <DecisionBoardCard
+        model={model.decisionBoard}
+        isLoading={sectionStates?.decisionBoard?.isLoading}
+        error={sectionStates?.decisionBoard?.error}
+      />
+
       <CustomerHealthCard
         model={model.institutionalHealthOverview}
         isLoading={sectionStates?.customerHealth?.isLoading}

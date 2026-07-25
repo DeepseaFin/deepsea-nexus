@@ -103,6 +103,20 @@ export interface ApprovalWorkflowOverviewModel {
   readonly estimatedReadinessForFinalApproval: InstitutionalHealthSignal;
 }
 
+export interface InstitutionalDecisionBoardModel {
+  readonly institutionalRecommendation: string;
+  readonly creditAssessmentSummary: string;
+  readonly approvalWorkflowStatus: string;
+  readonly evidenceSufficiency: string;
+  readonly fundingReadiness: string;
+  readonly criticalBlockers: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly priority: string;
+  }[];
+  readonly recommendedNextAction: NextBestActionModel | null;
+}
+
 export interface EvidenceOverviewModel {
   readonly timeline: readonly {
     readonly id: string;
@@ -220,6 +234,7 @@ export interface OnboardingDashboardModel {
     readonly decision: string;
     readonly status: string;
   }[];
+  readonly decisionBoard: InstitutionalDecisionBoardModel;
   readonly creditAssessmentOverview: CreditAssessmentOverviewModel;
   readonly approvalWorkflowOverview: ApprovalWorkflowOverviewModel;
   readonly evidenceOverview: EvidenceOverviewModel;
@@ -477,6 +492,37 @@ function deriveApprovalWorkflowOverview(params: {
     outstandingApprovalConditions,
     escalations,
     estimatedReadinessForFinalApproval,
+  };
+}
+
+function deriveInstitutionalDecisionBoard(params: {
+  readonly decisionSummary: InstitutionalDecisionSummaryModel;
+  readonly creditAssessmentOverview: CreditAssessmentOverviewModel;
+  readonly approvalWorkflowOverview: ApprovalWorkflowOverviewModel;
+  readonly evidenceOverview: EvidenceOverviewModel;
+  readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
+  readonly criticalBlockers: readonly OnboardingWorkflowTask[];
+  readonly nextRecommendedAction: NextBestActionModel | null;
+}): InstitutionalDecisionBoardModel {
+  const institutionalRecommendation =
+    params.criticalBlockers.length > 0
+      ? "Resolve critical blockers before final institutional decision."
+      : params.decisionSummary.fundingRecommendation;
+
+  return {
+    institutionalRecommendation,
+    creditAssessmentSummary: `${params.creditAssessmentOverview.creditAssessmentStatus} • ${params.creditAssessmentOverview.decisionReadiness.value}`,
+    approvalWorkflowStatus: `${params.approvalWorkflowOverview.currentApprovalStage} • ${params.approvalWorkflowOverview.estimatedReadinessForFinalApproval.value}`,
+    evidenceSufficiency:
+      params.evidenceOverview.qualityAssessment.evidenceCompleteness.value +
+      ` completeness, ${params.evidenceOverview.qualityAssessment.verificationCoverage.value} coverage`,
+    fundingReadiness: `${params.fundingReadinessAssessment.status} (${params.fundingReadinessAssessment.score}/100)`,
+    criticalBlockers: params.criticalBlockers.map((blocker) => ({
+      id: blocker.id,
+      title: blocker.title,
+      priority: blocker.priority,
+    })),
+    recommendedNextAction: params.nextRecommendedAction,
   };
 }
 
@@ -906,6 +952,15 @@ export function composeWorkspaceIntelligence(
     relationshipHealthStatus: relationshipHealth?.status ?? null,
     workflowState: lifecycle.workflow.state,
   });
+  const decisionBoard = deriveInstitutionalDecisionBoard({
+    decisionSummary,
+    creditAssessmentOverview,
+    approvalWorkflowOverview,
+    evidenceOverview,
+    fundingReadinessAssessment,
+    criticalBlockers: onboardingWorkflow.blockers,
+    nextRecommendedAction,
+  });
   const onboardingDashboard: OnboardingDashboardModel = {
     currentLifecycleStage: lifecycle.phase,
     overallOnboardingProgress: lifecycle.onboardingProgress.currentStage.label,
@@ -914,6 +969,7 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     requiredDocuments,
     pendingApprovals,
+    decisionBoard,
     creditAssessmentOverview,
     approvalWorkflowOverview,
     evidenceOverview,
