@@ -78,3 +78,15 @@ export class InMemoryBusinessPassportRepository implements BusinessPassportRepos
 export function createInMemoryBusinessPassportRepository(): BusinessPassportRepository {
   return new InMemoryBusinessPassportRepository();
 }
+
+export async function createSeededInMemoryBusinessPassportRepository(
+  passports: readonly BusinessPassport[],
+): Promise<BusinessPassportRepository> {
+  const repository = new InMemoryBusinessPassportRepository();
+
+  for (const passport of passports) {
+    await repository.save(passport);
+  }
+
+  return repository;
+}

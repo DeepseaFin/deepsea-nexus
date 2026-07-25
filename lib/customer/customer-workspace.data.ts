@@ -1,4 +1,8 @@
 import { createCustomerWorkspaceComposition, type CustomerWorkspaceComposition } from "@/lib/application/CustomerWorkspaceComposition";
+import type { BusinessPassportProjection } from "@/lib/business-passport/projections/BusinessPassportProjection";
+import type { BusinessPassportRepository } from "@/lib/business-passport/repositories/BusinessPassportRepository";
+import type { BusinessPassport } from "@/lib/business-passport/domain/BusinessPassport";
+import { PassportId } from "@/lib/business-passport/value-objects/PassportId";
 import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
 import type { ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
@@ -66,6 +70,13 @@ export interface CustomerWorkspaceDataCompositionInput {
 export interface CustomerWorkspaceDataLoadInput extends CustomerWorkspaceDataCompositionInput {
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
   readonly repositoryContext?: CustomerWorkspaceRepositoryContext;
+  readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
+}
+
+export interface BusinessPassportRepositoryBinding {
+  readonly repository: BusinessPassportRepository;
+  readonly resolvePassportId?: (context: CustomerWorkspaceRepositoryContext) => PassportId | string | null | undefined;
+  readonly toProjection?: (passport: BusinessPassport) => BusinessPassportProjection;
 }
 
 type LoaderEntry = {
@@ -114,6 +125,75 @@ export function getCustomerWorkspaceRepositoryLoadingState(
   }
 
   return loadingState;
+}
+
+function toBusinessPassportProjection(passport: BusinessPassport): BusinessPassportProjection {
+  return {
+    passportId: passport.passportId,
+    status: passport.status,
+    lifecycle: passport.lifecycle,
+    confidenceScore: passport.confidence.score,
+    knowledgeDensityBand: passport.knowledgeDensity.band,
+    institutionalPulseState: passport.institutionalPulse.state,
+    maturityLevel: passport.maturity.level,
+    updatedAt: passport.metadata.audit.updatedAt,
+  };
+}
+
+function toPassportId(
+  value: PassportId | string | null | undefined,
+): PassportId | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof PassportId) {
+    return value;
+  }
+
+  try {
+    return PassportId.fromString(value);
+  } catch {
+    return null;
+  }
+}
+
+export function createBusinessPassportRepositoryBackedAdapters(
+  binding: BusinessPassportRepositoryBinding,
+): Pick<CustomerWorkspaceRepositoryAdapters, "businessPassportProjection"> {
+  return {
+    async businessPassportProjection(context: CustomerWorkspaceRepositoryContext): Promise<BusinessPassportProjection | undefined> {
+      const resolvedPassportId = binding.resolvePassportId
+        ? binding.resolvePassportId(context)
+        : context.customerId;
+      const passportId = toPassportId(resolvedPassportId);
+
+      if (!passportId) {
+        return undefined;
+      }
+
+      const passport = await binding.repository.findById(passportId);
+      if (!passport) {
+        return undefined;
+      }
+
+      return binding.toProjection ? binding.toProjection(passport) : toBusinessPassportProjection(passport);
+    },
+  };
+}
+
+export function composeCustomerWorkspaceRepositoryAdapters(input: {
+  readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
+  readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
+}): CustomerWorkspaceRepositoryAdapters {
+  const businessPassportRepositoryAdapters = input.businessPassportRepository
+    ? createBusinessPassportRepositoryBackedAdapters(input.businessPassportRepository)
+    : {};
+
+  return {
+    ...input.repositoryAdapters,
+    ...businessPassportRepositoryAdapters,
+  };
 }
 
 async function loadRepositoryData(
@@ -269,7 +349,12 @@ export async function loadCustomerWorkspaceData(
     customerId: input.repositoryContext?.customerId ?? input.customerId,
   };
 
-  const loaded = await loadRepositoryData(input.repositoryAdapters, repositoryContext);
+  const repositoryAdapters = composeCustomerWorkspaceRepositoryAdapters({
+    repositoryAdapters: input.repositoryAdapters,
+    businessPassportRepository: input.businessPassportRepository,
+  });
+
+  const loaded = await loadRepositoryData(repositoryAdapters, repositoryContext);
   const resolved = mergeResolvedData(input.source, loaded.resolved);
   const composed = composeCustomerWorkspaceData({
     customerId: input.customerId,

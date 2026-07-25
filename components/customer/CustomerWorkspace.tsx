@@ -18,9 +18,11 @@ import {
   type CustomerWorkspaceRegistryModels,
 } from "@/lib/customer/customer-workspace.registry";
 import {
+  composeCustomerWorkspaceRepositoryAdapters,
   composeCustomerWorkspaceData,
   getCustomerWorkspaceRepositoryLoadingState,
   loadCustomerWorkspaceData,
+  type BusinessPassportRepositoryBinding,
   type CustomerWorkspaceDataComposition,
   type CustomerWorkspaceSourceData,
 } from "@/lib/customer/customer-workspace.data";
@@ -69,6 +71,7 @@ export interface CustomerWorkspaceProps {
   readonly institutionalTimelineModel?: InstitutionalTimelineModel;
   readonly workflowPanelModel?: WorkflowPanelModel;
   readonly repositoryAdapters?: CustomerWorkspaceRepositoryAdapters;
+  readonly businessPassportRepository?: BusinessPassportRepositoryBinding;
   readonly loadingByTabId?: Partial<Record<CustomerWorkspaceTabId, boolean>>;
   readonly initialTabId?: CustomerWorkspaceTabId;
   readonly onTabChange?: (tabId: CustomerWorkspaceTabId) => void;
@@ -97,6 +100,7 @@ export default function CustomerWorkspace({
   institutionalTimelineModel,
   workflowPanelModel,
   repositoryAdapters,
+  businessPassportRepository,
   loadingByTabId,
   initialTabId,
   onTabChange,
@@ -159,6 +163,19 @@ export default function CustomerWorkspace({
     let cancelled = false;
 
     if (!repositoryAdapters) {
+      if (!businessPassportRepository) {
+        return () => {
+          cancelled = true;
+        };
+      }
+    }
+
+    const effectiveRepositoryAdapters = composeCustomerWorkspaceRepositoryAdapters({
+      repositoryAdapters,
+      businessPassportRepository,
+    });
+
+    if (Object.keys(effectiveRepositoryAdapters).length === 0) {
       return () => {
         cancelled = true;
       };
@@ -166,7 +183,7 @@ export default function CustomerWorkspace({
 
     void (async () => {
       setRepositoryWorkspaceData(null);
-      setRepositoryLoadingByTabId(getCustomerWorkspaceRepositoryLoadingState(repositoryAdapters));
+      setRepositoryLoadingByTabId(getCustomerWorkspaceRepositoryLoadingState(effectiveRepositoryAdapters));
 
       try {
         const loadedData = await loadCustomerWorkspaceData({
@@ -174,6 +191,7 @@ export default function CustomerWorkspace({
           customerName: summary.customerName,
           source: sourceData,
           repositoryAdapters,
+          businessPassportRepository,
         });
 
         if (cancelled) {
@@ -204,9 +222,16 @@ export default function CustomerWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [baselineWorkspaceData, customerId, repositoryAdapters, sourceData, summary.customerName]);
+  }, [
+    baselineWorkspaceData,
+    businessPassportRepository,
+    customerId,
+    repositoryAdapters,
+    sourceData,
+    summary.customerName,
+  ]);
 
-  const workspaceData = repositoryAdapters
+  const workspaceData = repositoryAdapters || businessPassportRepository
     ? (repositoryWorkspaceData ?? baselineWorkspaceData)
     : baselineWorkspaceData;
 
