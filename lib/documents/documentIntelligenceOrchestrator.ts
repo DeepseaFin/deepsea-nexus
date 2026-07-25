@@ -104,12 +104,13 @@ export interface DocumentIntelligenceProcessingResult {
 export type DocumentIntelligencePipelineResult = DocumentIntelligenceProcessingResult;
 
 export type DocumentIntelligenceStageName =
-  | "document-ingestion"
+  | "validation"
+  | "classification"
   | "evidence-extraction"
   | "knowledge-transformation"
   | "passport-enrichment";
 
-export interface DocumentIntelligenceProcessingContext {
+export interface ProcessingContext {
   readonly input: {
     readonly customerId?: string;
     readonly documentId?: string;
@@ -127,40 +128,48 @@ export interface DocumentIntelligenceProcessingContext {
   readonly updatedPassport?: BusinessPassport;
 }
 
-export interface DocumentIngestionStage {
-  execute(
-    context: DocumentIntelligenceProcessingContext,
-    dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext>;
+export interface ProcessingOutcome {
+  readonly context: ProcessingContext;
+  readonly halt?: boolean;
 }
 
-export interface EvidenceExtractionStage {
+export interface ProcessingStage {
+  readonly name: DocumentIntelligenceStageName;
   execute(
-    context: DocumentIntelligenceProcessingContext,
+    context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext>;
+  ): Promise<ProcessingOutcome>;
 }
 
-export interface KnowledgeTransformationStage {
-  execute(
-    context: DocumentIntelligenceProcessingContext,
-    dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext>;
+export interface ValidationStage extends ProcessingStage {
+  readonly name: "validation";
 }
 
-export interface PassportEnrichmentStage {
-  execute(
-    context: DocumentIntelligenceProcessingContext,
-    dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext>;
+export interface ClassificationStage extends ProcessingStage {
+  readonly name: "classification";
+}
+
+export interface EvidenceExtractionStage extends ProcessingStage {
+  readonly name: "evidence-extraction";
+}
+
+export interface KnowledgeTransformationStage extends ProcessingStage {
+  readonly name: "knowledge-transformation";
+}
+
+export interface PassportEnrichmentStage extends ProcessingStage {
+  readonly name: "passport-enrichment";
 }
 
 export interface DocumentIntelligencePipelineStages {
-  readonly documentIngestion: DocumentIngestionStage;
+  readonly validation: ValidationStage;
+  readonly classification: ClassificationStage;
   readonly evidenceExtraction: EvidenceExtractionStage;
   readonly knowledgeTransformation: KnowledgeTransformationStage;
   readonly passportEnrichment: PassportEnrichmentStage;
 }
+
+export type DocumentIntelligenceProcessingContext = ProcessingContext;
 
 export interface DocumentIntelligenceOrchestratorDependencies {
   readonly documentsRepository: DocumentsRepository;
@@ -296,9 +305,9 @@ async function processSingleDocument(params: {
 }
 
 function appendProcessingValidationIssues(
-  context: DocumentIntelligenceProcessingContext,
+  context: ProcessingContext,
   stage: DocumentIntelligenceStageName,
-): DocumentIntelligenceProcessingContext {
+): ProcessingContext {
   const warnings: ProcessingWarning[] = [...context.processingWarnings];
   const errors: ProcessingError[] = [...context.processingErrors];
 
@@ -370,31 +379,75 @@ export interface DocumentIntelligenceOrchestratorRuntimeDependencies {
   readonly aiExtractor?: DocumentAiExtractor;
 }
 
-export const defaultDocumentIngestionStage: DocumentIngestionStage = {
+export const defaultValidationStage: ValidationStage = {
+  name: "validation",
   async execute(
-    context: DocumentIntelligenceProcessingContext,
+    context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext> {
+  ): Promise<ProcessingOutcome> {
+    void dependencies;
+
+    const errors: ProcessingError[] = [...context.processingErrors];
+    const warnings: ProcessingWarning[] = [...context.processingWarnings];
+
+    if (context.input.passportId && !toPassportId(context.input.passportId)) {
+      errors.push({
+        code: "passport.invalid-id",
+        message: "Passport ID is invalid and cannot be parsed.",
+        stage: "validation",
+      });
+    }
+
+    if (!context.input.documentId && !context.input.customerId && !context.input.documentFilters) {
+      warnings.push({
+        code: "processing.unscoped-input",
+        message: "No customer or filters provided; all available documents may be processed.",
+        stage: "validation",
+      });
+    }
+
+    return {
+      context: {
+        ...context,
+        processingWarnings: warnings,
+        processingErrors: errors,
+      },
+      halt: errors.length > context.processingErrors.length,
+    };
+  },
+};
+
+export const defaultClassificationStage: ClassificationStage = {
+  name: "classification",
+  async execute(
+    context: ProcessingContext,
+    dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
+  ): Promise<ProcessingOutcome> {
     if (context.input.documentId) {
       const document = await dependencies.documentsRepository.findById(context.input.documentId);
       if (!document) {
         return {
-          ...context,
-          processingErrors: [
-            ...context.processingErrors,
-            {
-              code: "document.not-found",
-              message: `Document ${context.input.documentId} was not found.`,
-              stage: "document-ingestion",
-              documentId: context.input.documentId,
-            },
-          ],
+          context: {
+            ...context,
+            processingErrors: [
+              ...context.processingErrors,
+              {
+                code: "document.not-found",
+                message: `Document ${context.input.documentId} was not found.`,
+                stage: "classification",
+                documentId: context.input.documentId,
+              },
+            ],
+          },
+          halt: true,
         };
       }
 
       return {
-        ...context,
-        documents: [document],
+        context: {
+          ...context,
+          documents: [document],
+        },
       };
     }
 
@@ -408,17 +461,26 @@ export const defaultDocumentIngestionStage: DocumentIngestionStage = {
 
     const documents = await dependencies.documentsRepository.list(filters);
     return {
-      ...context,
-      documents,
+      context: {
+        ...context,
+        documents,
+      },
     };
   },
 };
 
 export const defaultEvidenceExtractionStage: EvidenceExtractionStage = {
+  name: "evidence-extraction",
   async execute(
-    context: DocumentIntelligenceProcessingContext,
+    context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext> {
+  ): Promise<ProcessingOutcome> {
+    if (context.documents.length === 0) {
+      return {
+        context,
+      };
+    }
+
     const documentResults = await Promise.all(
       context.documents.map((document) =>
         processSingleDocument({
@@ -433,24 +495,27 @@ export const defaultEvidenceExtractionStage: EvidenceExtractionStage = {
       ),
     );
 
-    return appendProcessingValidationIssues(
-      {
-        ...context,
-        documentResults,
-        evidenceCollection: {
-          items: documentResults.map((item) => item.evidence),
+    return {
+      context: appendProcessingValidationIssues(
+        {
+          ...context,
+          documentResults,
+          evidenceCollection: {
+            items: documentResults.map((item) => item.evidence),
+          },
         },
-      },
-      "evidence-extraction",
-    );
+        "evidence-extraction",
+      ),
+    };
   },
 };
 
 export const defaultKnowledgeTransformationStage: KnowledgeTransformationStage = {
+  name: "knowledge-transformation",
   async execute(
-    context: DocumentIntelligenceProcessingContext,
+    context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext> {
+  ): Promise<ProcessingOutcome> {
     const knowledgeCollection = toKnowledgeCollection(context.documentResults);
 
     if (dependencies.evidenceRepository) {
@@ -462,17 +527,20 @@ export const defaultKnowledgeTransformationStage: KnowledgeTransformationStage =
     }
 
     return {
-      ...context,
-      knowledgeCollection,
+      context: {
+        ...context,
+        knowledgeCollection,
+      },
     };
   },
 };
 
 export const defaultPassportEnrichmentStage: PassportEnrichmentStage = {
+  name: "passport-enrichment",
   async execute(
-    context: DocumentIntelligenceProcessingContext,
+    context: ProcessingContext,
     dependencies: DocumentIntelligenceOrchestratorRuntimeDependencies,
-  ): Promise<DocumentIntelligenceProcessingContext> {
+  ): Promise<ProcessingOutcome> {
     const currentPassport = await resolvePassport({
       businessPassportRepository: dependencies.businessPassportRepository,
       passportId: context.input.passportId,
@@ -480,8 +548,10 @@ export const defaultPassportEnrichmentStage: PassportEnrichmentStage = {
 
     if (!currentPassport) {
       return {
-        ...context,
-        currentPassport,
+        context: {
+          ...context,
+          currentPassport,
+        },
       };
     }
 
@@ -490,9 +560,11 @@ export const defaultPassportEnrichmentStage: PassportEnrichmentStage = {
     await dependencies.businessPassportRepository?.save(updatedPassport);
 
     return {
-      ...context,
-      currentPassport,
-      updatedPassport,
+      context: {
+        ...context,
+        currentPassport,
+        updatedPassport,
+      },
     };
   },
 };
@@ -502,7 +574,7 @@ function createInitialProcessingContext(input: {
   readonly documentId?: string;
   readonly documentFilters?: ListDocumentsFilters;
   readonly passportId?: PassportId | string;
-}): DocumentIntelligenceProcessingContext {
+}): ProcessingContext {
   return {
     input,
     processedAt: new Date().toISOString(),
@@ -521,21 +593,33 @@ function createInitialProcessingContext(input: {
 }
 
 async function runProcessingPipeline(params: {
-  readonly initialContext: DocumentIntelligenceProcessingContext;
+  readonly initialContext: ProcessingContext;
   readonly stages: DocumentIntelligencePipelineStages;
   readonly runtimeDependencies: DocumentIntelligenceOrchestratorRuntimeDependencies;
-}): Promise<DocumentIntelligenceProcessingContext> {
+}): Promise<ProcessingContext> {
   let context = params.initialContext;
 
-  context = await params.stages.documentIngestion.execute(context, params.runtimeDependencies);
-  context = await params.stages.evidenceExtraction.execute(context, params.runtimeDependencies);
-  context = await params.stages.knowledgeTransformation.execute(context, params.runtimeDependencies);
-  context = await params.stages.passportEnrichment.execute(context, params.runtimeDependencies);
+  const orderedStages: readonly ProcessingStage[] = [
+    params.stages.validation,
+    params.stages.classification,
+    params.stages.evidenceExtraction,
+    params.stages.knowledgeTransformation,
+    params.stages.passportEnrichment,
+  ];
+
+  for (const stage of orderedStages) {
+    const outcome = await stage.execute(context, params.runtimeDependencies);
+    context = outcome.context;
+
+    if (outcome.halt) {
+      break;
+    }
+  }
 
   return context;
 }
 
-function toProcessingResult(context: DocumentIntelligenceProcessingContext): DocumentIntelligenceProcessingResult {
+function toProcessingResult(context: ProcessingContext): DocumentIntelligenceProcessingResult {
   return {
     processedAt: context.processedAt,
     extractedEvidence: context.evidenceCollection.items,
@@ -569,7 +653,8 @@ export function createDocumentIntelligenceOrchestrator(
   };
 
   const stages: DocumentIntelligencePipelineStages = {
-    documentIngestion: dependencies.stages?.documentIngestion ?? defaultDocumentIngestionStage,
+    validation: dependencies.stages?.validation ?? defaultValidationStage,
+    classification: dependencies.stages?.classification ?? defaultClassificationStage,
     evidenceExtraction: dependencies.stages?.evidenceExtraction ?? defaultEvidenceExtractionStage,
     knowledgeTransformation: dependencies.stages?.knowledgeTransformation ?? defaultKnowledgeTransformationStage,
     passportEnrichment: dependencies.stages?.passportEnrichment ?? defaultPassportEnrichmentStage,
