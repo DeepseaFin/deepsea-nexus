@@ -370,6 +370,10 @@ export default function CustomerWorkspace({
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,
     },
+    creditAssessment: {
+      isLoading: loadingByTabId?.approvals,
+      error: errorByTabId.approvals,
+    },
     evidenceOverview: {
       isLoading: loadingByTabId?.documents,
       error: errorByTabId.documents,

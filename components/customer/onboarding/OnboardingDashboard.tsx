@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import CreditAssessmentCard from "@/components/customer/approval/CreditAssessmentCard";
 import EvidenceOverviewCard from "@/components/customer/evidence/EvidenceOverviewCard";
 import CustomerHealthCard from "@/components/customer/onboarding/CustomerHealthCard";
 import DecisionSummaryCard from "@/components/customer/onboarding/DecisionSummaryCard";
@@ -18,6 +19,7 @@ interface OnboardingDashboardSectionState {
 
 export interface OnboardingDashboardSectionStates {
   readonly customerHealth?: OnboardingDashboardSectionState;
+  readonly creditAssessment?: OnboardingDashboardSectionState;
   readonly evidenceOverview?: OnboardingDashboardSectionState;
   readonly journey?: OnboardingDashboardSectionState;
   readonly fundingReadiness?: OnboardingDashboardSectionState;
@@ -102,6 +104,12 @@ export default function OnboardingDashboard({ model, sectionStates }: Onboarding
         model={model.institutionalHealthOverview}
         isLoading={sectionStates?.customerHealth?.isLoading}
         error={sectionStates?.customerHealth?.error}
+      />
+
+      <CreditAssessmentCard
+        model={model.creditAssessmentOverview}
+        isLoading={sectionStates?.creditAssessment?.isLoading}
+        error={sectionStates?.creditAssessment?.error}
       />
 
       <EvidenceOverviewCard

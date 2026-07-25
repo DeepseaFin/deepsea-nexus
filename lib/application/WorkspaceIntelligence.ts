@@ -72,6 +72,19 @@ export interface InstitutionalHealthOverviewModel {
   readonly operationalStatus: InstitutionalHealthSignal;
 }
 
+export interface CreditAssessmentOverviewModel {
+  readonly creditAssessmentStatus: string;
+  readonly approvalStage: string;
+  readonly pendingApprovers: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly role: string;
+  }[];
+  readonly policyExceptions: readonly string[];
+  readonly decisionReadiness: InstitutionalHealthSignal;
+  readonly recommendedNextAction: NextBestActionModel | null;
+}
+
 export interface EvidenceOverviewModel {
   readonly timeline: readonly {
     readonly id: string;
@@ -189,6 +202,7 @@ export interface OnboardingDashboardModel {
     readonly decision: string;
     readonly status: string;
   }[];
+  readonly creditAssessmentOverview: CreditAssessmentOverviewModel;
   readonly evidenceOverview: EvidenceOverviewModel;
   readonly institutionalHealthOverview: InstitutionalHealthOverviewModel;
   readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
@@ -300,6 +314,69 @@ function deriveInstitutionalHealthOverview(params: {
     fundingReadiness,
     relationshipHealth,
     operationalStatus,
+  };
+}
+
+function deriveCreditAssessmentOverview(params: {
+  readonly approvalProjection: ApprovalPresentationViewModel["payload"]["approvalProjection"] | undefined;
+  readonly lifecycle: CustomerLifecycleOrchestrationModel;
+  readonly workbench: RelationshipManagerWorkbenchModel;
+  readonly nextRecommendedAction: NextBestActionModel | null;
+}): CreditAssessmentOverviewModel {
+  const approval = params.approvalProjection;
+
+  const pendingApprovers =
+    params.lifecycle.approvals.state === "pending"
+      ? (approval?.participants ?? [])
+          .filter(
+            (participant) =>
+              participant.actor.role === "approver" || participant.actor.role === "reviewer",
+          )
+          .map((participant) => ({
+            id: participant.actor.id,
+            name: participant.actor.name,
+            role: participant.actor.role,
+          }))
+      : [];
+
+  const policyExceptions =
+    approval?.participants
+      .flatMap((participant) =>
+        (participant.metadata.tags ?? [])
+          .filter((tag) => tag.toLowerCase().includes("policy") || tag.toLowerCase().includes("exception"))
+          .map((tag) => `${participant.actor.name}: ${tag}`),
+      )
+      .slice(0, 5) ?? [];
+
+  const decisionReadiness: InstitutionalHealthSignal =
+    params.lifecycle.approvals.state === "rejected"
+      ? { value: "Blocked", variant: "danger" }
+      : pendingApprovers.length > 0
+        ? { value: `${pendingApprovers.length} Pending`, variant: "warning" }
+        : policyExceptions.length > 0
+          ? { value: "Exceptions Review", variant: "warning" }
+          : params.lifecycle.approvals.state === "completed"
+            ? { value: "Decision Complete", variant: "success" }
+            : { value: "In Progress", variant: "info" };
+
+  const approvalAction =
+    params.workbench.topItems.find((item) => item.action.actionLabel.toLowerCase().includes("approval"))?.action ??
+    params.nextRecommendedAction;
+
+  return {
+    creditAssessmentStatus:
+      params.lifecycle.approvals.state === "completed"
+        ? "Approved"
+        : params.lifecycle.approvals.state === "rejected"
+          ? "Declined"
+          : params.lifecycle.approvals.state === "pending"
+            ? "Under Review"
+            : "Not Started",
+    approvalStage: approval?.currentStage ?? "Not available",
+    pendingApprovers,
+    policyExceptions,
+    decisionReadiness,
+    recommendedNextAction: approvalAction,
   };
 }
 
@@ -651,6 +728,12 @@ export function composeWorkspaceIntelligence(
     lifecycle.nextAction ??
     workflowPanelModel?.nextBestAction ??
     null;
+  const creditAssessmentOverview = deriveCreditAssessmentOverview({
+    approvalProjection,
+    lifecycle,
+    workbench,
+    nextRecommendedAction,
+  });
   const providedReadinessScore = parseReadinessScore(fundingPanelModel?.readiness.confidence);
   const fundingReadinessScore = inferFundingReadinessScore({
     providedScore: providedReadinessScore,
@@ -724,6 +807,7 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     requiredDocuments,
     pendingApprovals,
+    creditAssessmentOverview,
     evidenceOverview,
     institutionalHealthOverview,
     fundingReadinessAssessment,
