@@ -25,6 +25,7 @@ import {
   type OnboardingWorkflowTask,
   type OnboardingWorkflowModel,
 } from "@/lib/application/OnboardingWorkflow";
+import type { StatusChipProps } from "@/components/ui/StatusChip";
 
 export type FundingReadinessStatus =
   | "Not Ready"
@@ -54,6 +55,21 @@ export interface InstitutionalDecisionSummaryModel {
   readonly criticalBlockers: readonly OnboardingWorkflowTask[];
   readonly requiredNextActions: readonly NextBestActionModel[];
   readonly confidenceIndicator?: string;
+}
+
+export interface InstitutionalHealthSignal {
+  readonly value: string;
+  readonly variant: StatusChipProps["variant"];
+}
+
+export interface InstitutionalHealthOverviewModel {
+  readonly overallCustomerHealth: InstitutionalHealthSignal;
+  readonly onboardingHealth: InstitutionalHealthSignal;
+  readonly documentationCompleteness: InstitutionalHealthSignal;
+  readonly approvalReadiness: InstitutionalHealthSignal;
+  readonly fundingReadiness: InstitutionalHealthSignal;
+  readonly relationshipHealth: InstitutionalHealthSignal;
+  readonly operationalStatus: InstitutionalHealthSignal;
 }
 
 export interface WorkspaceIntelligenceSource {
@@ -118,6 +134,7 @@ export interface OnboardingDashboardModel {
     readonly decision: string;
     readonly status: string;
   }[];
+  readonly institutionalHealthOverview: InstitutionalHealthOverviewModel;
   readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
   readonly decisionSummary: InstitutionalDecisionSummaryModel;
   readonly relationshipHealth:
@@ -149,6 +166,85 @@ function deriveFundingRecommendation(params: {
   }
 
   return `Funding is not ready. Focus on clearing blockers under state: ${params.fundingReadinessLabel}.`;
+}
+
+function deriveInstitutionalHealthOverview(params: {
+  readonly lifecycle: CustomerLifecycleOrchestrationModel;
+  readonly onboardingProgress: OnboardingProgressModel;
+  readonly fundingReadiness: FundingReadinessAssessmentModel;
+  readonly requiredDocumentsCount: number;
+  readonly pendingApprovalsCount: number;
+  readonly blockerCount: number;
+  readonly relationshipHealthStatus: string | null;
+  readonly workflowState: string;
+}): InstitutionalHealthOverviewModel {
+  const documentationCompleteness: InstitutionalHealthSignal =
+    params.requiredDocumentsCount === 0
+      ? { value: "Complete", variant: "success" }
+      : { value: `${params.requiredDocumentsCount} Missing`, variant: "warning" };
+
+  const approvalReadiness: InstitutionalHealthSignal =
+    params.pendingApprovalsCount === 0
+      ? { value: "Ready", variant: "success" }
+      : { value: `${params.pendingApprovalsCount} Pending`, variant: "warning" };
+
+  const onboardingHealth: InstitutionalHealthSignal =
+    params.blockerCount === 0
+      ? params.onboardingProgress.overallCompletionPercent >= 75
+        ? { value: "Healthy", variant: "success" }
+        : { value: "In Progress", variant: "info" }
+      : { value: "Blocked", variant: "danger" };
+
+  const fundingHealthVariant: StatusChipProps["variant"] =
+    params.fundingReadiness.status === "Funding Ready"
+      ? "success"
+      : params.fundingReadiness.status === "Ready for Review"
+        ? "info"
+        : params.fundingReadiness.status === "In Progress"
+          ? "warning"
+          : "danger";
+
+  const fundingReadiness: InstitutionalHealthSignal = {
+    value: params.fundingReadiness.status,
+    variant: fundingHealthVariant,
+  };
+
+  const relationshipHealth: InstitutionalHealthSignal = params.relationshipHealthStatus
+    ? {
+        value: params.relationshipHealthStatus,
+        variant:
+          params.relationshipHealthStatus.toLowerCase().includes("active") ||
+          params.relationshipHealthStatus.toLowerCase().includes("stable")
+            ? "success"
+            : "warning",
+      }
+    : { value: "Unknown", variant: "default" };
+
+  const operationalStatus: InstitutionalHealthSignal =
+    params.blockerCount > 0
+      ? { value: "Attention Required", variant: "danger" }
+      : params.workflowState.toLowerCase().includes("blocked")
+        ? { value: "Queue Blocked", variant: "danger" }
+        : params.workflowState.toLowerCase().includes("active")
+          ? { value: "Operational", variant: "success" }
+          : { value: "Monitoring", variant: "info" };
+
+  const overallCustomerHealth: InstitutionalHealthSignal =
+    params.blockerCount > 0 || params.fundingReadiness.score < 40
+      ? { value: "At Risk", variant: "danger" }
+      : params.onboardingProgress.overallCompletionPercent >= 80 && params.requiredDocumentsCount === 0
+        ? { value: "Strong", variant: "success" }
+        : { value: "Watchlist", variant: "warning" };
+
+  return {
+    overallCustomerHealth,
+    onboardingHealth,
+    documentationCompleteness,
+    approvalReadiness,
+    fundingReadiness,
+    relationshipHealth,
+    operationalStatus,
+  };
 }
 
 function parseReadinessScore(confidence: string | undefined): number | null {
@@ -358,6 +454,16 @@ export function composeWorkspaceIntelligence(
     requiredNextActions,
     ...(confidenceIndicator ? { confidenceIndicator } : {}),
   };
+  const institutionalHealthOverview = deriveInstitutionalHealthOverview({
+    lifecycle,
+    onboardingProgress: lifecycle.onboardingProgress,
+    fundingReadiness: fundingReadinessAssessment,
+    requiredDocumentsCount: requiredDocuments.length,
+    pendingApprovalsCount: pendingApprovals.length,
+    blockerCount: onboardingWorkflow.blockers.length,
+    relationshipHealthStatus: relationshipHealth?.status ?? null,
+    workflowState: lifecycle.workflow.state,
+  });
   const onboardingDashboard: OnboardingDashboardModel = {
     currentLifecycleStage: lifecycle.phase,
     overallOnboardingProgress: lifecycle.onboardingProgress.currentStage.label,
@@ -366,6 +472,7 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     requiredDocuments,
     pendingApprovals,
+    institutionalHealthOverview,
     fundingReadinessAssessment,
     decisionSummary,
     relationshipHealth,

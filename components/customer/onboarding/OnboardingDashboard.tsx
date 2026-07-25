@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import CustomerHealthCard from "@/components/customer/onboarding/CustomerHealthCard";
 import DecisionSummaryCard from "@/components/customer/onboarding/DecisionSummaryCard";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import FundingReadinessCard from "@/components/customer/onboarding/FundingReadinessCard";
@@ -15,6 +16,7 @@ interface OnboardingDashboardSectionState {
 }
 
 export interface OnboardingDashboardSectionStates {
+  readonly customerHealth?: OnboardingDashboardSectionState;
   readonly journey?: OnboardingDashboardSectionState;
   readonly fundingReadiness?: OnboardingDashboardSectionState;
   readonly decisionSummary?: OnboardingDashboardSectionState;
@@ -94,6 +96,12 @@ function StatefulSection({ title, subtitle, state, children }: StatefulSectionPr
 export default function OnboardingDashboard({ model, sectionStates }: OnboardingDashboardProps) {
   return (
     <div className="space-y-4">
+      <CustomerHealthCard
+        model={model.institutionalHealthOverview}
+        isLoading={sectionStates?.customerHealth?.isLoading}
+        error={sectionStates?.customerHealth?.error}
+      />
+
       <FundingReadinessCard
         model={model.fundingReadinessAssessment}
         isLoading={sectionStates?.fundingReadiness?.isLoading}
