@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import DecisionSummaryCard from "@/components/customer/onboarding/DecisionSummaryCard";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import FundingReadinessCard from "@/components/customer/onboarding/FundingReadinessCard";
 import SectionCard from "@/components/ui/SectionCard";
@@ -16,6 +17,7 @@ interface OnboardingDashboardSectionState {
 export interface OnboardingDashboardSectionStates {
   readonly journey?: OnboardingDashboardSectionState;
   readonly fundingReadiness?: OnboardingDashboardSectionState;
+  readonly decisionSummary?: OnboardingDashboardSectionState;
   readonly blockers?: OnboardingDashboardSectionState;
   readonly requiredDocuments?: OnboardingDashboardSectionState;
   readonly pendingApprovals?: OnboardingDashboardSectionState;
@@ -96,6 +98,12 @@ export default function OnboardingDashboard({ model, sectionStates }: Onboarding
         model={model.fundingReadinessAssessment}
         isLoading={sectionStates?.fundingReadiness?.isLoading}
         error={sectionStates?.fundingReadiness?.error}
+      />
+
+      <DecisionSummaryCard
+        model={model.decisionSummary}
+        isLoading={sectionStates?.decisionSummary?.isLoading}
+        error={sectionStates?.decisionSummary?.error}
       />
 
       <StatefulSection

@@ -48,6 +48,14 @@ export interface FundingReadinessAssessmentModel {
   readonly recommendedNextAction: NextBestActionModel | null;
 }
 
+export interface InstitutionalDecisionSummaryModel {
+  readonly fundingRecommendation: string;
+  readonly keyStrengths: readonly string[];
+  readonly criticalBlockers: readonly OnboardingWorkflowTask[];
+  readonly requiredNextActions: readonly NextBestActionModel[];
+  readonly confidenceIndicator?: string;
+}
+
 export interface WorkspaceIntelligenceSource {
   readonly customer?: {
     readonly id?: string;
@@ -111,6 +119,7 @@ export interface OnboardingDashboardModel {
     readonly status: string;
   }[];
   readonly fundingReadinessAssessment: FundingReadinessAssessmentModel;
+  readonly decisionSummary: InstitutionalDecisionSummaryModel;
   readonly relationshipHealth:
     | {
         readonly relationshipName: string;
@@ -120,6 +129,26 @@ export interface OnboardingDashboardModel {
       }
     | null;
   readonly nextRecommendedAction: NextBestActionModel | null;
+}
+
+function deriveFundingRecommendation(params: {
+  readonly fundingReadinessStatus: FundingReadinessStatus;
+  readonly fundingReadinessLabel: string;
+  readonly blockerCount: number;
+}): string {
+  if (params.fundingReadinessStatus === "Funding Ready" && params.blockerCount === 0) {
+    return "Proceed with funding release and final onboarding completion checks.";
+  }
+
+  if (params.fundingReadinessStatus === "Ready for Review") {
+    return "Route case for institutional funding review and decision confirmation.";
+  }
+
+  if (params.fundingReadinessStatus === "In Progress") {
+    return "Continue readiness execution to close remaining funding dependencies.";
+  }
+
+  return `Funding is not ready. Focus on clearing blockers under state: ${params.fundingReadinessLabel}.`;
 }
 
 function parseReadinessScore(confidence: string | undefined): number | null {
@@ -303,6 +332,32 @@ export function composeWorkspaceIntelligence(
     criticalBlockers: onboardingWorkflow.blockers,
     recommendedNextAction: nextRecommendedAction,
   };
+  const keyStrengths = [
+    ...(lifecycle.documents.state === "ready" ? ["Mandatory document set is complete"] : []),
+    ...(lifecycle.approvals.state === "completed" ? ["Approval decision has been completed"] : []),
+    ...(lifecycle.funding.state === "readiness-ready" ? ["Funding readiness has reached release threshold"] : []),
+    ...(relationshipHealth ? [`Relationship health is ${relationshipHealth.status}`] : []),
+    ...((aiPanelModel?.recommendations ?? [])
+      .filter((recommendation) => recommendation.riskLevel === "Low")
+      .slice(0, 2)
+      .map((recommendation) => recommendation.title)),
+  ];
+  const requiredNextActions: readonly NextBestActionModel[] = [
+    ...(nextRecommendedAction ? [nextRecommendedAction] : []),
+    ...workbench.topItems.slice(0, 2).map((item) => item.action),
+  ];
+  const confidenceIndicator = aiPanelModel?.recommendations[0]?.confidence;
+  const decisionSummary: InstitutionalDecisionSummaryModel = {
+    fundingRecommendation: deriveFundingRecommendation({
+      fundingReadinessStatus,
+      fundingReadinessLabel: onboardingWorkflow.fundingReadiness,
+      blockerCount: onboardingWorkflow.blockers.length,
+    }),
+    keyStrengths,
+    criticalBlockers: onboardingWorkflow.blockers,
+    requiredNextActions,
+    ...(confidenceIndicator ? { confidenceIndicator } : {}),
+  };
   const onboardingDashboard: OnboardingDashboardModel = {
     currentLifecycleStage: lifecycle.phase,
     overallOnboardingProgress: lifecycle.onboardingProgress.currentStage.label,
@@ -312,6 +367,7 @@ export function composeWorkspaceIntelligence(
     requiredDocuments,
     pendingApprovals,
     fundingReadinessAssessment,
+    decisionSummary,
     relationshipHealth,
     nextRecommendedAction,
   };

@@ -374,6 +374,10 @@ export default function CustomerWorkspace({
       isLoading: loadingByTabId?.funding,
       error: errorByTabId.funding,
     },
+    decisionSummary: {
+      isLoading: loadingByTabId?.overview,
+      error: errorByTabId.overview,
+    },
     blockers: {
       isLoading: loadingByTabId?.overview,
       error: errorByTabId.overview,
