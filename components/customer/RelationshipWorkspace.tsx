@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
 import RelationshipDocumentExplorer from "@/components/customer/documents/RelationshipDocumentExplorer";
+import RelationshipEvidenceExplorer from "@/components/customer/evidence/RelationshipEvidenceExplorer";
 import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
@@ -48,14 +49,7 @@ function defaultSectionSummary(
   }
 
   if (section === "evidence") {
-    return (
-      <SectionCard
-        title="Evidence Explorer"
-        subtitle={`${viewModel.evidenceExplorer.totalEvidenceItems} evidence items grouped`}
-      >
-        <p className="text-sm text-slate-300">Evidence items are linked to supporting documents and related knowledge.</p>
-      </SectionCard>
-    );
+    return <RelationshipEvidenceExplorer explorer={viewModel.evidenceExplorer} />;
   }
 
   if (section === "knowledge") {
