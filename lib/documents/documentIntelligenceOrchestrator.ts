@@ -21,6 +21,11 @@ import {
 import type { KnowledgeCollection } from "@/lib/knowledge/domain/KnowledgeCollection";
 import type { KnowledgeRepository } from "@/lib/knowledge/repositories/KnowledgeRepository";
 import type { KnowledgeTransformationResult } from "@/lib/knowledge/services/KnowledgeTransformationResult";
+import {
+  createDocumentProcessingStageRegistry,
+  registerDocumentIntelligencePipelineStages,
+  type DocumentProcessingStageRegistry,
+} from "@/lib/documents/documentProcessingStageRegistry";
 
 export interface DocumentOcrExtractionReference {
   readonly page: number;
@@ -184,6 +189,7 @@ export interface DocumentIntelligenceOrchestratorDependencies {
   readonly ocrExtractor?: DocumentOcrExtractor;
   readonly aiExtractor?: DocumentAiExtractor;
   readonly stages?: Partial<DocumentIntelligencePipelineStages>;
+  readonly stageRegistry?: DocumentProcessingStageRegistry;
 }
 
 export interface DocumentIntelligenceOrchestrator {
@@ -594,18 +600,13 @@ function createInitialProcessingContext(input: {
 
 async function runProcessingPipeline(params: {
   readonly initialContext: ProcessingContext;
-  readonly stages: DocumentIntelligencePipelineStages;
+  readonly stageRegistry: DocumentProcessingStageRegistry;
   readonly runtimeDependencies: DocumentIntelligenceOrchestratorRuntimeDependencies;
 }): Promise<ProcessingContext> {
   let context = params.initialContext;
 
-  const orderedStages: readonly ProcessingStage[] = [
-    params.stages.validation,
-    params.stages.classification,
-    params.stages.evidenceExtraction,
-    params.stages.knowledgeTransformation,
-    params.stages.passportEnrichment,
-  ];
+  const executionPlan = params.stageRegistry.getOrderedExecutionPlan();
+  const orderedStages: readonly ProcessingStage[] = executionPlan.stages;
 
   for (const stage of orderedStages) {
     const outcome = await stage.execute(context, params.runtimeDependencies);
@@ -660,6 +661,9 @@ export function createDocumentIntelligenceOrchestrator(
     passportEnrichment: dependencies.stages?.passportEnrichment ?? defaultPassportEnrichmentStage,
   };
 
+  const stageRegistry = dependencies.stageRegistry ?? createDocumentProcessingStageRegistry();
+  registerDocumentIntelligencePipelineStages(stageRegistry, stages);
+
   return {
     async processDocument(input: DocumentIntelligenceOrchestrationInput): Promise<DocumentIntelligencePipelineResult> {
       const context = await runProcessingPipeline({
@@ -668,7 +672,7 @@ export function createDocumentIntelligenceOrchestrator(
           documentId: input.documentId,
           passportId: input.passportId,
         }),
-        stages,
+        stageRegistry,
         runtimeDependencies,
       });
 
@@ -684,7 +688,7 @@ export function createDocumentIntelligenceOrchestrator(
           documentFilters: input.documentFilters,
           passportId: input.passportId,
         }),
-        stages,
+        stageRegistry,
         runtimeDependencies,
       });
 
