@@ -111,9 +111,10 @@ export interface DocumentsRepositoryBinding {
 type RepositoryAdapterSubset = Partial<CustomerWorkspaceRepositoryAdapters>;
 
 interface DeferredRepositoryBinding {
-  // Placeholder DI hook for future repository-backed adapters.
-  // Implementations can expose one or more capability loaders by returning
-  // a partial set of CustomerWorkspaceRepositoryAdapters.
+  // Standardized DI hook for repository-backed capabilities.
+  // Each binding contributes one or more adapter loaders without exposing
+  // repository usage to React components.
+  readonly loadingTabs?: readonly CustomerWorkspaceTabId[];
   readonly toAdapters?: (context: CustomerWorkspaceRepositoryContext) => RepositoryAdapterSubset | Promise<RepositoryAdapterSubset>;
 }
 
@@ -122,6 +123,7 @@ export type RelationshipRepositoryBinding = DeferredRepositoryBinding;
 export type ApprovalRepositoryBinding = DeferredRepositoryBinding;
 export type FundingRepositoryBinding = DeferredRepositoryBinding;
 export type TimelineRepositoryBinding = DeferredRepositoryBinding;
+export type AiInsightsRepositoryBinding = DeferredRepositoryBinding;
 
 export interface CustomerWorkspaceRepositoryComposition {
   // Base adapter map for callers that already expose projection/model loaders.
@@ -136,6 +138,7 @@ export interface CustomerWorkspaceRepositoryComposition {
   readonly approval?: ApprovalRepositoryBinding;
   readonly funding?: FundingRepositoryBinding;
   readonly timeline?: TimelineRepositoryBinding;
+  readonly aiInsights?: AiInsightsRepositoryBinding;
 }
 
 type LoaderEntry = {
@@ -174,6 +177,41 @@ function toRepositoryLoaderEntries(adapters?: CustomerWorkspaceRepositoryAdapter
   ].filter((entry) => typeof entry.load === "function");
 }
 
+function toCompositionBindingEntries(
+  composition: CustomerWorkspaceRepositoryComposition | undefined,
+): readonly DeferredRepositoryBinding[] {
+  if (!composition) {
+    return [];
+  }
+
+  const documentsBinding = composition.documents;
+  const documentsDeferred: DeferredRepositoryBinding | undefined = documentsBinding?.repository
+    ? {
+        loadingTabs: ["documents"],
+        toAdapters: () => createDocumentsRepositoryBackedAdapters(documentsBinding),
+      }
+    : documentsBinding;
+
+  const businessPassportBinding = composition.businessPassport;
+  const businessPassportDeferred: DeferredRepositoryBinding | undefined = businessPassportBinding
+    ? {
+        loadingTabs: ["business-passport"],
+        toAdapters: () => createBusinessPassportRepositoryBackedAdapters(businessPassportBinding),
+      }
+    : undefined;
+
+  return [
+    businessPassportDeferred,
+    documentsDeferred,
+    composition.evidence,
+    composition.relationship,
+    composition.approval,
+    composition.funding,
+    composition.timeline,
+    composition.aiInsights,
+  ].filter((binding): binding is DeferredRepositoryBinding => Boolean(binding));
+}
+
 export function getCustomerWorkspaceRepositoryLoadingState(
   adaptersOrComposition?: CustomerWorkspaceRepositoryAdapters | CustomerWorkspaceRepositoryComposition,
 ): Partial<Record<CustomerWorkspaceTabId, boolean>> {
@@ -189,12 +227,14 @@ export function getCustomerWorkspaceRepositoryLoadingState(
     loadingState[entry.tabId] = true;
   }
 
-  if (composition?.businessPassport) {
-    loadingState["business-passport"] = true;
-  }
+  for (const binding of toCompositionBindingEntries(composition)) {
+    if (!binding.loadingTabs) {
+      continue;
+    }
 
-  if (composition?.documents?.repository) {
-    loadingState.documents = true;
+    for (const tabId of binding.loadingTabs) {
+      loadingState[tabId] = true;
+    }
   }
 
   return loadingState;
@@ -387,8 +427,8 @@ function toRepositoryComposition(input: {
 
 // Repository composition flow:
 // 1) Start with base adapters if provided by caller.
-// 2) Layer Business Passport repository-backed adapter mapping.
-// 3) Layer future repository bindings through the same toAdapters contract.
+// 2) Resolve registered repository bindings into adapters.
+// 3) Merge adapter contributions in-order so later bindings can override.
 export async function composeCustomerWorkspaceRepositoryAdapters(
   composition: CustomerWorkspaceRepositoryComposition | undefined,
   context: CustomerWorkspaceRepositoryContext,
@@ -397,29 +437,7 @@ export async function composeCustomerWorkspaceRepositoryAdapters(
     ...(composition?.adapters ?? {}),
   };
 
-  if (composition?.businessPassport) {
-    Object.assign(
-      mergedAdapters,
-      createBusinessPassportRepositoryBackedAdapters(composition.businessPassport),
-    );
-  }
-
-  if (composition?.documents?.repository) {
-    Object.assign(
-      mergedAdapters,
-      createDocumentsRepositoryBackedAdapters(composition.documents),
-    );
-  }
-
-  const deferredBindings = [
-    composition?.evidence,
-    composition?.relationship,
-    composition?.approval,
-    composition?.funding,
-    composition?.timeline,
-  ];
-
-  for (const binding of deferredBindings) {
+  for (const binding of toCompositionBindingEntries(composition)) {
     if (!binding?.toAdapters) {
       continue;
     }
