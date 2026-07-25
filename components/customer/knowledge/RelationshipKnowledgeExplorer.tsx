@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import KnowledgeDomainSection from "@/components/customer/knowledge/KnowledgeDomainSection";
 import KnowledgeToolbar, { type KnowledgeToolbarValue } from "@/components/customer/knowledge/KnowledgeToolbar";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipKnowledgeBusinessDomain,
@@ -12,7 +13,9 @@ import type {
 } from "@/lib/customer/RelationshipKnowledgeExplorerViewModel";
 
 export interface RelationshipKnowledgeExplorerProps {
-  readonly explorer: RelationshipKnowledgeExplorerViewModel;
+  readonly explorer?: RelationshipKnowledgeExplorerViewModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function normalize(value: string): string {
@@ -55,7 +58,13 @@ function matchesSearch(item: RelationshipKnowledgeItemViewModel, query: string):
   return haystack.includes(query);
 }
 
-export default function RelationshipKnowledgeExplorer({ explorer }: RelationshipKnowledgeExplorerProps) {
+export default function RelationshipKnowledgeExplorer({ explorer, isLoading = false, error }: RelationshipKnowledgeExplorerProps) {
+  const resolvedExplorer: RelationshipKnowledgeExplorerViewModel = explorer ?? {
+    generatedAt: "",
+    totalKnowledgeItems: 0,
+    domains: [],
+  };
+
   const [toolbarValue, setToolbarValue] = useState<KnowledgeToolbarValue>({
     search: "",
     domain: "all",
@@ -64,16 +73,16 @@ export default function RelationshipKnowledgeExplorer({ explorer }: Relationship
   });
 
   const domains = useMemo<readonly RelationshipKnowledgeBusinessDomain[]>(
-    () => explorer.domains.map((domain) => domain.key),
-    [explorer.domains],
+    () => resolvedExplorer.domains.map((domain) => domain.key),
+    [resolvedExplorer.domains],
   );
 
   const filteredDomains = useMemo<readonly RelationshipKnowledgeDomainGroupViewModel[]>(() => {
     const query = normalize(toolbarValue.search);
 
     const scopedDomains = toolbarValue.domain === "all"
-      ? explorer.domains
-      : explorer.domains.filter((domain) => domain.key === toolbarValue.domain);
+      ? resolvedExplorer.domains
+      : resolvedExplorer.domains.filter((domain) => domain.key === toolbarValue.domain);
 
     return scopedDomains
       .map((domain) => {
@@ -88,15 +97,31 @@ export default function RelationshipKnowledgeExplorer({ explorer }: Relationship
         };
       })
       .filter((domain) => domain.totalKnowledgeItems > 0 || toolbarValue.domain !== "all");
-  }, [explorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
+  }, [resolvedExplorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
 
   const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalKnowledgeItems, 0);
 
+  if (isLoading) {
+    return <PanelLoadingState title="Relationship Knowledge Explorer" subtitle="Loading knowledge explorer" />;
+  }
+
+  if (error) {
+    return <PanelErrorState title="Relationship Knowledge Explorer" subtitle="Unable to render knowledge explorer" message={error} />;
+  }
+
+  if (!explorer) {
+    return (
+      <SectionCard title="Relationship Knowledge Explorer" subtitle="No knowledge explorer data is currently available">
+        <PanelEmptyState message="Knowledge explorer data is not available in this workspace." />
+      </SectionCard>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <SectionCard
         title="Relationship Knowledge Explorer"
-        subtitle={`${visibleItemCount} of ${explorer.totalKnowledgeItems} knowledge items visible`}
+        subtitle={`${visibleItemCount} of ${resolvedExplorer.totalKnowledgeItems} knowledge items visible`}
       >
         <KnowledgeToolbar value={toolbarValue} domains={domains} onChange={setToolbarValue} />
       </SectionCard>
@@ -105,14 +130,14 @@ export default function RelationshipKnowledgeExplorer({ explorer }: Relationship
         title="Knowledge Domains"
         subtitle="Corporate, Financial, Trade, Compliance, and Operations"
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filteredDomains.map((domain) => (
             <KnowledgeDomainSection key={domain.key} domain={domain} />
           ))}
 
           {filteredDomains.length === 0 ? (
-            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-500">
-              No knowledge items match the current search and filters.
+            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
+              <PanelEmptyState message="No knowledge items match the current search and filters." />
             </div>
           ) : null}
         </div>

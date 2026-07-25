@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ActionPrioritySection from "@/components/customer/actions/ActionPrioritySection";
 import ActionToolbar, { type ActionToolbarValue } from "@/components/customer/actions/ActionToolbar";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipActionCategory,
@@ -12,8 +13,10 @@ import type {
 } from "@/lib/customer/RelationshipActionCenterViewModel";
 
 export interface RelationshipActionCenterProps {
-  readonly actionCenter: RelationshipActionCenterViewModel;
+  readonly actionCenter?: RelationshipActionCenterViewModel;
   readonly dueDatesByActionId?: Readonly<Record<string, string>>;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function normalize(value: string): string {
@@ -91,7 +94,23 @@ function categoryForItem(
 export default function RelationshipActionCenter({
   actionCenter,
   dueDatesByActionId,
+  isLoading = false,
+  error,
 }: RelationshipActionCenterProps) {
+  const resolvedActionCenter = useMemo<RelationshipActionCenterViewModel>(() => {
+    return actionCenter ?? {
+      generatedAt: "",
+      relatedCustomer: "",
+      totalActions: 0,
+      categories: [],
+      priorities: {
+        high: [],
+        medium: [],
+        low: [],
+      },
+    };
+  }, [actionCenter]);
+
   const [toolbarValue, setToolbarValue] = useState<ActionToolbarValue>({
     search: "",
     priority: "all",
@@ -100,7 +119,7 @@ export default function RelationshipActionCenter({
   });
 
   const categoryIndex = useMemo(() => {
-    return actionCenter.categories.map((category) => ({
+    return resolvedActionCenter.categories.map((category) => ({
       key: category.key,
       itemIds: [
         ...category.priorities.high.map((item) => item.id),
@@ -108,17 +127,17 @@ export default function RelationshipActionCenter({
         ...category.priorities.low.map((item) => item.id),
       ],
     }));
-  }, [actionCenter.categories]);
+  }, [resolvedActionCenter.categories]);
 
   const categories = useMemo<readonly RelationshipActionCategory[]>(
-    () => actionCenter.categories.map((category) => category.key),
-    [actionCenter.categories],
+    () => resolvedActionCenter.categories.map((category) => category.key),
+    [resolvedActionCenter.categories],
   );
 
   const filtered = useMemo(() => {
     const query = normalize(toolbarValue.search);
 
-    const all = flattenUnique(actionCenter)
+    const all = flattenUnique(resolvedActionCenter)
       .filter((item) => matchesSearch(item, query))
       .filter((item) => {
         if (toolbarValue.priority === "all") {
@@ -140,24 +159,40 @@ export default function RelationshipActionCenter({
       });
 
     return sortItems(all, toolbarValue.sortOrder);
-  }, [actionCenter, categoryIndex, toolbarValue.category, toolbarValue.priority, toolbarValue.search, toolbarValue.sortOrder]);
+  }, [resolvedActionCenter, categoryIndex, toolbarValue.category, toolbarValue.priority, toolbarValue.search, toolbarValue.sortOrder]);
 
   const critical = filtered.filter((item) => isCritical(item));
   const high = filtered.filter((item) => item.priority === "high" && !isCritical(item));
   const medium = filtered.filter((item) => item.priority === "medium");
   const low = filtered.filter((item) => item.priority === "low");
 
+  if (isLoading) {
+    return <PanelLoadingState title="Relationship Action Center" subtitle="Loading action center" />;
+  }
+
+  if (error) {
+    return <PanelErrorState title="Relationship Action Center" subtitle="Unable to render action center" message={error} />;
+  }
+
+  if (!actionCenter) {
+    return (
+      <SectionCard title="Relationship Action Center" subtitle="No action center data is currently available">
+        <PanelEmptyState message="Action center data is not available in this workspace." />
+      </SectionCard>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <SectionCard
         title="Relationship Action Center"
-        subtitle={`${filtered.length} of ${actionCenter.totalActions} actions visible`}
+        subtitle={`${filtered.length} of ${resolvedActionCenter.totalActions} actions visible`}
       >
         <ActionToolbar value={toolbarValue} categories={categories} onChange={setToolbarValue} />
       </SectionCard>
 
       <SectionCard title="Priority Action Groups" subtitle="Critical, High, Medium, and Low">
-        <div className="space-y-4">
+        <div className="space-y-5">
           <ActionPrioritySection
             title="Critical"
             priority="critical"
@@ -182,6 +217,12 @@ export default function RelationshipActionCenter({
             items={low}
             dueDatesByActionId={dueDatesByActionId}
           />
+
+          {filtered.length === 0 ? (
+            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
+              <PanelEmptyState message="No actions match the current search and filters." />
+            </div>
+          ) : null}
         </div>
       </SectionCard>
     </div>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import EvidenceDomainSection from "@/components/customer/evidence/EvidenceDomainSection";
 import EvidenceToolbar, { type EvidenceToolbarValue } from "@/components/customer/evidence/EvidenceToolbar";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipEvidenceBusinessDomain,
@@ -12,7 +13,9 @@ import type {
 } from "@/lib/customer/RelationshipEvidenceExplorerViewModel";
 
 export interface RelationshipEvidenceExplorerProps {
-  readonly explorer: RelationshipEvidenceExplorerViewModel;
+  readonly explorer?: RelationshipEvidenceExplorerViewModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 function normalize(value: string): string {
@@ -54,7 +57,13 @@ function matchesSearch(item: RelationshipEvidenceItemViewModel, query: string): 
   return haystack.includes(query);
 }
 
-export default function RelationshipEvidenceExplorer({ explorer }: RelationshipEvidenceExplorerProps) {
+export default function RelationshipEvidenceExplorer({ explorer, isLoading = false, error }: RelationshipEvidenceExplorerProps) {
+  const resolvedExplorer: RelationshipEvidenceExplorerViewModel = explorer ?? {
+    generatedAt: "",
+    totalEvidenceItems: 0,
+    domains: [],
+  };
+
   const [toolbarValue, setToolbarValue] = useState<EvidenceToolbarValue>({
     search: "",
     domain: "all",
@@ -63,16 +72,16 @@ export default function RelationshipEvidenceExplorer({ explorer }: RelationshipE
   });
 
   const domains = useMemo<readonly RelationshipEvidenceBusinessDomain[]>(
-    () => explorer.domains.map((domain) => domain.key),
-    [explorer.domains],
+    () => resolvedExplorer.domains.map((domain) => domain.key),
+    [resolvedExplorer.domains],
   );
 
   const filteredDomains = useMemo<readonly RelationshipEvidenceDomainGroupViewModel[]>(() => {
     const query = normalize(toolbarValue.search);
 
     const scopedDomains = toolbarValue.domain === "all"
-      ? explorer.domains
-      : explorer.domains.filter((domain) => domain.key === toolbarValue.domain);
+      ? resolvedExplorer.domains
+      : resolvedExplorer.domains.filter((domain) => domain.key === toolbarValue.domain);
 
     return scopedDomains
       .map((domain) => {
@@ -87,15 +96,31 @@ export default function RelationshipEvidenceExplorer({ explorer }: RelationshipE
         };
       })
       .filter((domain) => domain.totalEvidenceItems > 0 || toolbarValue.domain !== "all");
-  }, [explorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
+  }, [resolvedExplorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
 
   const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalEvidenceItems, 0);
 
+  if (isLoading) {
+    return <PanelLoadingState title="Relationship Evidence Explorer" subtitle="Loading evidence explorer" />;
+  }
+
+  if (error) {
+    return <PanelErrorState title="Relationship Evidence Explorer" subtitle="Unable to render evidence explorer" message={error} />;
+  }
+
+  if (!explorer) {
+    return (
+      <SectionCard title="Relationship Evidence Explorer" subtitle="No evidence explorer data is currently available">
+        <PanelEmptyState message="Evidence explorer data is not available in this workspace." />
+      </SectionCard>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <SectionCard
         title="Relationship Evidence Explorer"
-        subtitle={`${visibleItemCount} of ${explorer.totalEvidenceItems} evidence items visible`}
+        subtitle={`${visibleItemCount} of ${resolvedExplorer.totalEvidenceItems} evidence items visible`}
       >
         <EvidenceToolbar value={toolbarValue} domains={domains} onChange={setToolbarValue} />
       </SectionCard>
@@ -104,14 +129,14 @@ export default function RelationshipEvidenceExplorer({ explorer }: RelationshipE
         title="Evidence Domains"
         subtitle="Corporate Identity, Financial Profile, Trade Activity, Compliance, and Operations"
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filteredDomains.map((domain) => (
             <EvidenceDomainSection key={domain.key} domain={domain} />
           ))}
 
           {filteredDomains.length === 0 ? (
-            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-500">
-              No evidence items match the current search and filters.
+            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
+              <PanelEmptyState message="No evidence items match the current search and filters." />
             </div>
           ) : null}
         </div>

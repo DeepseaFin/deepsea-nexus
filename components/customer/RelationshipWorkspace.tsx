@@ -6,6 +6,7 @@ import RelationshipActionCenter from "@/components/customer/actions/Relationship
 import RelationshipDocumentExplorer from "@/components/customer/documents/RelationshipDocumentExplorer";
 import RelationshipEvidenceExplorer from "@/components/customer/evidence/RelationshipEvidenceExplorer";
 import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/RelationshipKnowledgeExplorer";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
@@ -17,8 +18,11 @@ import RelationshipWorkspaceNavigation, {
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
 
 export interface RelationshipWorkspaceProps {
-  readonly viewModel: RelationshipWorkspaceViewModel;
+  readonly viewModel?: RelationshipWorkspaceViewModel | null;
   readonly initialSection?: RelationshipWorkspaceSectionId;
+  readonly isLoading?: boolean;
+  readonly error?: string;
+  readonly emptyMessage?: string;
   readonly renderSection?: (
     section: RelationshipWorkspaceSectionId,
     viewModel: RelationshipWorkspaceViewModel,
@@ -64,17 +68,40 @@ function defaultSectionSummary(
 export default function RelationshipWorkspace({
   viewModel,
   initialSection = "dashboard",
+  isLoading = false,
+  error,
+  emptyMessage = "Relationship workspace data is not available.",
   renderSection,
 }: RelationshipWorkspaceProps) {
   const [activeSection, setActiveSection] = useState<RelationshipWorkspaceSectionId>(initialSection);
 
-  const content = useMemo(() => {
+  const content = useMemo<React.ReactNode>(() => {
+    if (!viewModel) {
+      return (
+        <SectionCard title="Relationship Workspace" subtitle="No relationship data is currently available">
+          <PanelEmptyState message={emptyMessage} />
+        </SectionCard>
+      );
+    }
+
     if (renderSection) {
       return renderSection(activeSection, viewModel);
     }
 
     return defaultSectionSummary(activeSection, viewModel);
-  }, [activeSection, renderSection, viewModel]);
+  }, [activeSection, emptyMessage, renderSection, viewModel]);
+
+  if (isLoading) {
+    return <PanelLoadingState title="Relationship Workspace" subtitle="Loading workspace modules" />;
+  }
+
+  if (error) {
+    return <PanelErrorState title="Relationship Workspace" subtitle="Unable to render workspace" message={error} />;
+  }
+
+  if (!viewModel) {
+    return content;
+  }
 
   return (
     <RelationshipWorkspaceLayout
@@ -86,7 +113,11 @@ export default function RelationshipWorkspace({
           onSectionChange={setActiveSection}
         />
       }
-      content={content}
+      content={
+        <section id={`relationship-workspace-panel-${activeSection}`} role="tabpanel" aria-labelledby={`relationship-workspace-tab-${activeSection}`}>
+          {content}
+        </section>
+      }
       rail={
         <SectionCard title="Workspace Snapshot" subtitle="Ready for incremental feature panels">
           <dl className="space-y-2 text-sm text-slate-300">

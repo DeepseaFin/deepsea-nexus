@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import TimelineDateGroup, { type TimelineDateGroupItem } from "@/components/customer/timeline/TimelineDateGroup";
 import TimelineFilters, {
@@ -14,7 +15,9 @@ import type {
 } from "@/lib/customer/RelationshipTimelineViewModel";
 
 export interface RelationshipTimelineProps {
-  readonly timeline: RelationshipTimelineViewModel;
+  readonly timeline?: RelationshipTimelineViewModel;
+  readonly isLoading?: boolean;
+  readonly error?: string;
 }
 
 type TimelineDomain = "corporate" | "financial" | "trade" | "compliance" | "operations";
@@ -125,7 +128,13 @@ function filterByDateRange(events: readonly EnrichedTimelineEvent[], range: Time
   });
 }
 
-export default function RelationshipTimeline({ timeline }: RelationshipTimelineProps) {
+export default function RelationshipTimeline({ timeline, isLoading = false, error }: RelationshipTimelineProps) {
+  const resolvedTimeline: RelationshipTimelineViewModel = timeline ?? {
+    generatedAt: "",
+    customerId: undefined,
+    events: [],
+  };
+
   const [filters, setFilters] = useState<TimelineFiltersValue>({
     eventType: "all",
     dateRange: "all",
@@ -133,11 +142,11 @@ export default function RelationshipTimeline({ timeline }: RelationshipTimelineP
   });
 
   const allTypes = useMemo<readonly RelationshipTimelineEventType[]>(() => {
-    return [...new Set(timeline.events.map((event) => event.type))];
-  }, [timeline.events]);
+    return [...new Set(resolvedTimeline.events.map((event) => event.type))];
+  }, [resolvedTimeline.events]);
 
   const enriched = useMemo<readonly EnrichedTimelineEvent[]>(() => {
-    return timeline.events
+    return resolvedTimeline.events
       .map((event) => ({
         event,
         businessDomain: inferBusinessDomain(event),
@@ -145,7 +154,7 @@ export default function RelationshipTimeline({ timeline }: RelationshipTimelineP
         relatedEvidence: inferRelatedEvidence(event),
       }))
       .sort((left, right) => Date.parse(right.event.occurredAt) - Date.parse(left.event.occurredAt));
-  }, [timeline.events]);
+  }, [resolvedTimeline.events]);
 
   const filtered = useMemo(() => {
     const byType = filters.eventType === "all"
@@ -175,8 +184,24 @@ export default function RelationshipTimeline({ timeline }: RelationshipTimelineP
     }));
   }, [filtered]);
 
+  if (isLoading) {
+    return <PanelLoadingState title="Relationship Timeline" subtitle="Loading timeline events" />;
+  }
+
+  if (error) {
+    return <PanelErrorState title="Relationship Timeline" subtitle="Unable to render timeline" message={error} />;
+  }
+
+  if (!timeline) {
+    return (
+      <SectionCard title="Relationship Timeline" subtitle="No timeline is currently available">
+        <PanelEmptyState message="Timeline data is not available in this workspace." />
+      </SectionCard>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <SectionCard
         title="Relationship Timeline"
         subtitle="Chronological relationship history with presentation-level filtering"
@@ -188,14 +213,14 @@ export default function RelationshipTimeline({ timeline }: RelationshipTimelineP
         title="Timeline History"
         subtitle={`${filtered.length} events across ${grouped.length} date group(s)`}
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {grouped.map((group) => (
             <TimelineDateGroup key={group.dateLabel} dateLabel={group.dateLabel} items={group.items} />
           ))}
 
           {grouped.length === 0 ? (
-            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
-              No timeline events match the selected filters.
+            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
+              <PanelEmptyState message="No timeline events match the selected filters." />
             </div>
           ) : null}
         </div>
