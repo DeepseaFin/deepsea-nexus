@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
 import RelationshipDocumentExplorer from "@/components/customer/documents/RelationshipDocumentExplorer";
 import RelationshipEvidenceExplorer from "@/components/customer/evidence/RelationshipEvidenceExplorer";
+import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/RelationshipKnowledgeExplorer";
 import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
@@ -53,14 +54,7 @@ function defaultSectionSummary(
   }
 
   if (section === "knowledge") {
-    return (
-      <SectionCard
-        title="Knowledge Explorer"
-        subtitle={`${viewModel.knowledgeExplorer.totalKnowledgeItems} conclusions grouped`}
-      >
-        <p className="text-sm text-slate-300">Knowledge conclusions are available for detailed progressive rendering.</p>
-      </SectionCard>
-    );
+    return <RelationshipKnowledgeExplorer explorer={viewModel.knowledgeExplorer} />;
   }
 
   return (
