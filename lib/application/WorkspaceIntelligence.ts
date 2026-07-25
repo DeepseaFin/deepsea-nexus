@@ -11,6 +11,10 @@ import { createInstitutionalEvents } from "@/lib/application/events/Institutiona
 import { InstitutionalEventQueue } from "@/lib/application/events/InstitutionalEventQueue";
 import type { InstitutionalEventType } from "@/lib/application/events/InstitutionalEventType";
 import type { NextBestActionModel } from "@/lib/customer/workflow/workflow.types";
+import {
+  orchestrateCustomerLifecycle,
+  type CustomerLifecycleOrchestrationModel,
+} from "@/lib/application/CustomerLifecycleOrchestrator";
 
 export interface WorkspaceIntelligenceSource {
   readonly businessPassport?: BusinessPassportPresentationViewModel | null;
@@ -48,6 +52,7 @@ export interface WorkspaceIntelligenceModel {
     readonly eventType: InstitutionalEventType;
     readonly action: NextBestActionModel;
   }[];
+  readonly lifecycle: CustomerLifecycleOrchestrationModel;
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
 }
 
@@ -90,8 +95,17 @@ export function composeWorkspaceIntelligence(
     workflowNextAction: workflowPanelModel?.nextBestAction ?? null,
   });
   const eventQueue = new InstitutionalEventQueue(institutionalEvents);
-  const prioritizedActions = eventQueue.prioritized().map(toPrioritizedAction);
-  const topPrioritizedAction = prioritizedActions[0]?.action ?? null;
+  const lifecycle = orchestrateCustomerLifecycle({
+    businessPassport: source.businessPassport,
+    documents: source.documents,
+    relationship: source.relationship,
+    approvals: source.approvals,
+    funding: source.funding,
+    aiInsights: source.aiInsights,
+    workflow: source.workflow,
+    institutionalEvents: eventQueue.toArray(),
+  });
+  const prioritizedActions = lifecycle.prioritizedEvents.map(toPrioritizedAction);
 
   return {
     outstandingApprovals: approvalProjection ? [approvalProjection] : [],
@@ -115,9 +129,10 @@ export function composeWorkspaceIntelligence(
       : [],
     aiRecommendations: aiPanelModel?.recommendations ?? [],
     timelineAlerts: timelinePanelModel?.events ?? [],
-    workflowNextAction: topPrioritizedAction ?? workflowPanelModel?.nextBestAction ?? null,
+    workflowNextAction: lifecycle.nextAction ?? workflowPanelModel?.nextBestAction ?? null,
     institutionalEvents: eventQueue.toArray(),
     prioritizedActions,
+    lifecycle,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }
