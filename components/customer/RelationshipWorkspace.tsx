@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import ExecutiveDashboard from "@/components/customer/dashboard/ExecutiveDashboard";
 import SectionCard from "@/components/ui/SectionCard";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
 import RelationshipWorkspaceLayout from "@/components/customer/RelationshipWorkspaceLayout";
@@ -33,17 +34,7 @@ function defaultSectionSummary(
   viewModel: RelationshipWorkspaceViewModel,
 ): React.ReactNode {
   if (section === "dashboard") {
-    return (
-      <SectionCard
-        title="Executive Dashboard"
-        subtitle={viewModel.executiveDashboard.executiveSummary.headline}
-      >
-        <p className="text-sm text-slate-300">
-          Confidence {viewModel.executiveDashboard.relationshipConfidence.overallScore} and readiness{" "}
-          {viewModel.executiveDashboard.readinessStatus.status}.
-        </p>
-      </SectionCard>
-    );
+    return <ExecutiveDashboard dashboard={viewModel.executiveDashboard} workspace={viewModel} />;
   }
 
   if (section === "timeline") {
