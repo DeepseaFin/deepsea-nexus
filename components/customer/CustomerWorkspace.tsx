@@ -8,7 +8,6 @@ import CustomerSummaryCard from "@/components/customer/CustomerSummaryCard";
 import CustomerTabs from "@/components/customer/CustomerTabs";
 import CustomerWorkspaceHeader from "@/components/customer/CustomerWorkspaceHeader";
 import OnboardingDashboard from "@/components/customer/onboarding/OnboardingDashboard";
-import { createCustomerWorkspaceComposition } from "@/lib/application/CustomerWorkspaceComposition";
 import {
   CUSTOMER_WORKSPACE_NAVIGATE_TAB_EVENT,
   type CustomerWorkspaceNavigateTabEventDetail,
@@ -18,7 +17,13 @@ import {
   createCustomerWorkspacePanelRegistry,
   type CustomerWorkspaceRegistryModels,
 } from "@/lib/customer/customer-workspace.registry";
-import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
+import {
+  composeCustomerWorkspaceData,
+  getCustomerWorkspaceRepositoryLoadingState,
+  loadCustomerWorkspaceData,
+  type CustomerWorkspaceDataComposition,
+  type CustomerWorkspaceSourceData,
+} from "@/lib/customer/customer-workspace.data";
 import SectionCard from "@/components/ui/SectionCard";
 import StatusChip from "@/components/ui/StatusChip";
 import {
@@ -41,18 +46,7 @@ import type {
   CustomerWorkspaceLayoutConfig,
   CustomerWorkspaceTabId,
 } from "@/lib/customer/customer-workspace.types";
-import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
-import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
-import type { FundingPresentationViewModel } from "@/lib/presentation/presenters/FundingPresenter";
-import type { AiInsightsPresentationViewModel } from "@/lib/presentation/presenters/AiInsightsPresenter";
-import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
-import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
-import type { BusinessPassportPresentationViewModel } from "@/lib/presentation/presenters/BusinessPassportPresenter";
-import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
-import type {
-  CustomerWorkspaceRepositoryAdapters,
-  CustomerWorkspaceRepositoryContext,
-} from "@/lib/customer/customer-workspace.repositories";
+import type { CustomerWorkspaceRepositoryAdapters } from "@/lib/customer/customer-workspace.repositories";
 
 export interface CustomerWorkspaceProps {
   readonly title?: string;
@@ -81,22 +75,6 @@ export interface CustomerWorkspaceProps {
   readonly onAction?: (event: CustomerWorkspaceActionEvent) => void;
   readonly renderTabContent?: (tabId: CustomerWorkspaceTabId) => React.ReactNode;
 }
-
-type CustomerWorkspaceRepositoryData = {
-  readonly businessPassportProjection?: unknown;
-  readonly documentsProjection?: unknown;
-  readonly relationshipProjection?: unknown;
-  readonly approvalProjection?: unknown;
-  readonly fundingProjection?: unknown;
-  readonly businessPassportPanelModel?: PassportPanelModel;
-  readonly documentsPanelModel?: DocumentsPanelModel;
-  readonly relationshipPanelModel?: RelationshipPanelModel;
-  readonly approvalPanelModel?: ApprovalPanelModel;
-  readonly fundingPanelModel?: FundingPanelModel;
-  readonly insightsPanelModel?: AiInsightsModel;
-  readonly institutionalTimelineModel?: InstitutionalTimelineModel;
-  readonly workflowPanelModel?: WorkflowPanelModel;
-};
 
 export default function CustomerWorkspace({
   title = "Institution Customer Workspace",
@@ -129,12 +107,53 @@ export default function CustomerWorkspace({
 
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const composition = useMemo(() => createCustomerWorkspaceComposition(), []);
-  const [repositoryData, setRepositoryData] = useState<CustomerWorkspaceRepositoryData>({});
+  const sourceData = useMemo<CustomerWorkspaceSourceData>(
+    () => ({
+      businessPassportProjection,
+      documentsProjection,
+      relationshipProjection,
+      approvalProjection,
+      fundingProjection,
+      businessPassportPanelModel,
+      documentsPanelModel,
+      relationshipPanelModel,
+      approvalPanelModel,
+      fundingPanelModel,
+      insightsPanelModel,
+      institutionalTimelineModel,
+      workflowPanelModel,
+    }),
+    [
+      approvalPanelModel,
+      approvalProjection,
+      businessPassportPanelModel,
+      businessPassportProjection,
+      documentsPanelModel,
+      documentsProjection,
+      fundingPanelModel,
+      fundingProjection,
+      insightsPanelModel,
+      institutionalTimelineModel,
+      relationshipPanelModel,
+      relationshipProjection,
+      workflowPanelModel,
+    ],
+  );
+
+  const baselineWorkspaceData = useMemo<CustomerWorkspaceDataComposition>(
+    () =>
+      composeCustomerWorkspaceData({
+        customerId,
+        customerName: summary.customerName,
+        source: sourceData,
+      }),
+    [customerId, sourceData, summary.customerName],
+  );
+
+  const [repositoryWorkspaceData, setRepositoryWorkspaceData] =
+    useState<CustomerWorkspaceDataComposition | null>(null);
   const [repositoryLoadingByTabId, setRepositoryLoadingByTabId] =
     useState<Partial<Record<CustomerWorkspaceTabId, boolean>>>({});
-  const [repositoryErrorByTabId, setRepositoryErrorByTabId] =
-    useState<Partial<Record<CustomerWorkspaceTabId, string>>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -145,285 +164,73 @@ export default function CustomerWorkspace({
       };
     }
 
-    const context: CustomerWorkspaceRepositoryContext = {
-      customerId,
-    };
-
-    const loaders = [
-      { key: "businessPassportProjection", tabId: "business-passport", load: repositoryAdapters.businessPassportProjection },
-      { key: "documentsProjection", tabId: "documents", load: repositoryAdapters.documentsProjection },
-      { key: "relationshipProjection", tabId: "relationship", load: repositoryAdapters.relationshipProjection },
-      { key: "approvalProjection", tabId: "approvals", load: repositoryAdapters.approvalProjection },
-      { key: "fundingProjection", tabId: "funding", load: repositoryAdapters.fundingProjection },
-      { key: "businessPassportPanelModel", tabId: "business-passport", load: repositoryAdapters.businessPassportPanelModel },
-      { key: "documentsPanelModel", tabId: "documents", load: repositoryAdapters.documentsPanelModel },
-      { key: "relationshipPanelModel", tabId: "relationship", load: repositoryAdapters.relationshipPanelModel },
-      { key: "approvalPanelModel", tabId: "approvals", load: repositoryAdapters.approvalPanelModel },
-      { key: "fundingPanelModel", tabId: "funding", load: repositoryAdapters.fundingPanelModel },
-      { key: "insightsPanelModel", tabId: "ai-insights", load: repositoryAdapters.insightsPanelModel },
-      { key: "institutionalTimelineModel", tabId: "timeline", load: repositoryAdapters.institutionalTimelineModel },
-      { key: "workflowPanelModel", tabId: "overview", load: repositoryAdapters.workflowPanelModel },
-    ] as const;
-
-    const activeLoaders = loaders.filter((loader) => typeof loader.load === "function");
-    if (activeLoaders.length === 0) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const loadingState: Partial<Record<CustomerWorkspaceTabId, boolean>> = {};
-    for (const loader of activeLoaders) {
-      loadingState[loader.tabId] = true;
-    }
-
     void (async () => {
-      setRepositoryLoadingByTabId(loadingState);
-      setRepositoryErrorByTabId({});
+      setRepositoryWorkspaceData(null);
+      setRepositoryLoadingByTabId(getCustomerWorkspaceRepositoryLoadingState(repositoryAdapters));
 
-      const results = await Promise.all(
-        activeLoaders.map(async (loader) => {
-          try {
-            const value = await loader.load(context);
-            return { key: loader.key, tabId: loader.tabId, value };
-          } catch (error) {
-            const message = error instanceof Error ? error.message : "Repository adapter failed to resolve data.";
-            return { key: loader.key, tabId: loader.tabId, error: message };
-          }
-        }),
-      );
+      try {
+        const loadedData = await loadCustomerWorkspaceData({
+          customerId,
+          customerName: summary.customerName,
+          source: sourceData,
+          repositoryAdapters,
+        });
 
-      if (cancelled) {
-        return;
-      }
-
-      const nextData: Partial<CustomerWorkspaceRepositoryData> = {};
-      const nextErrors: Partial<Record<CustomerWorkspaceTabId, string>> = {};
-
-      for (const result of results) {
-        if ("error" in result) {
-          nextErrors[result.tabId] = result.error;
-          continue;
+        if (cancelled) {
+          return;
         }
 
-        if (typeof result.value !== "undefined") {
-          (nextData as Record<string, unknown>)[result.key] = result.value;
+        setRepositoryWorkspaceData(loadedData);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : "Workspace data composition failed.";
+        setRepositoryWorkspaceData({
+          ...baselineWorkspaceData,
+          errorByTabId: {
+            ...baselineWorkspaceData.errorByTabId,
+            overview: message,
+          },
+        });
+      } finally {
+        if (!cancelled) {
+          setRepositoryLoadingByTabId({});
         }
       }
-
-      setRepositoryData(nextData as CustomerWorkspaceRepositoryData);
-      setRepositoryErrorByTabId(nextErrors);
-      setRepositoryLoadingByTabId({});
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [customerId, repositoryAdapters]);
+  }, [baselineWorkspaceData, customerId, repositoryAdapters, sourceData, summary.customerName]);
 
-  const resolvedBusinessPassportProjection = repositoryAdapters
-    ? (repositoryData.businessPassportProjection ?? businessPassportProjection)
-    : businessPassportProjection;
-  const resolvedDocumentsProjection = repositoryAdapters
-    ? (repositoryData.documentsProjection ?? documentsProjection)
-    : documentsProjection;
-  const resolvedRelationshipProjection = repositoryAdapters
-    ? (repositoryData.relationshipProjection ?? relationshipProjection)
-    : relationshipProjection;
-  const resolvedApprovalProjection = repositoryAdapters
-    ? (repositoryData.approvalProjection ?? approvalProjection)
-    : approvalProjection;
-  const resolvedFundingProjection = repositoryAdapters
-    ? (repositoryData.fundingProjection ?? fundingProjection)
-    : fundingProjection;
-  const resolvedBusinessPassportPanelModel = repositoryAdapters
-    ? (repositoryData.businessPassportPanelModel ?? businessPassportPanelModel)
-    : businessPassportPanelModel;
-  const resolvedDocumentsPanelModel = repositoryAdapters
-    ? (repositoryData.documentsPanelModel ?? documentsPanelModel)
-    : documentsPanelModel;
-  const resolvedRelationshipPanelModel = repositoryAdapters
-    ? (repositoryData.relationshipPanelModel ?? relationshipPanelModel)
-    : relationshipPanelModel;
-  const resolvedApprovalPanelModel = repositoryAdapters
-    ? (repositoryData.approvalPanelModel ?? approvalPanelModel)
-    : approvalPanelModel;
-  const resolvedFundingPanelModel = repositoryAdapters
-    ? (repositoryData.fundingPanelModel ?? fundingPanelModel)
-    : fundingPanelModel;
-  const resolvedInsightsPanelModel = repositoryAdapters
-    ? (repositoryData.insightsPanelModel ?? insightsPanelModel)
-    : insightsPanelModel;
-  const resolvedInstitutionalTimelineModel = repositoryAdapters
-    ? (repositoryData.institutionalTimelineModel ?? institutionalTimelineModel)
-    : institutionalTimelineModel;
-  const resolvedWorkflowPanelModel = repositoryAdapters
-    ? (repositoryData.workflowPanelModel ?? workflowPanelModel)
-    : workflowPanelModel;
+  const workspaceData = repositoryAdapters
+    ? (repositoryWorkspaceData ?? baselineWorkspaceData)
+    : baselineWorkspaceData;
 
-  const businessPassportPresentation = useMemo(() => {
-    if (!resolvedBusinessPassportProjection) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
+  const businessPassportViewModel = workspaceData.viewModels.businessPassport;
+  const documentsViewModel = workspaceData.viewModels.documents;
+  const relationshipViewModel = workspaceData.viewModels.relationship;
+  const approvalViewModel = workspaceData.viewModels.approvals;
+  const fundingViewModel = workspaceData.viewModels.funding;
+  const aiInsightsViewModel = workspaceData.viewModels.aiInsights;
+  const institutionalTimelineViewModel = workspaceData.viewModels.timeline;
+  const workflowViewModel = workspaceData.viewModels.workflow;
 
-    const result = composition.resolveBusinessPassportViewModel(resolvedBusinessPassportProjection);
+  const workspaceIntelligence = workspaceData.workspaceIntelligence;
 
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedBusinessPassportProjection]);
+  const resolvedBusinessPassportPanelModel = workspaceData.resolved.businessPassportPanelModel;
+  const resolvedDocumentsPanelModel = workspaceData.resolved.documentsPanelModel;
+  const resolvedRelationshipPanelModel = workspaceData.resolved.relationshipPanelModel;
+  const resolvedApprovalPanelModel = workspaceData.resolved.approvalPanelModel;
+  const resolvedFundingPanelModel = workspaceData.resolved.fundingPanelModel;
+  const resolvedInsightsPanelModel = workspaceData.resolved.insightsPanelModel;
+  const resolvedInstitutionalTimelineModel = workspaceData.resolved.institutionalTimelineModel;
+  const resolvedWorkflowPanelModel = workspaceData.resolved.workflowPanelModel;
 
-  const documentsPresentation = useMemo(() => {
-    const documentsInput = resolvedDocumentsProjection ?? resolvedDocumentsPanelModel;
-    if (!documentsInput) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveDocumentsViewModel(documentsInput);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedDocumentsProjection, resolvedDocumentsPanelModel]);
-
-  const relationshipPresentation = useMemo(() => {
-    if (!resolvedRelationshipProjection) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveRelationshipViewModel(resolvedRelationshipProjection);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedRelationshipProjection]);
-
-  const approvalPresentation = useMemo(() => {
-    if (!resolvedApprovalProjection) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveApprovalViewModel(resolvedApprovalProjection);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedApprovalProjection]);
-
-  const fundingPresentation = useMemo(() => {
-    const fundingInput = resolvedFundingProjection ?? resolvedFundingPanelModel;
-    if (!fundingInput) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveFundingViewModel(fundingInput);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedFundingProjection, resolvedFundingPanelModel]);
-
-  const aiInsightsPresentation = useMemo(() => {
-    if (!resolvedInsightsPanelModel) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveAiInsightsViewModel(resolvedInsightsPanelModel);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedInsightsPanelModel]);
-
-  const institutionalTimelinePresentation = useMemo(() => {
-    if (!resolvedInstitutionalTimelineModel) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveInstitutionalTimelineViewModel(resolvedInstitutionalTimelineModel);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedInstitutionalTimelineModel]);
-
-  const workflowPresentation = useMemo(() => {
-    if (!resolvedWorkflowPanelModel) {
-      return { viewModel: null, error: undefined as string | undefined };
-    }
-
-    const result = composition.resolveWorkflowViewModel(resolvedWorkflowPanelModel);
-
-    return result.ok
-      ? { viewModel: result.viewModel, error: undefined as string | undefined }
-      : { viewModel: null, error: result.reason };
-  }, [composition, resolvedWorkflowPanelModel]);
-
-  const businessPassportViewModel: BusinessPassportPresentationViewModel | null =
-    businessPassportPresentation.viewModel;
-  const documentsViewModel: DocumentsPresentationViewModel | null = documentsPresentation.viewModel;
-  const relationshipViewModel: RelationshipPresentationViewModel | null = relationshipPresentation.viewModel;
-  const approvalViewModel: ApprovalPresentationViewModel | null = approvalPresentation.viewModel;
-  const fundingViewModel: FundingPresentationViewModel | null = fundingPresentation.viewModel;
-  const aiInsightsViewModel: AiInsightsPresentationViewModel | null = aiInsightsPresentation.viewModel;
-  const institutionalTimelineViewModel: InstitutionalTimelinePresentationViewModel | null =
-    institutionalTimelinePresentation.viewModel;
-  const workflowViewModel: WorkflowPresentationViewModel | null = workflowPresentation.viewModel;
-
-  const workspaceIntelligence = useMemo<WorkspaceIntelligenceModel>(
-    () =>
-      composition.composeWorkspaceIntelligence({
-        customer: {
-          id: customerId,
-          name: summary.customerName,
-        },
-        businessPassport: businessPassportViewModel,
-        documents: documentsViewModel,
-        relationship: relationshipViewModel,
-        approvals: approvalViewModel,
-        funding: fundingViewModel,
-        aiInsights: aiInsightsViewModel,
-        timeline: institutionalTimelineViewModel,
-        workflow: workflowViewModel,
-      }),
-    [
-      aiInsightsViewModel,
-      approvalViewModel,
-      businessPassportViewModel,
-      customerId,
-      composition,
-      documentsViewModel,
-      fundingViewModel,
-      institutionalTimelineViewModel,
-      relationshipViewModel,
-      summary.customerName,
-      workflowViewModel,
-    ],
-  );
-
-  const errorByTabId = useMemo<Partial<Record<CustomerWorkspaceTabId, string>>>(
-    () => ({
-      "business-passport": businessPassportPresentation.error ?? repositoryErrorByTabId["business-passport"],
-      documents: documentsPresentation.error ?? repositoryErrorByTabId.documents,
-      relationship: relationshipPresentation.error ?? repositoryErrorByTabId.relationship,
-      approvals: approvalPresentation.error ?? repositoryErrorByTabId.approvals,
-      funding: fundingPresentation.error ?? repositoryErrorByTabId.funding,
-      "ai-insights": aiInsightsPresentation.error ?? repositoryErrorByTabId["ai-insights"],
-      timeline: institutionalTimelinePresentation.error ?? repositoryErrorByTabId.timeline,
-      overview: workflowPresentation.error ?? repositoryErrorByTabId.overview,
-    }),
-    [
-      approvalPresentation.error,
-      aiInsightsPresentation.error,
-      businessPassportPresentation.error,
-      documentsPresentation.error,
-      fundingPresentation.error,
-      institutionalTimelinePresentation.error,
-      repositoryErrorByTabId,
-      relationshipPresentation.error,
-      workflowPresentation.error,
-    ],
-  );
+  const errorByTabId = workspaceData.errorByTabId;
 
   const mergedLoadingByTabId = useMemo<Partial<Record<CustomerWorkspaceTabId, boolean>>>(
     () => ({
