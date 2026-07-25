@@ -20,6 +20,10 @@ import {
   composeRelationshipManagerWorkbench,
   type RelationshipManagerWorkbenchModel,
 } from "@/lib/application/RelationshipManagerWorkbench";
+import {
+  composeOnboardingWorkflow,
+  type OnboardingWorkflowModel,
+} from "@/lib/application/OnboardingWorkflow";
 
 export interface WorkspaceIntelligenceSource {
   readonly customer?: {
@@ -64,6 +68,7 @@ export interface WorkspaceIntelligenceModel {
   readonly lifecycle: CustomerLifecycleOrchestrationModel;
   readonly onboardingProgress: OnboardingProgressModel;
   readonly workbench: RelationshipManagerWorkbenchModel;
+  readonly onboardingWorkflow: OnboardingWorkflowModel;
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
 }
 
@@ -126,6 +131,11 @@ export function composeWorkspaceIntelligence(
     institutionalEvents: eventQueue.toArray(),
     aiRecommendations: aiPanelModel?.recommendations ?? [],
   });
+  const onboardingWorkflow = composeOnboardingWorkflow({
+    lifecycle,
+    onboardingProgress: lifecycle.onboardingProgress,
+    workbench,
+  });
   const prioritizedActions = lifecycle.prioritizedEvents.map(toPrioritizedAction);
 
   return {
@@ -151,7 +161,7 @@ export function composeWorkspaceIntelligence(
     aiRecommendations: aiPanelModel?.recommendations ?? [],
     timelineAlerts: timelinePanelModel?.events ?? [],
     workflowNextAction:
-      workbench.recommendedWorkItem?.action ??
+      onboardingWorkflow.highestPriorityTask ??
       lifecycle.nextAction ??
       workflowPanelModel?.nextBestAction ??
       null,
@@ -160,6 +170,7 @@ export function composeWorkspaceIntelligence(
     lifecycle,
     onboardingProgress: lifecycle.onboardingProgress,
     workbench,
+    onboardingWorkflow,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }

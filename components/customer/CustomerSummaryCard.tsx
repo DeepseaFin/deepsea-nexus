@@ -13,6 +13,9 @@ export default function CustomerSummaryCard({ summary }: CustomerSummaryCardProp
   const blockedStageText = summary.onboardingProgress?.blockedStageLabels.length
     ? summary.onboardingProgress.blockedStageLabels.join(", ")
     : "None";
+  const criticalBlockerText = summary.onboardingProgress?.criticalBlockerLabels.length
+    ? summary.onboardingProgress.criticalBlockerLabels.join(", ")
+    : "None";
 
   return (
     <SectionCard title="Customer Summary" subtitle="Snapshot of core relationship and risk context">
@@ -62,9 +65,16 @@ export default function CustomerSummaryCard({ summary }: CustomerSummaryCardProp
             {summary.onboardingProgress?.overallCompletionPercent ?? 0}% complete
           </p>
           <p className="mt-1 text-xs text-slate-400">
+            Lifecycle stage: {summary.onboardingProgress?.lifecycleStageLabel ?? "Not available"}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
             Current stage: {summary.onboardingProgress?.currentStageLabel ?? "Not available"}
           </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Funding readiness: {summary.onboardingProgress?.fundingReadinessLabel ?? "Not available"}
+          </p>
           <p className="mt-1 text-xs text-slate-400">Blocked stages: {blockedStageText}</p>
+          <p className="mt-1 text-xs text-amber-300">Critical blockers: {criticalBlockerText}</p>
         </article>
       </div>
     </SectionCard>

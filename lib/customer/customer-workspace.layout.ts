@@ -25,6 +25,9 @@ export const defaultCustomerSummary: CustomerSummaryModel = {
     currentStageLabel: "Business Passport",
     blockedStageLabels: ["Business Passport"],
     recommendedNextStageLabel: "Business Passport",
+    lifecycleStageLabel: "Business Passport",
+    fundingReadinessLabel: "Unknown",
+    criticalBlockerLabels: ["Business Passport"],
   },
 };
 

@@ -351,6 +351,7 @@ export default function CustomerWorkspace({
   const sidebarSections = layout.sidebarSections[activeTab.id] ?? [];
   const tabPanelModel = layout.tabContent[activeTab.id];
   const onboardingProgress = workspaceIntelligence.onboardingProgress;
+  const onboardingWorkflow = workspaceIntelligence.onboardingWorkflow;
   const summaryWithOnboarding: CustomerSummaryModel = {
     ...summary,
     onboardingProgress: {
@@ -358,6 +359,9 @@ export default function CustomerWorkspace({
       currentStageLabel: onboardingProgress.currentStage.label,
       blockedStageLabels: onboardingProgress.blockedStages.map((stage) => stage.label),
       recommendedNextStageLabel: onboardingProgress.recommendedNextStage.label,
+      lifecycleStageLabel: onboardingWorkflow.currentLifecycleStage,
+      fundingReadinessLabel: onboardingWorkflow.fundingReadiness,
+      criticalBlockerLabels: onboardingWorkflow.blockers.map((blocker) => blocker.title),
     },
   };
 
@@ -375,11 +379,24 @@ export default function CustomerWorkspace({
         title="Current Onboarding Stage"
         subtitle={`Recommended next stage: ${onboardingProgress.recommendedNextStage.label}`}
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusChip label={onboardingProgress.currentStage.label} variant="info" />
-          {onboardingProgress.blockedStages.map((stage) => (
-            <StatusChip key={stage.id} label={`${stage.label} blocked`} variant="warning" />
-          ))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusChip label={onboardingProgress.currentStage.label} variant="info" />
+            <StatusChip label={`Lifecycle: ${onboardingWorkflow.currentLifecycleStage}`} variant="default" />
+            <StatusChip label={`Funding: ${onboardingWorkflow.fundingReadiness}`} variant="default" />
+          </div>
+
+          {onboardingWorkflow.blockers.length > 0 ? (
+            <div className="space-y-1.5">
+              {onboardingWorkflow.blockers.map((blocker) => (
+                <p key={blocker.id} className="text-xs text-amber-300">
+                  Blocker: {blocker.title}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">No active onboarding blockers.</p>
+          )}
         </div>
       </SectionCard>
 

@@ -50,6 +50,9 @@ export interface CustomerSummaryModel {
     readonly currentStageLabel: string;
     readonly blockedStageLabels: readonly string[];
     readonly recommendedNextStageLabel: string;
+    readonly lifecycleStageLabel: string;
+    readonly fundingReadinessLabel: string;
+    readonly criticalBlockerLabels: readonly string[];
   };
 }
 
