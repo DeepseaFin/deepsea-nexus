@@ -28,7 +28,7 @@ export interface NextBestActionProps {
 }
 
 export default function NextBestAction({ config, intelligence }: NextBestActionProps) {
-  const action = intelligence.workflowNextAction;
+  const action = intelligence.prioritizedActions[0]?.action ?? intelligence.workflowNextAction;
 
   return (
     <SectionCard title={config.nextActionTitle} subtitle={config.nextActionSubtitle}>

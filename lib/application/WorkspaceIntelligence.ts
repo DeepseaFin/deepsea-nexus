@@ -6,6 +6,11 @@ import type { FundingPresentationViewModel } from "@/lib/presentation/presenters
 import type { InstitutionalTimelinePresentationViewModel } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
 import type { RelationshipPresentationViewModel } from "@/lib/presentation/presenters/RelationshipPresenter";
 import type { WorkflowPresentationViewModel } from "@/lib/presentation/presenters/WorkflowPresenter";
+import type { InstitutionalEvent } from "@/lib/application/events/InstitutionalEvent";
+import { createInstitutionalEvents } from "@/lib/application/events/InstitutionalEventFactory";
+import { InstitutionalEventQueue } from "@/lib/application/events/InstitutionalEventQueue";
+import type { InstitutionalEventType } from "@/lib/application/events/InstitutionalEventType";
+import type { NextBestActionModel } from "@/lib/customer/workflow/workflow.types";
 
 export interface WorkspaceIntelligenceSource {
   readonly businessPassport?: BusinessPassportPresentationViewModel | null;
@@ -37,7 +42,31 @@ export interface WorkspaceIntelligenceModel {
   readonly aiRecommendations: AiInsightsPresentationViewModel["payload"]["panelModel"]["recommendations"];
   readonly timelineAlerts: InstitutionalTimelinePresentationViewModel["payload"]["panelModel"]["events"];
   readonly workflowNextAction: WorkflowPresentationViewModel["payload"]["panelModel"]["nextBestAction"] | null;
+  readonly institutionalEvents: readonly InstitutionalEvent[];
+  readonly prioritizedActions: readonly {
+    readonly id: string;
+    readonly eventType: InstitutionalEventType;
+    readonly action: NextBestActionModel;
+  }[];
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
+}
+
+function toPrioritizedAction(event: InstitutionalEvent): {
+  readonly id: string;
+  readonly eventType: InstitutionalEventType;
+  readonly action: NextBestActionModel;
+} {
+  return {
+    id: event.id,
+    eventType: event.type,
+    action: {
+      title: event.title,
+      description: event.description,
+      owner: event.owner ?? "Operations",
+      priority: event.priority,
+      actionLabel: event.actionLabel ?? "Open Workspace",
+    },
+  };
 }
 
 export function composeWorkspaceIntelligence(
@@ -50,6 +79,19 @@ export function composeWorkspaceIntelligence(
   const aiPanelModel = source.aiInsights?.payload.panelModel;
   const timelinePanelModel = source.timeline?.payload.panelModel;
   const workflowPanelModel = source.workflow?.payload.panelModel;
+
+  const institutionalEvents = createInstitutionalEvents({
+    approvalProjection,
+    missingDocuments: documentsPanelModel?.missingDocuments ?? [],
+    fundingMilestones: fundingPanelModel?.timeline ?? [],
+    relationshipWorkspaceProjection: relationshipProjection,
+    aiRecommendations: aiPanelModel?.recommendations ?? [],
+    timelineMilestones: timelinePanelModel?.events ?? [],
+    workflowNextAction: workflowPanelModel?.nextBestAction ?? null,
+  });
+  const eventQueue = new InstitutionalEventQueue(institutionalEvents);
+  const prioritizedActions = eventQueue.prioritized().map(toPrioritizedAction);
+  const topPrioritizedAction = prioritizedActions[0]?.action ?? null;
 
   return {
     outstandingApprovals: approvalProjection ? [approvalProjection] : [],
@@ -73,7 +115,9 @@ export function composeWorkspaceIntelligence(
       : [],
     aiRecommendations: aiPanelModel?.recommendations ?? [],
     timelineAlerts: timelinePanelModel?.events ?? [],
-    workflowNextAction: workflowPanelModel?.nextBestAction ?? null,
+    workflowNextAction: topPrioritizedAction ?? workflowPanelModel?.nextBestAction ?? null,
+    institutionalEvents: eventQueue.toArray(),
+    prioritizedActions,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }
