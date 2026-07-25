@@ -26,6 +26,10 @@ import {
   registerDocumentIntelligencePipelineStages,
   type DocumentProcessingStageRegistry,
 } from "@/lib/documents/documentProcessingStageRegistry";
+import {
+  createProcessingStageExecutor,
+  type ProcessingStageExecutor,
+} from "@/lib/documents/documentProcessingStageExecutor";
 
 export interface DocumentOcrExtractionReference {
   readonly page: number;
@@ -205,6 +209,7 @@ export interface DocumentIntelligenceOrchestratorDependencies {
   readonly aiExtractor?: DocumentAiExtractor;
   readonly stages?: Partial<DocumentIntelligencePipelineStages>;
   readonly stageRegistry?: DocumentProcessingStageRegistry;
+  readonly stageExecutor?: ProcessingStageExecutor;
 }
 
 export interface DocumentIntelligenceOrchestrator {
@@ -398,45 +403,6 @@ export interface DocumentIntelligenceOrchestratorRuntimeDependencies {
   readonly knowledgeProjector: KnowledgeIdentityProjector;
   readonly ocrExtractor?: DocumentOcrExtractor;
   readonly aiExtractor?: DocumentAiExtractor;
-}
-
-function mergeKnowledgeCollection(
-  base: KnowledgeCollection,
-  incoming: KnowledgeCollection,
-): KnowledgeCollection {
-  return {
-    facts: [...base.facts, ...incoming.facts],
-  };
-}
-
-function applyStageContribution(
-  context: ProcessingContext,
-  stage: ProcessingStage,
-  contribution: ProcessingStageContribution,
-): ProcessingContext {
-  const warningsWithStage = (contribution.warnings ?? []).map((warning) => ({
-    ...warning,
-    stage: warning.stage ?? stage.name,
-  }));
-
-  const errorsWithStage = (contribution.errors ?? []).map((error) => ({
-    ...error,
-    stage: error.stage ?? stage.name,
-  }));
-
-  return {
-    ...context,
-    evidenceCollection: contribution.evidence
-      ? {
-          items: [...context.evidenceCollection.items, ...contribution.evidence],
-        }
-      : context.evidenceCollection,
-    knowledgeCollection: contribution.knowledge
-      ? mergeKnowledgeCollection(context.knowledgeCollection, contribution.knowledge)
-      : context.knowledgeCollection,
-    processingWarnings: [...context.processingWarnings, ...warningsWithStage],
-    processingErrors: [...context.processingErrors, ...errorsWithStage],
-  };
 }
 
 export const defaultValidationStage: ValidationStage = {
@@ -679,45 +645,17 @@ function createInitialProcessingContext(input: {
 async function runProcessingPipeline(params: {
   readonly initialContext: ProcessingContext;
   readonly stageRegistry: DocumentProcessingStageRegistry;
+  readonly stageExecutor: ProcessingStageExecutor;
   readonly runtimeDependencies: DocumentIntelligenceOrchestratorRuntimeDependencies;
 }): Promise<ProcessingContext> {
-  let context = params.initialContext;
-  const stageMetrics: Partial<Record<DocumentIntelligenceStageName, ProcessingStageMetrics>> = {};
-
   const executionPlan = params.stageRegistry.getOrderedExecutionPlan();
-  const orderedStages: readonly ProcessingStage[] = executionPlan.stages;
+  const execution = await params.stageExecutor.execute({
+    initialContext: params.initialContext,
+    stages: executionPlan.stages,
+    runtimeDependencies: params.runtimeDependencies,
+  });
 
-  for (const stage of orderedStages) {
-    const canExecute = await stage.canExecute(context);
-    if (!canExecute) {
-      continue;
-    }
-
-    const preExecutionContribution = await stage.validate(context);
-    context = applyStageContribution(context, stage, preExecutionContribution);
-
-    if (preExecutionContribution.metrics) {
-      stageMetrics[stage.name] = {
-        ...(stageMetrics[stage.name] ?? {}),
-        ...preExecutionContribution.metrics,
-      };
-    }
-
-    if (preExecutionContribution.halt) {
-      break;
-    }
-
-    const outcome = await stage.execute(context, params.runtimeDependencies);
-    context = outcome.context;
-
-    if (outcome.halt) {
-      break;
-    }
-  }
-
-  void stageMetrics;
-
-  return context;
+  return execution.outcome.context;
 }
 
 function toProcessingResult(context: ProcessingContext): DocumentIntelligenceProcessingResult {
@@ -762,6 +700,7 @@ export function createDocumentIntelligenceOrchestrator(
   };
 
   const stageRegistry = dependencies.stageRegistry ?? createDocumentProcessingStageRegistry();
+  const stageExecutor = dependencies.stageExecutor ?? createProcessingStageExecutor();
   registerDocumentIntelligencePipelineStages(stageRegistry, stages);
 
   return {
@@ -773,6 +712,7 @@ export function createDocumentIntelligenceOrchestrator(
           passportId: input.passportId,
         }),
         stageRegistry,
+        stageExecutor,
         runtimeDependencies,
       });
 
@@ -789,6 +729,7 @@ export function createDocumentIntelligenceOrchestrator(
           passportId: input.passportId,
         }),
         stageRegistry,
+        stageExecutor,
         runtimeDependencies,
       });
 
