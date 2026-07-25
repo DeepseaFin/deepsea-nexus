@@ -22,6 +22,7 @@ import {
 } from "@/lib/application/RelationshipManagerWorkbench";
 import {
   composeOnboardingWorkflow,
+  type OnboardingWorkflowTask,
   type OnboardingWorkflowModel,
 } from "@/lib/application/OnboardingWorkflow";
 
@@ -69,7 +70,33 @@ export interface WorkspaceIntelligenceModel {
   readonly onboardingProgress: OnboardingProgressModel;
   readonly workbench: RelationshipManagerWorkbenchModel;
   readonly onboardingWorkflow: OnboardingWorkflowModel;
+  readonly onboardingDashboard: OnboardingDashboardModel;
   readonly businessPassportSnapshot: BusinessPassportPresentationViewModel["payload"]["projection"] | null;
+}
+
+export interface OnboardingDashboardModel {
+  readonly currentLifecycleStage: CustomerLifecycleOrchestrationModel["phase"];
+  readonly overallOnboardingProgress: string;
+  readonly completionPercentage: number;
+  readonly fundingReadiness: string;
+  readonly criticalBlockers: readonly OnboardingWorkflowTask[];
+  readonly requiredDocuments: DocumentsPresentationViewModel["payload"]["panelModel"]["missingDocuments"];
+  readonly pendingApprovals: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly currentStage: string;
+    readonly decision: string;
+    readonly status: string;
+  }[];
+  readonly relationshipHealth:
+    | {
+        readonly relationshipName: string;
+        readonly status: string;
+        readonly stage: string;
+        readonly recentInteractionCount: number;
+      }
+    | null;
+  readonly nextRecommendedAction: NextBestActionModel | null;
 }
 
 function toPrioritizedAction(event: InstitutionalEvent): {
@@ -136,6 +163,43 @@ export function composeWorkspaceIntelligence(
     onboardingProgress: lifecycle.onboardingProgress,
     workbench,
   });
+  const requiredDocuments = documentsPanelModel?.missingDocuments ?? [];
+  const pendingApprovals =
+    lifecycle.approvals.state === "pending" && approvalProjection
+      ? [
+          {
+            id: approvalProjection.approvalId,
+            title: approvalProjection.title,
+            currentStage: approvalProjection.currentStage,
+            decision: approvalProjection.currentDecision,
+            status: approvalProjection.status,
+          },
+        ]
+      : [];
+  const relationshipHealth = relationshipProjection
+    ? {
+        relationshipName: relationshipProjection.relationship.relationshipName,
+        status: relationshipProjection.relationship.status,
+        stage: relationshipProjection.relationship.stage,
+        recentInteractionCount: relationshipProjection.interactions.length,
+      }
+    : null;
+  const nextRecommendedAction =
+    onboardingWorkflow.highestPriorityTask ??
+    lifecycle.nextAction ??
+    workflowPanelModel?.nextBestAction ??
+    null;
+  const onboardingDashboard: OnboardingDashboardModel = {
+    currentLifecycleStage: lifecycle.phase,
+    overallOnboardingProgress: lifecycle.onboardingProgress.currentStage.label,
+    completionPercentage: onboardingWorkflow.completionPercentage,
+    fundingReadiness: onboardingWorkflow.fundingReadiness,
+    criticalBlockers: onboardingWorkflow.blockers,
+    requiredDocuments,
+    pendingApprovals,
+    relationshipHealth,
+    nextRecommendedAction,
+  };
   const prioritizedActions = lifecycle.prioritizedEvents.map(toPrioritizedAction);
 
   return {
@@ -160,17 +224,14 @@ export function composeWorkspaceIntelligence(
       : [],
     aiRecommendations: aiPanelModel?.recommendations ?? [],
     timelineAlerts: timelinePanelModel?.events ?? [],
-    workflowNextAction:
-      onboardingWorkflow.highestPriorityTask ??
-      lifecycle.nextAction ??
-      workflowPanelModel?.nextBestAction ??
-      null,
+    workflowNextAction: nextRecommendedAction,
     institutionalEvents: eventQueue.toArray(),
     prioritizedActions,
     lifecycle,
     onboardingProgress: lifecycle.onboardingProgress,
     workbench,
     onboardingWorkflow,
+    onboardingDashboard,
     businessPassportSnapshot: source.businessPassport?.payload.projection ?? null,
   };
 }
