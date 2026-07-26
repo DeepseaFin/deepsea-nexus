@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
 import SectionCard from "@/components/ui/SectionCard";
 import TimelineDateGroup, { type TimelineDateGroupItem } from "@/components/customer/timeline/TimelineDateGroup";
 import TimelineFilters, {
@@ -185,17 +187,17 @@ export default function RelationshipTimeline({ timeline, isLoading = false, erro
   }, [filtered]);
 
   if (isLoading) {
-    return <PanelLoadingState title="Relationship Timeline" subtitle="Loading timeline events" />;
+    return <LoadingState title="Relationship Timeline" message="Loading timeline events" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Relationship Timeline" subtitle="Unable to render timeline" message={error} />;
+    return <ErrorState title="Relationship Timeline" message={`Unable to render timeline: ${error}`} />;
   }
 
   if (!timeline) {
     return (
       <SectionCard title="Relationship Timeline" subtitle="No timeline is currently available">
-        <PanelEmptyState message="Timeline data is not available in this workspace." />
+        <EmptyState message="Timeline data is not available in this workspace." />
       </SectionCard>
     );
   }
@@ -220,7 +222,7 @@ export default function RelationshipTimeline({ timeline, isLoading = false, erro
 
           {grouped.length === 0 ? (
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
-              <PanelEmptyState message="No timeline events match the selected filters." />
+              <EmptyState message="No timeline events match the selected filters." />
             </div>
           ) : null}
         </div>

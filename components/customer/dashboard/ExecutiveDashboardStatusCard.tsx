@@ -1,7 +1,7 @@
 "use client";
 
 import SectionCard from "@/components/ui/SectionCard";
-import StatusBadge from "@/components/atlas/design-system/StatusBadge";
+import StatusBadge from "@/components/customer/shared/StatusBadge";
 import type { ExecutiveRelationshipDashboardViewModel } from "@/lib/customer/ExecutiveRelationshipDashboardViewModel";
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
 

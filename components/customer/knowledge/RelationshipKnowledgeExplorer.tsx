@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import KnowledgeDomainSection from "@/components/customer/knowledge/KnowledgeDomainSection";
 import KnowledgeToolbar, { type KnowledgeToolbarValue } from "@/components/customer/knowledge/KnowledgeToolbar";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipKnowledgeBusinessDomain,
@@ -102,17 +104,17 @@ export default function RelationshipKnowledgeExplorer({ explorer, isLoading = fa
   const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalKnowledgeItems, 0);
 
   if (isLoading) {
-    return <PanelLoadingState title="Relationship Knowledge Explorer" subtitle="Loading knowledge explorer" />;
+    return <LoadingState title="Relationship Knowledge Explorer" message="Loading knowledge explorer" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Relationship Knowledge Explorer" subtitle="Unable to render knowledge explorer" message={error} />;
+    return <ErrorState title="Relationship Knowledge Explorer" message={`Unable to render knowledge explorer: ${error}`} />;
   }
 
   if (!explorer) {
     return (
       <SectionCard title="Relationship Knowledge Explorer" subtitle="No knowledge explorer data is currently available">
-        <PanelEmptyState message="Knowledge explorer data is not available in this workspace." />
+        <EmptyState message="Knowledge explorer data is not available in this workspace." />
       </SectionCard>
     );
   }
@@ -137,7 +139,7 @@ export default function RelationshipKnowledgeExplorer({ explorer, isLoading = fa
 
           {filteredDomains.length === 0 ? (
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
-              <PanelEmptyState message="No knowledge items match the current search and filters." />
+              <EmptyState message="No knowledge items match the current search and filters." />
             </div>
           ) : null}
         </div>

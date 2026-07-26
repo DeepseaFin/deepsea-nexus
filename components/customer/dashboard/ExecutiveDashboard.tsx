@@ -3,8 +3,10 @@
 import ExecutiveDashboardInsights from "@/components/customer/dashboard/ExecutiveDashboardInsights";
 import ExecutiveDashboardKPIs from "@/components/customer/dashboard/ExecutiveDashboardKPIs";
 import ExecutiveDashboardStatusCard from "@/components/customer/dashboard/ExecutiveDashboardStatusCard";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
-import SectionCard from "@/components/ui/SectionCard";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
+import Section from "@/components/customer/shared/Section";
 import type { ExecutiveRelationshipDashboardViewModel } from "@/lib/customer/ExecutiveRelationshipDashboardViewModel";
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
 
@@ -22,26 +24,26 @@ export default function ExecutiveDashboard({
   error,
 }: ExecutiveDashboardProps) {
   if (isLoading) {
-    return <PanelLoadingState title="Executive Dashboard" subtitle="Loading executive summary" />;
+    return <LoadingState title="Executive Dashboard" message="Loading executive summary" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Executive Dashboard" subtitle="Unable to render executive section" message={error} />;
+    return <ErrorState title="Executive Dashboard" message={`Unable to render executive section: ${error}`} />;
   }
 
   if (!dashboard) {
     return (
-      <SectionCard title="Executive Dashboard" subtitle="No executive summary is currently available">
-        <PanelEmptyState message="Executive dashboard data is not available in this workspace." />
-      </SectionCard>
+      <Section title="Executive Dashboard" subtitle="No executive summary is currently available">
+        <EmptyState message="Executive dashboard data is not available in this workspace." />
+      </Section>
     );
   }
 
   return (
     <div className="space-y-5">
-      <SectionCard title="Executive Dashboard" subtitle={dashboard.executiveSummary.headline}>
+      <Section title="Executive Dashboard" subtitle={dashboard.executiveSummary.headline}>
         <ExecutiveDashboardKPIs dashboard={dashboard} workspace={workspace} />
-      </SectionCard>
+      </Section>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <ExecutiveDashboardStatusCard dashboard={dashboard} workspace={workspace} />

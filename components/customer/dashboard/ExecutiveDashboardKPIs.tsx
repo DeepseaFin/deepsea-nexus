@@ -1,6 +1,6 @@
 "use client";
 
-import KPIGrid, { type KPIItem } from "@/components/atlas/design-system/KPIGrid";
+import MetricCard from "@/components/customer/shared/MetricCard";
 import type { ExecutiveRelationshipDashboardViewModel } from "@/lib/customer/ExecutiveRelationshipDashboardViewModel";
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
 
@@ -13,7 +13,7 @@ export default function ExecutiveDashboardKPIs({
   dashboard,
   workspace,
 }: ExecutiveDashboardKPIsProps) {
-  const items: KPIItem[] = [
+  const items = [
     {
       label: "Relationship Confidence",
       value: `${dashboard.relationshipConfidence.overallScore}`,
@@ -39,7 +39,13 @@ export default function ExecutiveDashboardKPIs({
       value: `${workspace?.documentExplorer.totalDocuments ?? dashboard.recentDocuments.length}`,
       note: "Available documents",
     },
-  ];
+  ] as const;
 
-  return <KPIGrid items={items} />;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {items.map((item) => (
+        <MetricCard key={item.label} label={item.label} value={item.value} note={item.note} />
+      ))}
+    </div>
+  );
 }

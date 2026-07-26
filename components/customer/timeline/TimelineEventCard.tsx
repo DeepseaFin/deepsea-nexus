@@ -1,6 +1,6 @@
 "use client";
 
-import StatusBadge from "@/components/atlas/design-system/StatusBadge";
+import StatusBadge from "@/components/customer/shared/StatusBadge";
 import type { RelationshipTimelineEventType, RelationshipTimelineEventViewModel } from "@/lib/customer/RelationshipTimelineViewModel";
 
 export interface TimelineEventCardProps {

@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import ActionPrioritySection from "@/components/customer/actions/ActionPrioritySection";
 import ActionToolbar, { type ActionToolbarValue } from "@/components/customer/actions/ActionToolbar";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipActionCategory,
@@ -167,17 +169,17 @@ export default function RelationshipActionCenter({
   const low = filtered.filter((item) => item.priority === "low");
 
   if (isLoading) {
-    return <PanelLoadingState title="Relationship Action Center" subtitle="Loading action center" />;
+    return <LoadingState title="Relationship Action Center" message="Loading action center" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Relationship Action Center" subtitle="Unable to render action center" message={error} />;
+    return <ErrorState title="Relationship Action Center" message={`Unable to render action center: ${error}`} />;
   }
 
   if (!actionCenter) {
     return (
       <SectionCard title="Relationship Action Center" subtitle="No action center data is currently available">
-        <PanelEmptyState message="Action center data is not available in this workspace." />
+        <EmptyState message="Action center data is not available in this workspace." />
       </SectionCard>
     );
   }
@@ -220,7 +222,7 @@ export default function RelationshipActionCenter({
 
           {filtered.length === 0 ? (
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
-              <PanelEmptyState message="No actions match the current search and filters." />
+              <EmptyState message="No actions match the current search and filters." />
             </div>
           ) : null}
         </div>

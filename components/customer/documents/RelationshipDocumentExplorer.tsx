@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import DocumentCategorySection from "@/components/customer/documents/DocumentCategorySection";
 import DocumentToolbar, { type DocumentToolbarValue } from "@/components/customer/documents/DocumentToolbar";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipDocumentBusinessCategory,
@@ -108,17 +110,17 @@ export default function RelationshipDocumentExplorer({ explorer, isLoading = fal
   const visibleDocumentCount = filteredCategories.reduce((count, category) => count + category.totalDocuments, 0);
 
   if (isLoading) {
-    return <PanelLoadingState title="Relationship Document Explorer" subtitle="Loading document explorer" />;
+    return <LoadingState title="Relationship Document Explorer" message="Loading document explorer" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Relationship Document Explorer" subtitle="Unable to render document explorer" message={error} />;
+    return <ErrorState title="Relationship Document Explorer" message={`Unable to render document explorer: ${error}`} />;
   }
 
   if (!explorer) {
     return (
       <SectionCard title="Relationship Document Explorer" subtitle="No document explorer data is currently available">
-        <PanelEmptyState message="Document explorer data is not available in this workspace." />
+        <EmptyState message="Document explorer data is not available in this workspace." />
       </SectionCard>
     );
   }
@@ -148,7 +150,7 @@ export default function RelationshipDocumentExplorer({ explorer, isLoading = fal
 
           {filteredCategories.length === 0 ? (
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
-              <PanelEmptyState message="No documents match the current search and filters." />
+              <EmptyState message="No documents match the current search and filters." />
             </div>
           ) : null}
         </div>

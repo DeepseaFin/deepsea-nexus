@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import EvidenceDomainSection from "@/components/customer/evidence/EvidenceDomainSection";
 import EvidenceToolbar, { type EvidenceToolbarValue } from "@/components/customer/evidence/EvidenceToolbar";
-import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
+import EmptyState from "@/components/customer/shared/EmptyState";
+import ErrorState from "@/components/customer/shared/ErrorState";
+import LoadingState from "@/components/customer/shared/LoadingState";
 import SectionCard from "@/components/ui/SectionCard";
 import type {
   RelationshipEvidenceBusinessDomain,
@@ -101,17 +103,17 @@ export default function RelationshipEvidenceExplorer({ explorer, isLoading = fal
   const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalEvidenceItems, 0);
 
   if (isLoading) {
-    return <PanelLoadingState title="Relationship Evidence Explorer" subtitle="Loading evidence explorer" />;
+    return <LoadingState title="Relationship Evidence Explorer" message="Loading evidence explorer" />;
   }
 
   if (error) {
-    return <PanelErrorState title="Relationship Evidence Explorer" subtitle="Unable to render evidence explorer" message={error} />;
+    return <ErrorState title="Relationship Evidence Explorer" message={`Unable to render evidence explorer: ${error}`} />;
   }
 
   if (!explorer) {
     return (
       <SectionCard title="Relationship Evidence Explorer" subtitle="No evidence explorer data is currently available">
-        <PanelEmptyState message="Evidence explorer data is not available in this workspace." />
+        <EmptyState message="Evidence explorer data is not available in this workspace." />
       </SectionCard>
     );
   }
@@ -136,7 +138,7 @@ export default function RelationshipEvidenceExplorer({ explorer, isLoading = fal
 
           {filteredDomains.length === 0 ? (
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
-              <PanelEmptyState message="No evidence items match the current search and filters." />
+              <EmptyState message="No evidence items match the current search and filters." />
             </div>
           ) : null}
         </div>
