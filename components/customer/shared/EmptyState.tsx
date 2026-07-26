@@ -11,7 +11,12 @@ export interface EmptyStateProps {
 
 export default function EmptyState({ title, message, actions, className = "" }: EmptyStateProps) {
   return (
-    <div className={`rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-center ${className}`} role="status" aria-live="polite">
+    <div
+      className={`rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-center ${className}`}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {title ? <p className="text-sm font-semibold text-slate-100">{title}</p> : null}
       <p className={`${title ? "mt-1" : ""} text-sm text-slate-400`}>{message}</p>
       {actions ? <div className="mt-3 flex items-center justify-center gap-2">{actions}</div> : null}

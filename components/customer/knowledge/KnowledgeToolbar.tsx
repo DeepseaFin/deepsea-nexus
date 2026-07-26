@@ -25,6 +25,8 @@ function toLabel(value: string): string {
   return value.replace(/-/g, " ").replace(/_/g, " ").replace(/\b\w/g, (part) => part.toUpperCase());
 }
 
+const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 transition-colors hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70";
+
 const CONFIDENCE_OPTIONS: readonly Array<"all" | ConfidenceBand> = [
   "all",
   "very_high",
@@ -43,18 +45,19 @@ export default function KnowledgeToolbar({ value, domains, onChange }: Knowledge
         <SearchBar
           value={value.search}
           onChange={(search) => onChange({ ...value, search })}
+          label="Search Knowledge"
           placeholder="Search conclusions, evidence, documents"
         />
       }
       filters={
-        <FilterPanel>
-          <div className="grid gap-3 sm:grid-cols-3">
+        <FilterPanel title="Controls" subtitle="Domain, confidence, and sort order">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Domain</span>
               <select
                 value={value.domain}
                 onChange={(event) => onChange({ ...value, domain: event.target.value as KnowledgeToolbarValue["domain"] })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 <option value="all">All Domains</option>
                 {domains.map((domain) => (
@@ -70,7 +73,7 @@ export default function KnowledgeToolbar({ value, domains, onChange }: Knowledge
               <select
                 value={value.confidence}
                 onChange={(event) => onChange({ ...value, confidence: event.target.value as KnowledgeToolbarValue["confidence"] })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 {CONFIDENCE_OPTIONS.map((confidence) => (
                   <option key={confidence} value={confidence}>
@@ -85,7 +88,7 @@ export default function KnowledgeToolbar({ value, domains, onChange }: Knowledge
               <select
                 value={value.sortOrder}
                 onChange={(event) => onChange({ ...value, sortOrder: event.target.value as KnowledgeSortOrder })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>

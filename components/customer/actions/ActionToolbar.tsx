@@ -28,6 +28,8 @@ function toLabel(value: string): string {
   return value.replace(/-/g, " ").replace(/_/g, " ").replace(/\b\w/g, (part) => part.toUpperCase());
 }
 
+const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 transition-colors hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70";
+
 const PRIORITY_OPTIONS: readonly ActionPriorityFilter[] = ["all", "critical", "high", "medium", "low"] as const;
 
 export default function ActionToolbar({ value, categories, onChange }: ActionToolbarProps) {
@@ -39,18 +41,19 @@ export default function ActionToolbar({ value, categories, onChange }: ActionToo
         <SearchBar
           value={value.search}
           onChange={(search) => onChange({ ...value, search })}
+          label="Search Actions"
           placeholder="Search actions, documents, source"
         />
       }
       filters={
-        <FilterPanel>
-          <div className="grid gap-3 sm:grid-cols-3">
+        <FilterPanel title="Controls" subtitle="Priority, category, and sort order">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <label className="flex flex-col gap-1">
               <span className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Priority</span>
               <select
                 value={value.priority}
                 onChange={(event) => onChange({ ...value, priority: event.target.value as ActionPriorityFilter })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 {PRIORITY_OPTIONS.map((priority) => (
                   <option key={priority} value={priority}>
@@ -65,7 +68,7 @@ export default function ActionToolbar({ value, categories, onChange }: ActionToo
               <select
                 value={value.category}
                 onChange={(event) => onChange({ ...value, category: event.target.value as ActionToolbarValue["category"] })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 <option value="all">All Categories</option>
                 {categories.map((category) => (
@@ -81,7 +84,7 @@ export default function ActionToolbar({ value, categories, onChange }: ActionToo
               <select
                 value={value.sortOrder}
                 onChange={(event) => onChange({ ...value, sortOrder: event.target.value as ActionSortOrder })}
-                className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className={SELECT_CLASS}
               >
                 <option value="priority">Priority</option>
                 <option value="title">Title</option>

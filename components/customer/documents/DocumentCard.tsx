@@ -46,10 +46,10 @@ function formatDateTime(value: string): string {
 
 export default function DocumentCard({ document }: DocumentCardProps) {
   return (
-    <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+    <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition-colors hover:border-slate-700 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-400/40">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h4 className="text-sm font-semibold text-slate-100">{document.documentType}</h4>
-        <StatusBadge label={toLabel(document.processingStatus)} tone={statusTone(document.processingStatus)} />
+        <StatusBadge label={toLabel(document.processingStatus)} tone={statusTone(document.processingStatus)} className="self-start" />
       </div>
 
       <dl className="mt-3 grid gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-500 sm:grid-cols-2">

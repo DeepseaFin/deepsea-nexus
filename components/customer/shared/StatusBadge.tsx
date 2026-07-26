@@ -13,12 +13,14 @@ const toneClasses: Record<SharedStatusTone, string> = {
 export interface StatusBadgeProps {
   readonly label: string;
   readonly tone?: SharedStatusTone;
+  readonly className?: string;
 }
 
-export default function StatusBadge({ label, tone = "neutral" }: StatusBadgeProps) {
+export default function StatusBadge({ label, tone = "neutral", className = "" }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${toneClasses[tone]}`}
+      aria-label={label}
+      className={`inline-flex min-h-6 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${toneClasses[tone]} ${className}`}
     >
       {label}
     </span>

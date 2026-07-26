@@ -56,10 +56,10 @@ export default function TimelineEventCard({
   relatedEvidence,
 }: TimelineEventCardProps) {
   return (
-    <li className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+    <li className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition-colors hover:border-slate-700 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-400/40">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="text-sm font-semibold text-slate-100">{event.title}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <StatusBadge label={toLabel(event.type)} tone={toTone(event.type)} />
           <StatusBadge label={toLabel(businessDomain)} tone="neutral" />
         </div>
