@@ -1,6 +1,6 @@
 "use client";
 
-import StatusBadge from "@/components/atlas/design-system/StatusBadge";
+import StatusBadge from "@/components/customer/shared/StatusBadge";
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
 
 export interface RelationshipWorkspaceHeaderProps {

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import Card from "@/components/customer/shared/Card";
 
 export interface SectionCardProps {
@@ -8,10 +8,15 @@ export interface SectionCardProps {
   readonly children: ReactNode;
 }
 
-export default function SectionCard({ title, subtitle, actions, children }: SectionCardProps) {
+function SectionCard({ title, subtitle, actions, children }: SectionCardProps) {
   return (
     <Card title={title} subtitle={subtitle} actions={actions}>
       {children}
     </Card>
   );
 }
+
+const MemoizedSectionCard = memo(SectionCard);
+MemoizedSectionCard.displayName = "SectionCard";
+
+export default MemoizedSectionCard;
