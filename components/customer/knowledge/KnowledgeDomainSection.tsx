@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import KnowledgeCard from "@/components/customer/knowledge/KnowledgeCard";
 import type { RelationshipKnowledgeDomainGroupViewModel } from "@/lib/customer/RelationshipKnowledgeExplorerViewModel";
 
@@ -7,7 +8,7 @@ export interface KnowledgeDomainSectionProps {
   readonly domain: RelationshipKnowledgeDomainGroupViewModel;
 }
 
-export default function KnowledgeDomainSection({ domain }: KnowledgeDomainSectionProps) {
+function KnowledgeDomainSection({ domain }: KnowledgeDomainSectionProps) {
   return (
     <section className="space-y-3" aria-label={domain.title}>
       <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
@@ -31,3 +32,8 @@ export default function KnowledgeDomainSection({ domain }: KnowledgeDomainSectio
     </section>
   );
 }
+
+const MemoizedKnowledgeDomainSection = memo(KnowledgeDomainSection);
+MemoizedKnowledgeDomainSection.displayName = "KnowledgeDomainSection";
+
+export default MemoizedKnowledgeDomainSection;

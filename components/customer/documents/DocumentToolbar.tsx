@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import FilterPanel from "@/components/customer/shared/FilterPanel";
 import SearchBar from "@/components/customer/shared/SearchBar";
 import Toolbar from "@/components/customer/shared/Toolbar";
@@ -27,7 +28,7 @@ function toLabel(value: string): string {
 
 const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 transition-colors hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70";
 
-export default function DocumentToolbar({
+function DocumentToolbar({
   value,
   categories,
   statuses,
@@ -98,3 +99,8 @@ export default function DocumentToolbar({
     />
   );
 }
+
+const MemoizedDocumentToolbar = memo(DocumentToolbar);
+MemoizedDocumentToolbar.displayName = "DocumentToolbar";
+
+export default MemoizedDocumentToolbar;

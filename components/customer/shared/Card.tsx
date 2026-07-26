@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 
 export interface CardProps {
   readonly title?: string;
@@ -13,7 +13,7 @@ export interface CardProps {
   readonly ariaLabel?: string;
 }
 
-export default function Card({
+function Card({
   title,
   subtitle,
   header,
@@ -48,3 +48,8 @@ export default function Card({
     </section>
   );
 }
+
+const MemoizedCard = memo(Card);
+MemoizedCard.displayName = "Card";
+
+export default MemoizedCard;

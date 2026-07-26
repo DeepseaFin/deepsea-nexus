@@ -48,7 +48,7 @@ function focusAdjacentChip(event: React.KeyboardEvent<HTMLDivElement>): void {
 
 const CHIP_CLASS = "rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function TimelineFilter({ title, filters, activeFilter, onFilterChange }: TimelineFilterProps) {
+function TimelineFilter({ title, filters, activeFilter, onFilterChange }: TimelineFilterProps) {
   return (
     <section aria-label={title}>
       <p className="mb-2 text-[11px] uppercase tracking-[0.12em] text-slate-500">{title}</p>
@@ -75,3 +75,8 @@ export default function TimelineFilter({ title, filters, activeFilter, onFilterC
     </section>
   );
 }
+
+const MemoizedTimelineFilter = React.memo(TimelineFilter);
+MemoizedTimelineFilter.displayName = "TimelineFilter";
+
+export default MemoizedTimelineFilter;

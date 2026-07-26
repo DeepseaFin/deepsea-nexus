@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 export interface ErrorStateProps {
   readonly title?: string;
@@ -9,7 +9,7 @@ export interface ErrorStateProps {
   readonly className?: string;
 }
 
-export default function ErrorState({ title = "Something went wrong", message, actions, className = "" }: ErrorStateProps) {
+function ErrorState({ title = "Something went wrong", message, actions, className = "" }: ErrorStateProps) {
   return (
     <div
       className={`rounded-lg border border-rose-800/45 bg-rose-950/20 p-4 ${className}`}
@@ -23,3 +23,8 @@ export default function ErrorState({ title = "Something went wrong", message, ac
     </div>
   );
 }
+
+const MemoizedErrorState = memo(ErrorState);
+MemoizedErrorState.displayName = "ErrorState";
+
+export default MemoizedErrorState;

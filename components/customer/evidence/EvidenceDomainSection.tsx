@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import EvidenceCard from "@/components/customer/evidence/EvidenceCard";
 import type { RelationshipEvidenceDomainGroupViewModel } from "@/lib/customer/RelationshipEvidenceExplorerViewModel";
 
@@ -7,7 +8,7 @@ export interface EvidenceDomainSectionProps {
   readonly domain: RelationshipEvidenceDomainGroupViewModel;
 }
 
-export default function EvidenceDomainSection({ domain }: EvidenceDomainSectionProps) {
+function EvidenceDomainSection({ domain }: EvidenceDomainSectionProps) {
   return (
     <section className="space-y-3" aria-label={domain.title}>
       <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
@@ -31,3 +32,8 @@ export default function EvidenceDomainSection({ domain }: EvidenceDomainSectionP
     </section>
   );
 }
+
+const MemoizedEvidenceDomainSection = memo(EvidenceDomainSection);
+MemoizedEvidenceDomainSection.displayName = "EvidenceDomainSection";
+
+export default MemoizedEvidenceDomainSection;

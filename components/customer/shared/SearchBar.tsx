@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { memo, useId } from "react";
 import { Search } from "lucide-react";
 
 export interface SearchBarProps {
@@ -12,7 +12,7 @@ export interface SearchBarProps {
   readonly className?: string;
 }
 
-export default function SearchBar({
+function SearchBar({
   value,
   onChange,
   placeholder = "Search",
@@ -40,3 +40,8 @@ export default function SearchBar({
     </label>
   );
 }
+
+const MemoizedSearchBar = memo(SearchBar);
+MemoizedSearchBar.displayName = "SearchBar";
+
+export default MemoizedSearchBar;

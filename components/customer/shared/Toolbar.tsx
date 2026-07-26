@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 
 export interface ToolbarProps {
   readonly title?: string;
@@ -11,7 +11,7 @@ export interface ToolbarProps {
   readonly className?: string;
 }
 
-export default function Toolbar({ title, subtitle, search, filters, actions, className = "" }: ToolbarProps) {
+function Toolbar({ title, subtitle, search, filters, actions, className = "" }: ToolbarProps) {
   const titleId = useId();
 
   return (
@@ -34,3 +34,8 @@ export default function Toolbar({ title, subtitle, search, filters, actions, cla
     </section>
   );
 }
+
+const MemoizedToolbar = memo(Toolbar);
+MemoizedToolbar.displayName = "Toolbar";
+
+export default MemoizedToolbar;

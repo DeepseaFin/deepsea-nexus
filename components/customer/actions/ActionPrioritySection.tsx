@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import ActionCard from "@/components/customer/actions/ActionCard";
 import type { RelationshipActionCenterItemViewModel } from "@/lib/customer/RelationshipActionCenterViewModel";
 
@@ -28,7 +29,7 @@ function borderTone(priority: ActionPriorityGroupKey): string {
   return "border-cyan-700/40 bg-cyan-950/10";
 }
 
-export default function ActionPrioritySection({
+function ActionPrioritySection({
   title,
   priority,
   items,
@@ -55,3 +56,8 @@ export default function ActionPrioritySection({
     </section>
   );
 }
+
+const MemoizedActionPrioritySection = memo(ActionPrioritySection);
+MemoizedActionPrioritySection.displayName = "ActionPrioritySection";
+
+export default MemoizedActionPrioritySection;

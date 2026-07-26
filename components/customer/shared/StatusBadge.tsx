@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 export type SharedStatusTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const toneClasses: Record<SharedStatusTone, string> = {
@@ -16,7 +18,7 @@ export interface StatusBadgeProps {
   readonly className?: string;
 }
 
-export default function StatusBadge({ label, tone = "neutral", className = "" }: StatusBadgeProps) {
+function StatusBadge({ label, tone = "neutral", className = "" }: StatusBadgeProps) {
   return (
     <span
       aria-label={label}
@@ -26,3 +28,8 @@ export default function StatusBadge({ label, tone = "neutral", className = "" }:
     </span>
   );
 }
+
+const MemoizedStatusBadge = memo(StatusBadge);
+MemoizedStatusBadge.displayName = "StatusBadge";
+
+export default MemoizedStatusBadge;

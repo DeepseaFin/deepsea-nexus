@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 
 export interface FilterPanelProps {
   readonly title?: string;
@@ -9,7 +9,7 @@ export interface FilterPanelProps {
   readonly className?: string;
 }
 
-export default function FilterPanel({ title, subtitle, children, className = "" }: FilterPanelProps) {
+function FilterPanel({ title, subtitle, children, className = "" }: FilterPanelProps) {
   const titleId = useId();
 
   return (
@@ -28,3 +28,8 @@ export default function FilterPanel({ title, subtitle, children, className = "" 
     </section>
   );
 }
+
+const MemoizedFilterPanel = memo(FilterPanel);
+MemoizedFilterPanel.displayName = "FilterPanel";
+
+export default MemoizedFilterPanel;

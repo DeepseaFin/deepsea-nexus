@@ -20,6 +20,12 @@ export interface RelationshipDocumentExplorerProps {
   readonly error?: string;
 }
 
+const EMPTY_DOCUMENT_EXPLORER: RelationshipDocumentExplorerViewModel = {
+  generatedAt: "",
+  totalDocuments: 0,
+  categories: [],
+};
+
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -56,11 +62,7 @@ function includesQuery(document: RelationshipDocumentExplorerDocumentViewModel, 
 }
 
 export default function RelationshipDocumentExplorer({ explorer, isLoading = false, error }: RelationshipDocumentExplorerProps) {
-  const resolvedExplorer: RelationshipDocumentExplorerViewModel = explorer ?? {
-    generatedAt: "",
-    totalDocuments: 0,
-    categories: [],
-  };
+  const resolvedExplorer: RelationshipDocumentExplorerViewModel = explorer ?? EMPTY_DOCUMENT_EXPLORER;
 
   const [toolbarValue, setToolbarValue] = useState<DocumentToolbarValue>({
     search: "",
@@ -107,7 +109,10 @@ export default function RelationshipDocumentExplorer({ explorer, isLoading = fal
       .filter((category) => category.totalDocuments > 0 || toolbarValue.category !== "all");
   }, [resolvedExplorer.categories, toolbarValue.category, toolbarValue.search, toolbarValue.sortOrder, toolbarValue.status]);
 
-  const visibleDocumentCount = filteredCategories.reduce((count, category) => count + category.totalDocuments, 0);
+  const visibleDocumentCount = useMemo(
+    () => filteredCategories.reduce((count, category) => count + category.totalDocuments, 0),
+    [filteredCategories],
+  );
 
   if (isLoading) {
     return <LoadingState title="Relationship Document Explorer" message="Loading document explorer" />;

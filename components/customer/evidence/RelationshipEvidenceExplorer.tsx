@@ -20,6 +20,12 @@ export interface RelationshipEvidenceExplorerProps {
   readonly error?: string;
 }
 
+const EMPTY_EVIDENCE_EXPLORER: RelationshipEvidenceExplorerViewModel = {
+  generatedAt: "",
+  totalEvidenceItems: 0,
+  domains: [],
+};
+
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -60,11 +66,7 @@ function matchesSearch(item: RelationshipEvidenceItemViewModel, query: string): 
 }
 
 export default function RelationshipEvidenceExplorer({ explorer, isLoading = false, error }: RelationshipEvidenceExplorerProps) {
-  const resolvedExplorer: RelationshipEvidenceExplorerViewModel = explorer ?? {
-    generatedAt: "",
-    totalEvidenceItems: 0,
-    domains: [],
-  };
+  const resolvedExplorer: RelationshipEvidenceExplorerViewModel = explorer ?? EMPTY_EVIDENCE_EXPLORER;
 
   const [toolbarValue, setToolbarValue] = useState<EvidenceToolbarValue>({
     search: "",
@@ -100,7 +102,10 @@ export default function RelationshipEvidenceExplorer({ explorer, isLoading = fal
       .filter((domain) => domain.totalEvidenceItems > 0 || toolbarValue.domain !== "all");
   }, [resolvedExplorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
 
-  const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalEvidenceItems, 0);
+  const visibleItemCount = useMemo(
+    () => filteredDomains.reduce((count, domain) => count + domain.totalEvidenceItems, 0),
+    [filteredDomains],
+  );
 
   if (isLoading) {
     return <LoadingState title="Relationship Evidence Explorer" message="Loading evidence explorer" />;

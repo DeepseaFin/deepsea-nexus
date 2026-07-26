@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import DocumentCard from "@/components/customer/documents/DocumentCard";
 import type { RelationshipDocumentExplorerCategoryViewModel } from "@/lib/customer/RelationshipDocumentExplorerViewModel";
 
@@ -7,7 +8,7 @@ export interface DocumentCategorySectionProps {
   readonly category: RelationshipDocumentExplorerCategoryViewModel;
 }
 
-export default function DocumentCategorySection({ category }: DocumentCategorySectionProps) {
+function DocumentCategorySection({ category }: DocumentCategorySectionProps) {
   return (
     <section className="space-y-3" aria-label={category.title}>
       <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
@@ -31,3 +32,8 @@ export default function DocumentCategorySection({ category }: DocumentCategorySe
     </section>
   );
 }
+
+const MemoizedDocumentCategorySection = memo(DocumentCategorySection);
+MemoizedDocumentCategorySection.displayName = "DocumentCategorySection";
+
+export default MemoizedDocumentCategorySection;

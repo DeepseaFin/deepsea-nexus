@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import { memo, type KeyboardEvent } from "react";
 import type { RelationshipTimelineEventType } from "@/lib/customer/RelationshipTimelineViewModel";
 
 export type TimelineDateRangeFilter = "all" | "7d" | "30d" | "90d";
@@ -70,7 +70,7 @@ const BUSINESS_DOMAINS: readonly TimelineBusinessDomainFilter[] = [
   "operations",
 ] as const;
 
-export default function TimelineFilters({ availableEventTypes, value, onChange }: TimelineFiltersProps) {
+function TimelineFilters({ availableEventTypes, value, onChange }: TimelineFiltersProps) {
   return (
     <div className="space-y-3" role="group" aria-label="Timeline filters">
       <fieldset>
@@ -159,3 +159,8 @@ export default function TimelineFilters({ availableEventTypes, value, onChange }
     </div>
   );
 }
+
+const MemoizedTimelineFilters = memo(TimelineFilters);
+MemoizedTimelineFilters.displayName = "TimelineFilters";
+
+export default MemoizedTimelineFilters;

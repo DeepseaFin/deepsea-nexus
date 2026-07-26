@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import StatusBadge from "@/components/customer/shared/StatusBadge";
 import type { RelationshipDocumentExplorerDocumentViewModel } from "@/lib/customer/RelationshipDocumentExplorerViewModel";
 
@@ -44,7 +45,7 @@ function formatDateTime(value: string): string {
   });
 }
 
-export default function DocumentCard({ document }: DocumentCardProps) {
+function DocumentCard({ document }: DocumentCardProps) {
   return (
     <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition-colors hover:border-slate-700 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-400/40">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -91,3 +92,8 @@ export default function DocumentCard({ document }: DocumentCardProps) {
     </article>
   );
 }
+
+const MemoizedDocumentCard = memo(DocumentCard);
+MemoizedDocumentCard.displayName = "DocumentCard";
+
+export default MemoizedDocumentCard;

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import StatusBadge from "@/components/customer/shared/StatusBadge";
 import type { RelationshipTimelineEventType, RelationshipTimelineEventViewModel } from "@/lib/customer/RelationshipTimelineViewModel";
 
@@ -49,7 +50,7 @@ function formatDateTime(value: string): string {
   });
 }
 
-export default function TimelineEventCard({
+function TimelineEventCard({
   event,
   businessDomain,
   relatedDocument,
@@ -75,3 +76,8 @@ export default function TimelineEventCard({
     </li>
   );
 }
+
+const MemoizedTimelineEventCard = memo(TimelineEventCard);
+MemoizedTimelineEventCard.displayName = "TimelineEventCard";
+
+export default MemoizedTimelineEventCard;

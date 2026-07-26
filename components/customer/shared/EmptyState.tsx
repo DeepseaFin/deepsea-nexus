@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 export interface EmptyStateProps {
   readonly title?: string;
@@ -9,7 +9,7 @@ export interface EmptyStateProps {
   readonly className?: string;
 }
 
-export default function EmptyState({ title, message, actions, className = "" }: EmptyStateProps) {
+function EmptyState({ title, message, actions, className = "" }: EmptyStateProps) {
   return (
     <div
       className={`rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-center ${className}`}
@@ -23,3 +23,8 @@ export default function EmptyState({ title, message, actions, className = "" }: 
     </div>
   );
 }
+
+const MemoizedEmptyState = memo(EmptyState);
+MemoizedEmptyState.displayName = "EmptyState";
+
+export default MemoizedEmptyState;

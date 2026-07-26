@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import FilterPanel from "@/components/customer/shared/FilterPanel";
 import SearchBar from "@/components/customer/shared/SearchBar";
 import Toolbar from "@/components/customer/shared/Toolbar";
@@ -36,7 +37,7 @@ const CONFIDENCE_OPTIONS: readonly Array<"all" | ConfidenceBand> = [
   "very_low",
 ] as const;
 
-export default function EvidenceToolbar({ value, domains, onChange }: EvidenceToolbarProps) {
+function EvidenceToolbar({ value, domains, onChange }: EvidenceToolbarProps) {
   return (
     <Toolbar
       title="Evidence Filters"
@@ -102,3 +103,8 @@ export default function EvidenceToolbar({ value, domains, onChange }: EvidenceTo
     />
   );
 }
+
+const MemoizedEvidenceToolbar = memo(EvidenceToolbar);
+MemoizedEvidenceToolbar.displayName = "EvidenceToolbar";
+
+export default MemoizedEvidenceToolbar;

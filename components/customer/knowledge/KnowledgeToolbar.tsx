@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import FilterPanel from "@/components/customer/shared/FilterPanel";
 import SearchBar from "@/components/customer/shared/SearchBar";
 import Toolbar from "@/components/customer/shared/Toolbar";
@@ -36,7 +37,7 @@ const CONFIDENCE_OPTIONS: readonly Array<"all" | ConfidenceBand> = [
   "very_low",
 ] as const;
 
-export default function KnowledgeToolbar({ value, domains, onChange }: KnowledgeToolbarProps) {
+function KnowledgeToolbar({ value, domains, onChange }: KnowledgeToolbarProps) {
   return (
     <Toolbar
       title="Knowledge Filters"
@@ -102,3 +103,8 @@ export default function KnowledgeToolbar({ value, domains, onChange }: Knowledge
     />
   );
 }
+
+const MemoizedKnowledgeToolbar = memo(KnowledgeToolbar);
+MemoizedKnowledgeToolbar.displayName = "KnowledgeToolbar";
+
+export default MemoizedKnowledgeToolbar;

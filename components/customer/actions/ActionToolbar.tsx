@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import FilterPanel from "@/components/customer/shared/FilterPanel";
 import SearchBar from "@/components/customer/shared/SearchBar";
 import Toolbar from "@/components/customer/shared/Toolbar";
@@ -32,7 +33,7 @@ const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py
 
 const PRIORITY_OPTIONS: readonly ActionPriorityFilter[] = ["all", "critical", "high", "medium", "low"] as const;
 
-export default function ActionToolbar({ value, categories, onChange }: ActionToolbarProps) {
+function ActionToolbar({ value, categories, onChange }: ActionToolbarProps) {
   return (
     <Toolbar
       title="Action Filters"
@@ -96,3 +97,8 @@ export default function ActionToolbar({ value, categories, onChange }: ActionToo
     />
   );
 }
+
+const MemoizedActionToolbar = memo(ActionToolbar);
+MemoizedActionToolbar.displayName = "ActionToolbar";
+
+export default MemoizedActionToolbar;

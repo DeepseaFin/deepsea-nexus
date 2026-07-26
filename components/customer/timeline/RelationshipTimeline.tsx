@@ -22,6 +22,12 @@ export interface RelationshipTimelineProps {
   readonly error?: string;
 }
 
+const EMPTY_TIMELINE: RelationshipTimelineViewModel = {
+  generatedAt: "",
+  customerId: undefined,
+  events: [],
+};
+
 type TimelineDomain = "corporate" | "financial" | "trade" | "compliance" | "operations";
 
 interface EnrichedTimelineEvent {
@@ -131,11 +137,7 @@ function filterByDateRange(events: readonly EnrichedTimelineEvent[], range: Time
 }
 
 export default function RelationshipTimeline({ timeline, isLoading = false, error }: RelationshipTimelineProps) {
-  const resolvedTimeline: RelationshipTimelineViewModel = timeline ?? {
-    generatedAt: "",
-    customerId: undefined,
-    events: [],
-  };
+  const resolvedTimeline: RelationshipTimelineViewModel = timeline ?? EMPTY_TIMELINE;
 
   const [filters, setFilters] = useState<TimelineFiltersValue>({
     eventType: "all",

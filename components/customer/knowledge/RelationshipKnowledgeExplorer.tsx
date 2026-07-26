@@ -20,6 +20,12 @@ export interface RelationshipKnowledgeExplorerProps {
   readonly error?: string;
 }
 
+const EMPTY_KNOWLEDGE_EXPLORER: RelationshipKnowledgeExplorerViewModel = {
+  generatedAt: "",
+  totalKnowledgeItems: 0,
+  domains: [],
+};
+
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -61,11 +67,7 @@ function matchesSearch(item: RelationshipKnowledgeItemViewModel, query: string):
 }
 
 export default function RelationshipKnowledgeExplorer({ explorer, isLoading = false, error }: RelationshipKnowledgeExplorerProps) {
-  const resolvedExplorer: RelationshipKnowledgeExplorerViewModel = explorer ?? {
-    generatedAt: "",
-    totalKnowledgeItems: 0,
-    domains: [],
-  };
+  const resolvedExplorer: RelationshipKnowledgeExplorerViewModel = explorer ?? EMPTY_KNOWLEDGE_EXPLORER;
 
   const [toolbarValue, setToolbarValue] = useState<KnowledgeToolbarValue>({
     search: "",
@@ -101,7 +103,10 @@ export default function RelationshipKnowledgeExplorer({ explorer, isLoading = fa
       .filter((domain) => domain.totalKnowledgeItems > 0 || toolbarValue.domain !== "all");
   }, [resolvedExplorer.domains, toolbarValue.confidence, toolbarValue.domain, toolbarValue.search, toolbarValue.sortOrder]);
 
-  const visibleItemCount = filteredDomains.reduce((count, domain) => count + domain.totalKnowledgeItems, 0);
+  const visibleItemCount = useMemo(
+    () => filteredDomains.reduce((count, domain) => count + domain.totalKnowledgeItems, 0),
+    [filteredDomains],
+  );
 
   if (isLoading) {
     return <LoadingState title="Relationship Knowledge Explorer" message="Loading knowledge explorer" />;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 
 export interface SectionProps {
   readonly title?: string;
@@ -11,7 +11,7 @@ export interface SectionProps {
   readonly ariaLabel?: string;
 }
 
-export default function Section({ title, subtitle, actions, children, className = "", ariaLabel }: SectionProps) {
+function Section({ title, subtitle, actions, children, className = "", ariaLabel }: SectionProps) {
   const titleId = useId();
 
   return (
@@ -30,3 +30,8 @@ export default function Section({ title, subtitle, actions, children, className 
     </section>
   );
 }
+
+const MemoizedSection = memo(Section);
+MemoizedSection.displayName = "Section";
+
+export default MemoizedSection;

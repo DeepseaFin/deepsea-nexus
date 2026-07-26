@@ -21,6 +21,18 @@ export interface RelationshipActionCenterProps {
   readonly error?: string;
 }
 
+const EMPTY_ACTION_CENTER: RelationshipActionCenterViewModel = {
+  generatedAt: "",
+  relatedCustomer: "",
+  totalActions: 0,
+  categories: [],
+  priorities: {
+    high: [],
+    medium: [],
+    low: [],
+  },
+};
+
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -100,17 +112,7 @@ export default function RelationshipActionCenter({
   error,
 }: RelationshipActionCenterProps) {
   const resolvedActionCenter = useMemo<RelationshipActionCenterViewModel>(() => {
-    return actionCenter ?? {
-      generatedAt: "",
-      relatedCustomer: "",
-      totalActions: 0,
-      categories: [],
-      priorities: {
-        high: [],
-        medium: [],
-        low: [],
-      },
-    };
+    return actionCenter ?? EMPTY_ACTION_CENTER;
   }, [actionCenter]);
 
   const [toolbarValue, setToolbarValue] = useState<ActionToolbarValue>({
@@ -163,10 +165,33 @@ export default function RelationshipActionCenter({
     return sortItems(all, toolbarValue.sortOrder);
   }, [resolvedActionCenter, categoryIndex, toolbarValue.category, toolbarValue.priority, toolbarValue.search, toolbarValue.sortOrder]);
 
-  const critical = filtered.filter((item) => isCritical(item));
-  const high = filtered.filter((item) => item.priority === "high" && !isCritical(item));
-  const medium = filtered.filter((item) => item.priority === "medium");
-  const low = filtered.filter((item) => item.priority === "low");
+  const groupedByPriority = useMemo(() => {
+    const critical: RelationshipActionCenterItemViewModel[] = [];
+    const high: RelationshipActionCenterItemViewModel[] = [];
+    const medium: RelationshipActionCenterItemViewModel[] = [];
+    const low: RelationshipActionCenterItemViewModel[] = [];
+
+    for (const item of filtered) {
+      if (isCritical(item)) {
+        critical.push(item);
+        continue;
+      }
+
+      if (item.priority === "high") {
+        high.push(item);
+        continue;
+      }
+
+      if (item.priority === "medium") {
+        medium.push(item);
+        continue;
+      }
+
+      low.push(item);
+    }
+
+    return { critical, high, medium, low };
+  }, [filtered]);
 
   if (isLoading) {
     return <LoadingState title="Relationship Action Center" message="Loading action center" />;
@@ -198,25 +223,25 @@ export default function RelationshipActionCenter({
           <ActionPrioritySection
             title="Critical"
             priority="critical"
-            items={critical}
+            items={groupedByPriority.critical}
             dueDatesByActionId={dueDatesByActionId}
           />
           <ActionPrioritySection
             title="High"
             priority="high"
-            items={high}
+            items={groupedByPriority.high}
             dueDatesByActionId={dueDatesByActionId}
           />
           <ActionPrioritySection
             title="Medium"
             priority="medium"
-            items={medium}
+            items={groupedByPriority.medium}
             dueDatesByActionId={dueDatesByActionId}
           />
           <ActionPrioritySection
             title="Low"
             priority="low"
-            items={low}
+            items={groupedByPriority.low}
             dueDatesByActionId={dueDatesByActionId}
           />
 

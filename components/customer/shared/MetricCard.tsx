@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 export interface MetricCardProps {
   readonly label: string;
@@ -10,7 +10,7 @@ export interface MetricCardProps {
   readonly className?: string;
 }
 
-export default function MetricCard({ label, value, note, footer, className = "" }: MetricCardProps) {
+function MetricCard({ label, value, note, footer, className = "" }: MetricCardProps) {
   return (
     <article
       aria-label={label}
@@ -23,3 +23,8 @@ export default function MetricCard({ label, value, note, footer, className = "" 
     </article>
   );
 }
+
+const MemoizedMetricCard = memo(MetricCard);
+MemoizedMetricCard.displayName = "MetricCard";
+
+export default MemoizedMetricCard;

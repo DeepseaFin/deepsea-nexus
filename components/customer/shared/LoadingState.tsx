@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 export interface LoadingStateProps {
   readonly title?: string;
@@ -13,7 +13,7 @@ function SkeletonLine() {
   return <div className="h-4 animate-pulse rounded bg-slate-800/80" />;
 }
 
-export default function LoadingState({
+function LoadingState({
   title,
   message = "Loading...",
   lines = 3,
@@ -35,3 +35,8 @@ export default function LoadingState({
     </div>
   );
 }
+
+const MemoizedLoadingState = memo(LoadingState);
+MemoizedLoadingState.displayName = "LoadingState";
+
+export default MemoizedLoadingState;
