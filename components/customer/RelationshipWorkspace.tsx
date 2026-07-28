@@ -9,6 +9,7 @@ import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/Relat
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import RelationshipTimeline from "@/components/customer/timeline/RelationshipTimeline";
 import SectionCard from "@/components/ui/SectionCard";
+import WorkflowWorkspace from "@/components/workflow/WorkflowWorkspace";
 import RelationshipWorkspaceHeader from "@/components/customer/RelationshipWorkspaceHeader";
 import RelationshipWorkspaceLayout from "@/components/customer/RelationshipWorkspaceLayout";
 import RelationshipWorkspaceNavigation, {
@@ -16,9 +17,11 @@ import RelationshipWorkspaceNavigation, {
   type RelationshipWorkspaceSectionId,
 } from "@/components/customer/RelationshipWorkspaceNavigation";
 import type { RelationshipWorkspaceViewModel } from "@/lib/customer/RelationshipWorkspaceViewModel";
+import type { WorkflowPresentationModel } from "@/lib/workflow/presentation/WorkflowPresentationModel";
 
 export interface RelationshipWorkspaceProps {
   readonly viewModel?: RelationshipWorkspaceViewModel | null;
+  readonly workflowPresentation?: WorkflowPresentationModel | null;
   readonly initialSection?: RelationshipWorkspaceSectionId;
   readonly isLoading?: boolean;
   readonly error?: string;
@@ -41,6 +44,7 @@ const DEFAULT_NAVIGATION_ITEMS: readonly RelationshipWorkspaceNavigationItem[] =
 function defaultSectionSummary(
   section: RelationshipWorkspaceSectionId,
   viewModel: RelationshipWorkspaceViewModel,
+  workflowPresentation?: WorkflowPresentationModel | null,
 ): React.ReactNode {
   if (section === "dashboard") {
     return <ExecutiveDashboard dashboard={viewModel.executiveDashboard} workspace={viewModel} />;
@@ -62,18 +66,41 @@ function defaultSectionSummary(
     return <RelationshipKnowledgeExplorer explorer={viewModel.knowledgeExplorer} />;
   }
 
+  if (section === "workflow") {
+    return <WorkflowWorkspace presentation={workflowPresentation} />;
+  }
+
   return <RelationshipActionCenter actionCenter={viewModel.actionCenter} />;
 }
 
 export default function RelationshipWorkspace({
   viewModel,
+  workflowPresentation,
   initialSection = "dashboard",
   isLoading = false,
   error,
   emptyMessage = "Relationship workspace data is not available.",
   renderSection,
 }: RelationshipWorkspaceProps) {
-  const [activeSection, setActiveSection] = useState<RelationshipWorkspaceSectionId>(initialSection);
+  const navigationItems = useMemo<readonly RelationshipWorkspaceNavigationItem[]>(() => {
+    if (!workflowPresentation) {
+      return DEFAULT_NAVIGATION_ITEMS;
+    }
+
+    return [...DEFAULT_NAVIGATION_ITEMS, { id: "workflow", label: "Workflow" }];
+  }, [workflowPresentation]);
+
+  const effectiveInitialSection = useMemo<RelationshipWorkspaceSectionId>(() => {
+    if (initialSection === "workflow" && !workflowPresentation) {
+      return "dashboard";
+    }
+
+    return initialSection;
+  }, [initialSection, workflowPresentation]);
+
+  const [activeSection, setActiveSection] = useState<RelationshipWorkspaceSectionId>(effectiveInitialSection);
+  const resolvedSection: RelationshipWorkspaceSectionId =
+    activeSection === "workflow" && !workflowPresentation ? "dashboard" : activeSection;
 
   const content = useMemo<React.ReactNode>(() => {
     if (!viewModel) {
@@ -85,11 +112,11 @@ export default function RelationshipWorkspace({
     }
 
     if (renderSection) {
-      return renderSection(activeSection, viewModel);
+      return renderSection(resolvedSection, viewModel);
     }
 
-    return defaultSectionSummary(activeSection, viewModel);
-  }, [activeSection, emptyMessage, renderSection, viewModel]);
+    return defaultSectionSummary(resolvedSection, viewModel, workflowPresentation);
+  }, [emptyMessage, renderSection, resolvedSection, viewModel, workflowPresentation]);
 
   if (isLoading) {
     return <PanelLoadingState title="Relationship Workspace" subtitle="Loading workspace modules" />;
@@ -108,13 +135,24 @@ export default function RelationshipWorkspace({
       header={<RelationshipWorkspaceHeader viewModel={viewModel} />}
       navigation={
         <RelationshipWorkspaceNavigation
-          items={DEFAULT_NAVIGATION_ITEMS}
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
+          items={navigationItems}
+          activeSection={resolvedSection}
+          onSectionChange={(section) => {
+            if (section === "workflow" && !workflowPresentation) {
+              setActiveSection("dashboard");
+              return;
+            }
+
+            setActiveSection(section);
+          }}
         />
       }
       content={
-        <section id={`relationship-workspace-panel-${activeSection}`} role="tabpanel" aria-labelledby={`relationship-workspace-tab-${activeSection}`}>
+        <section
+          id={`relationship-workspace-panel-${resolvedSection}`}
+          role="tabpanel"
+          aria-labelledby={`relationship-workspace-tab-${resolvedSection}`}
+        >
           {content}
         </section>
       }

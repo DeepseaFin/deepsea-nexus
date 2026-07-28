@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type KeyboardEvent } from "react";
-import { LayoutGrid, ScrollText, FolderKanban, ShieldCheck, BrainCircuit, ListChecks } from "lucide-react";
+import { LayoutGrid, ScrollText, FolderKanban, ShieldCheck, BrainCircuit, ListChecks, Route } from "lucide-react";
 
 export type RelationshipWorkspaceSectionId =
   | "dashboard"
@@ -9,7 +9,8 @@ export type RelationshipWorkspaceSectionId =
   | "documents"
   | "evidence"
   | "knowledge"
-  | "actions";
+  | "actions"
+  | "workflow";
 
 export interface RelationshipWorkspaceNavigationItem {
   readonly id: RelationshipWorkspaceSectionId;
@@ -41,6 +42,10 @@ function iconForSection(section: RelationshipWorkspaceSectionId) {
 
   if (section === "knowledge") {
     return BrainCircuit;
+  }
+
+  if (section === "workflow") {
+    return Route;
   }
 
   return ListChecks;

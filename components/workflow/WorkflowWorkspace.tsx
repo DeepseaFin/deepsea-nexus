@@ -7,14 +7,29 @@ import WorkflowStageTracker from "@/components/workflow/WorkflowStageTracker";
 import WorkflowSummaryPanel from "@/components/workflow/WorkflowSummaryPanel";
 import WorkflowTaskBoard from "@/components/workflow/WorkflowTaskBoard";
 import WorkflowTimeline from "@/components/workflow/WorkflowTimeline";
+import SectionCard from "@/components/ui/SectionCard";
+import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import type { WorkflowPresentationModel } from "@/lib/workflow/presentation/WorkflowPresentationModel";
 
 export interface WorkflowWorkspaceProps {
-  readonly presentation: WorkflowPresentationModel;
+  readonly presentation?: WorkflowPresentationModel | null;
   readonly className?: string;
+  readonly emptyMessage?: string;
 }
 
-export default function WorkflowWorkspace({ presentation, className = "" }: WorkflowWorkspaceProps) {
+export default function WorkflowWorkspace({
+  presentation,
+  className = "",
+  emptyMessage = "Workflow presentation data is not available in this workspace.",
+}: WorkflowWorkspaceProps) {
+  if (!presentation) {
+    return (
+      <SectionCard title="Workflow" subtitle="No workflow data is currently available">
+        <PanelEmptyState message={emptyMessage} />
+      </SectionCard>
+    );
+  }
+
   return (
     <section className={`space-y-5 ${className}`.trim()} aria-label="Workflow workspace">
       <WorkflowHeader presentation={presentation} />
