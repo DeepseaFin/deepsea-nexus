@@ -8,6 +8,53 @@
   --atlas-border: #1f2a3b;
   --atlas-title: #e6edf7;
   --atlas-muted: #8ea0ba;
+
+  /* Design tokens: colors */
+  --ds-color-bg: #050d18;
+  --ds-color-bg-elevated: #081524;
+  --ds-color-bg-soft: #0d1d2f;
+  --ds-color-surface: #0a192a;
+  --ds-color-surface-2: #102338;
+  --ds-color-surface-3: #142c45;
+  --ds-color-border: #27425f;
+  --ds-color-border-strong: #376080;
+  --ds-color-text: #e5eef8;
+  --ds-color-text-muted: #99aec4;
+  --ds-color-text-soft: #7f95ab;
+  --ds-color-primary: #4cc9f0;
+  --ds-color-primary-strong: #35b7df;
+  --ds-color-success: #22c55e;
+  --ds-color-warning: #f59e0b;
+  --ds-color-danger: #f43f5e;
+  --ds-color-info: #38bdf8;
+
+  /* Design tokens: typography */
+  --ds-font-family: var(--font-geist-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
+  --ds-font-display: clamp(2rem, 1.4rem + 2.4vw, 4rem);
+  --ds-font-h1: clamp(1.9rem, 1.45rem + 1.8vw, 3.2rem);
+  --ds-font-h2: clamp(1.55rem, 1.2rem + 1.2vw, 2.4rem);
+  --ds-font-h3: clamp(1.25rem, 1.05rem + 0.7vw, 1.7rem);
+  --ds-font-body-lg: 1.0625rem;
+  --ds-font-body: 0.95rem;
+  --ds-font-caption: 0.78rem;
+
+  /* Design tokens: radius */
+  --ds-radius-sm: 0.5rem;
+  --ds-radius-md: 0.75rem;
+  --ds-radius-lg: 1rem;
+  --ds-radius-xl: 1.25rem;
+  --ds-radius-2xl: 1.5rem;
+
+  /* Design tokens: elevation */
+  --ds-shadow-sm: 0 10px 22px rgba(2, 8, 18, 0.22);
+  --ds-shadow-md: 0 18px 38px rgba(2, 8, 18, 0.28);
+  --ds-shadow-lg: 0 28px 60px rgba(2, 8, 18, 0.36);
+
+  /* Design tokens: motion */
+  --ds-motion-fast: 140ms;
+  --ds-motion-base: 220ms;
+  --ds-motion-slow: 360ms;
+  --ds-ease-standard: cubic-bezier(0.2, 0.75, 0.2, 1);
 }
 
 @theme inline {
@@ -27,7 +74,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: var(--ds-font-family);
 }
 html {
   scroll-behavior: smooth;
@@ -55,6 +102,142 @@ html {
 
 .animate-fade-up-delay-2 {
   animation: fade-up 1000ms ease-out both;
+}
+
+.ds-surface-base {
+  background: var(--ds-color-bg);
+  color: var(--ds-color-text);
+}
+
+.ds-surface-1 {
+  background: var(--ds-color-surface);
+  border: 1px solid color-mix(in srgb, var(--ds-color-border) 82%, transparent 18%);
+}
+
+.ds-surface-2 {
+  background: var(--ds-color-surface-2);
+  border: 1px solid color-mix(in srgb, var(--ds-color-border-strong) 68%, transparent 32%);
+}
+
+.ds-elevation-sm {
+  box-shadow: var(--ds-shadow-sm);
+}
+
+.ds-elevation-md {
+  box-shadow: var(--ds-shadow-md);
+}
+
+.ds-elevation-lg {
+  box-shadow: var(--ds-shadow-lg);
+}
+
+.ds-motion {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: var(--ds-motion-base);
+  transition-timing-function: var(--ds-ease-standard);
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid color-mix(in srgb, var(--ds-color-border) 78%, transparent 22%);
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+}
+
+.ds-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ds-color-text-soft);
+  background: color-mix(in srgb, var(--ds-color-surface-2) 92%, transparent 8%);
+  padding: 0.75rem 0.9rem;
+}
+
+.ds-table tbody td {
+  font-size: var(--ds-font-body);
+  color: var(--ds-color-text-muted);
+  padding: 0.8rem 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--ds-color-border) 68%, transparent 32%);
+  background: color-mix(in srgb, var(--ds-color-surface) 90%, transparent 10%);
+}
+
+.ds-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--ds-color-surface-3) 86%, transparent 14%);
+}
+
+.ds-field-label {
+  display: block;
+  font-size: var(--ds-font-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ds-color-text-soft);
+  margin-bottom: 0.35rem;
+}
+
+.ds-field-hint {
+  margin-top: 0.35rem;
+  font-size: 0.77rem;
+  color: var(--ds-color-text-soft);
+}
+
+.ds-field-error {
+  margin-top: 0.35rem;
+  font-size: 0.77rem;
+  color: color-mix(in srgb, var(--ds-color-danger) 80%, white 20%);
+}
+
+.ds-input {
+  width: 100%;
+  border-radius: var(--ds-radius-md);
+  border: 1px solid color-mix(in srgb, var(--ds-color-border) 84%, transparent 16%);
+  background: color-mix(in srgb, var(--ds-color-surface) 84%, transparent 16%);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-body);
+  padding: 0.62rem 0.78rem;
+  outline: none;
+  transition: border-color var(--ds-motion-base) var(--ds-ease-standard), box-shadow var(--ds-motion-base) var(--ds-ease-standard);
+}
+
+.ds-input::placeholder {
+  color: var(--ds-color-text-soft);
+}
+
+.ds-input:focus-visible {
+  border-color: color-mix(in srgb, var(--ds-color-primary) 70%, white 30%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-color-primary) 22%, transparent 78%);
+}
+
+.ds-input[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--ds-color-danger) 75%, white 25%);
+}
+
+.ds-ai-signal {
+  border: 1px solid color-mix(in srgb, var(--ds-color-info) 46%, transparent 54%);
+  background: linear-gradient(145deg, rgba(8, 26, 43, 0.82), rgba(10, 24, 38, 0.82));
+}
+
+.ds-ai-glow {
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2), 0 16px 36px rgba(11, 72, 102, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-up,
+  .animate-fade-up-delay-1,
+  .animate-fade-up-delay-2 {
+    animation: none;
+  }
+
+  .ds-motion {
+    transition: none;
+  }
 }
 
 .atlas-workspace {
