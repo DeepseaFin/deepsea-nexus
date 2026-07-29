@@ -1,7 +1,11 @@
 import ActivitySummary, { type ActivitySummaryItem } from "@/components/customer/passport/ActivitySummary";
+import AIInsightPlaceholderPanel from "@/components/customer/passport/AIInsightPlaceholderPanel";
 import BusinessIdentityCard from "@/components/customer/passport/BusinessIdentityCard";
 import BusinessMetrics, { type BusinessMetric } from "@/components/customer/passport/BusinessMetrics";
 import BusinessPassportHeader from "@/components/customer/passport/BusinessPassportHeader";
+import ContextNavigation from "@/components/customer/passport/ContextNavigation";
+import CustomerJourneyNavigator, { type JourneyStepId } from "@/components/customer/passport/CustomerJourneyNavigator";
+import DocumentsSummary, { type DocumentSummaryItem } from "@/components/customer/passport/DocumentsSummary";
 import EvidenceSummary, { type EvidenceItem } from "@/components/customer/passport/EvidenceSummary";
 import KnowledgeSnapshot, { type KnowledgeSignal } from "@/components/customer/passport/KnowledgeSnapshot";
 import PassportQuickActions, { type PassportQuickAction } from "@/components/customer/passport/QuickActions";
@@ -10,6 +14,7 @@ import RelationshipHealthCard from "@/components/customer/passport/RelationshipH
 import WorkflowSummary, { type WorkflowSummaryItem } from "@/components/customer/passport/WorkflowSummary";
 
 export interface BusinessPassportWorkspaceProps {
+  readonly currentJourneyStep?: JourneyStepId;
   readonly business?: {
     readonly passportId: string;
     readonly legalName: string;
@@ -31,6 +36,7 @@ export interface BusinessPassportWorkspaceProps {
     readonly covenantState: string;
   };
   readonly metrics?: readonly BusinessMetric[];
+  readonly documents?: readonly DocumentSummaryItem[];
   readonly knowledgeSignals?: readonly KnowledgeSignal[];
   readonly evidenceItems?: readonly EvidenceItem[];
   readonly workflowStages?: readonly WorkflowSummaryItem[];
@@ -88,6 +94,30 @@ const defaultKnowledgeSignals: readonly KnowledgeSignal[] = [
     title: "Payment behavior signal",
     detail: "Collections behavior remains within historical tolerance bands for this relationship.",
     confidence: 79,
+  },
+];
+
+const defaultDocuments: readonly DocumentSummaryItem[] = [
+  {
+    id: "d-1",
+    documentGroup: "Corporate Registry and Governance",
+    owner: "Passport Office",
+    lastUpdated: "2 days ago",
+    status: "current",
+  },
+  {
+    id: "d-2",
+    documentGroup: "Facility and Commercial Pack",
+    owner: "Relationship Desk",
+    lastUpdated: "Today",
+    status: "review",
+  },
+  {
+    id: "d-3",
+    documentGroup: "Security and Legal Opinions",
+    owner: "Legal Team",
+    lastUpdated: "5 days ago",
+    status: "expiring",
   },
 ];
 
@@ -165,9 +195,11 @@ const defaultQuickActions: readonly PassportQuickAction[] = [
 ];
 
 export default function BusinessPassportWorkspace({
+  currentJourneyStep = "business-passport",
   business = defaultBusiness,
   relationshipHealth = defaultRelationshipHealth,
   metrics = defaultMetrics,
+  documents = defaultDocuments,
   knowledgeSignals = defaultKnowledgeSignals,
   evidenceItems = defaultEvidenceItems,
   workflowStages = defaultWorkflowStages,
@@ -175,49 +207,99 @@ export default function BusinessPassportWorkspace({
   timelineEntries = defaultTimelineEntries,
   quickActions = defaultQuickActions,
 }: BusinessPassportWorkspaceProps) {
+  const contextSections = [
+    { id: "passport-identity", label: "Identity" },
+    { id: "passport-health", label: "Health" },
+    { id: "passport-metrics", label: "Metrics" },
+    { id: "passport-documents", label: "Documents" },
+    { id: "passport-evidence", label: "Evidence" },
+    { id: "passport-knowledge", label: "Knowledge" },
+    { id: "passport-workflow", label: "Workflow" },
+    { id: "passport-activity", label: "Activity" },
+    { id: "passport-ai", label: "AI Placeholder" },
+    { id: "passport-actions", label: "Quick Actions" },
+  ] as const;
+
   return (
     <div className="space-y-4 sm:space-y-5">
-      <BusinessPassportHeader
-        passportId={business.passportId}
-        legalName={business.legalName}
-        legalForm={business.legalForm}
-        jurisdiction={business.jurisdiction}
-        relationshipManager={business.relationshipManager}
-        lifecycleStage={business.lifecycleStage}
-      />
-
-      <BusinessMetrics metrics={metrics} />
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <BusinessIdentityCard
-          registrationNumber={business.registrationNumber}
-          tradeLicense={business.tradeLicense}
-          taxRegistration={business.taxRegistration}
-          incorporationDate={business.incorporationDate}
-          sector={business.sector}
-          riskBand={business.riskBand}
+      <section id="passport-header" aria-label="Business passport header">
+        <BusinessPassportHeader
+          passportId={business.passportId}
+          legalName={business.legalName}
+          legalForm={business.legalForm}
+          jurisdiction={business.jurisdiction}
+          relationshipManager={business.relationshipManager}
+          lifecycleStage={business.lifecycleStage}
         />
-        <RelationshipHealthCard
-          healthScore={relationshipHealth.score}
-          posture={relationshipHealth.posture}
-          watchItems={relationshipHealth.watchItems}
-          covenantState={relationshipHealth.covenantState}
-        />
+      </section>
+
+      <section id="passport-journey" aria-label="Customer journey navigation">
+        <CustomerJourneyNavigator currentStep={currentJourneyStep} />
+      </section>
+
+      <section id="passport-context" aria-label="Business passport context links">
+        <ContextNavigation items={contextSections} />
+      </section>
+
+      <section id="passport-metrics" aria-label="Business passport metrics">
+        <BusinessMetrics metrics={metrics} />
+      </section>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section id="passport-identity" aria-label="Business identity section">
+          <BusinessIdentityCard
+            registrationNumber={business.registrationNumber}
+            tradeLicense={business.tradeLicense}
+            taxRegistration={business.taxRegistration}
+            incorporationDate={business.incorporationDate}
+            sector={business.sector}
+            riskBand={business.riskBand}
+          />
+        </section>
+        <section id="passport-health" aria-label="Relationship health section">
+          <RelationshipHealthCard
+            healthScore={relationshipHealth.score}
+            posture={relationshipHealth.posture}
+            watchItems={relationshipHealth.watchItems}
+            covenantState={relationshipHealth.covenantState}
+          />
+        </section>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <KnowledgeSnapshot signals={knowledgeSignals} />
-        <EvidenceSummary items={evidenceItems} />
+        <section id="passport-documents" aria-label="Documents section">
+          <DocumentsSummary items={documents} />
+        </section>
+        <section id="passport-evidence" aria-label="Evidence section">
+          <EvidenceSummary items={evidenceItems} />
+        </section>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <WorkflowSummary stages={workflowStages} />
-        <ActivitySummary items={activityItems} />
+        <section id="passport-knowledge" aria-label="Knowledge section">
+          <KnowledgeSnapshot signals={knowledgeSignals} />
+        </section>
+        <section id="passport-workflow" aria-label="Workflow section">
+          <WorkflowSummary stages={workflowStages} />
+        </section>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <PassportTimeline entries={timelineEntries} />
-        <PassportQuickActions actions={quickActions} />
+        <section id="passport-activity" aria-label="Activity section">
+          <ActivitySummary items={activityItems} />
+        </section>
+        <section id="passport-ai" aria-label="AI insight placeholder section">
+          <AIInsightPlaceholderPanel />
+        </section>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section id="passport-timeline" aria-label="Passport timeline section">
+          <PassportTimeline entries={timelineEntries} />
+        </section>
+        <section id="passport-actions" aria-label="Passport quick actions section">
+          <PassportQuickActions actions={quickActions} />
+        </section>
       </div>
     </div>
   );
