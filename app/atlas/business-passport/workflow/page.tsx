@@ -1,10 +1,11 @@
 import BusinessPassportStageFrame from "@/components/customer/passport/BusinessPassportStageFrame";
 import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 import WorkflowSummary from "@/components/customer/passport/WorkflowSummary";
 
 export default function PassportWorkflowPage() {
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <JourneyScreen>
       <BusinessPassportStageFrame
         stageLabel="Business Passport"
         title="Workflow"
@@ -21,6 +22,6 @@ export default function PassportWorkflowPage() {
         }
       />
       <CustomerJourneyNavigator currentStep="workflow" />
-    </div>
+    </JourneyScreen>
   );
 }

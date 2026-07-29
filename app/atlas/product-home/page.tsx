@@ -1,9 +1,10 @@
 import ProductHome from "@/components/product/home/ProductHome";
 import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 
 export default function ProductHomePage() {
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <JourneyScreen>
       <ProductHome
         welcome={{
           greeting: "Welcome",
@@ -12,11 +13,11 @@ export default function ProductHomePage() {
             "Start in a single operational view, then move into dashboard controls, customer context, and the Business Passport workspace.",
           context: "Journey context: Website / Login / Product Home",
           chips: ["Institutional", "Connected Journey", "State-Aware"],
-          primaryActionLabel: "Open Dashboard",
-          secondaryActionLabel: "Continue to Clients",
+          primaryActionLabel: "",
+          secondaryActionLabel: "",
         }}
       />
       <CustomerJourneyNavigator currentStep="product-home" />
-    </div>
+    </JourneyScreen>
   );
 }

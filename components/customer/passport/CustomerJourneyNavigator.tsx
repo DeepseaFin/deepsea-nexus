@@ -8,13 +8,12 @@ import UICard from "@/components/ui/Card";
 
 export type JourneyStepId =
   | "product-home"
-  | "dashboard"
+  | "atlas"
   | "clients"
   | "business-passport"
   | "documents"
   | "evidence"
   | "knowledge"
-  | "relationship-workspace"
   | "workflow"
   | "activity";
 
@@ -26,13 +25,12 @@ interface JourneyStep {
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
   { id: "product-home", label: "Product Home", href: "/atlas/product-home" },
-  { id: "dashboard", label: "Dashboard", href: "/atlas/dashboard" },
-  { id: "clients", label: "Clients", href: "/atlas/clients" },
+  { id: "atlas", label: "ATLAS", href: "/atlas" },
+  { id: "clients", label: "Customer List", href: "/atlas/clients" },
   { id: "business-passport", label: "Business Passport", href: "/atlas/business-passport" },
   { id: "documents", label: "Documents", href: "/atlas/business-passport/documents" },
   { id: "evidence", label: "Evidence", href: "/atlas/business-passport/evidence" },
   { id: "knowledge", label: "Knowledge", href: "/atlas/business-passport/knowledge" },
-  { id: "relationship-workspace", label: "Relationship Workspace", href: "/atlas/business-passport/relationship-workspace" },
   { id: "workflow", label: "Workflow", href: "/atlas/business-passport/workflow" },
   { id: "activity", label: "Activity", href: "/atlas/business-passport/activity" },
 ] as const;

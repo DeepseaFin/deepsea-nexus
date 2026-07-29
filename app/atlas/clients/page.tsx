@@ -2,12 +2,13 @@ import Link from "next/link";
 import UICard from "@/components/ui/Card";
 import StatusChip from "@/components/ui/StatusChip";
 import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 
 export default function ClientsPage() {
   const primaryJourneyHref = "/atlas/business-passport?customerId=cust-crescent-trade-holdings&passportId=BPP-UAE-2026-0148&workspace=atlas";
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <JourneyScreen>
       <UICard variant="subtle" className="p-5 sm:p-6">
         <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Clients</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">Select Relationship Context</h2>
@@ -29,6 +30,6 @@ export default function ClientsPage() {
       </UICard>
 
       <CustomerJourneyNavigator currentStep="clients" />
-    </div>
+    </JourneyScreen>
   );
 }

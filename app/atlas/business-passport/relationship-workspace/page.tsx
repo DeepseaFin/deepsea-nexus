@@ -1,11 +1,12 @@
 import BusinessPassportStageFrame from "@/components/customer/passport/BusinessPassportStageFrame";
 import BusinessIdentityCard from "@/components/customer/passport/BusinessIdentityCard";
 import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 import RelationshipHealthCard from "@/components/customer/passport/RelationshipHealthCard";
 
 export default function PassportRelationshipWorkspacePage() {
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <JourneyScreen>
       <BusinessPassportStageFrame
         stageLabel="Business Passport"
         title="Relationship Workspace"
@@ -29,7 +30,7 @@ export default function PassportRelationshipWorkspacePage() {
           />
         }
       />
-      <CustomerJourneyNavigator currentStep="relationship-workspace" />
-    </div>
+      <CustomerJourneyNavigator currentStep="business-passport" />
+    </JourneyScreen>
   );
 }

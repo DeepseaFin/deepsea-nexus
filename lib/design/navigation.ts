@@ -22,6 +22,20 @@ export interface NavigationItem {
 
 export const primaryNavigation: readonly NavigationItem[] = [
   {
+    id: "atlas",
+    label: "ATLAS",
+    href: "/atlas",
+    icon: "layout-dashboard",
+    roles: [
+      "executive",
+      "relationship_manager",
+      "credit_analyst",
+      "operations_lead",
+      "compliance_officer",
+      "observer",
+    ],
+  },
+  {
     id: "product-home",
     label: "Product Home",
     href: "/atlas/product-home",

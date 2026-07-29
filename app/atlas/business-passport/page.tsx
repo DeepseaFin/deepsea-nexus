@@ -1,5 +1,10 @@
 import BusinessPassportWorkspace from "@/components/customer/passport/BusinessPassportWorkspace";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 
 export default function BusinessPassportPage() {
-  return <BusinessPassportWorkspace currentJourneyStep="business-passport" />;
+  return (
+    <JourneyScreen>
+      <BusinessPassportWorkspace currentJourneyStep="business-passport" />
+    </JourneyScreen>
+  );
 }

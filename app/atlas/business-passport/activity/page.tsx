@@ -1,11 +1,12 @@
 import ActivitySummary from "@/components/customer/passport/ActivitySummary";
 import BusinessPassportStageFrame from "@/components/customer/passport/BusinessPassportStageFrame";
 import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 import PassportQuickActions from "@/components/customer/passport/QuickActions";
 
 export default function PassportActivityPage() {
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <JourneyScreen>
       <BusinessPassportStageFrame
         stageLabel="Business Passport"
         title="Activity"
@@ -45,6 +46,6 @@ export default function PassportActivityPage() {
         }
       />
       <CustomerJourneyNavigator currentStep="activity" />
-    </div>
+    </JourneyScreen>
   );
 }

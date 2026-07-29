@@ -28,7 +28,13 @@ export default function AppShell({ children }: AppShellProps) {
 
   const currentItem = useMemo(() => {
     const items = getNavigationForRole(role);
-    return items.find((item) => pathname.startsWith(item.href));
+
+    const matchingItems = items.filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+    if (matchingItems.length === 0) {
+      return undefined;
+    }
+
+    return matchingItems.sort((left, right) => right.href.length - left.href.length)[0];
   }, [pathname, role]);
 
   const breadcrumbs = useMemo(() => {
