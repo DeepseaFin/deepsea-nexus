@@ -9,6 +9,8 @@ import PageContainer, { type BreadcrumbItem } from "@/components/layout/PageCont
 import SideNavigation from "@/components/layout/SideNavigation";
 import TopNavigation from "@/components/layout/TopNavigation";
 import UserMenu from "@/components/layout/UserMenu";
+import PublicShell from "@/components/layout/PublicShell";
+import { PUBLIC_PATHS } from "@/components/layout/publicNavigation";
 import { getNavigationForRole } from "@/lib/design/navigation";
 import { USER_ROLE_LABELS, type UserRole } from "@/lib/design/roles";
 
@@ -25,6 +27,7 @@ function toTitle(segment: string): string {
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const isPublicRoute = PUBLIC_PATHS.has(pathname);
   const [role, setRole] = useState<UserRole>("relationship_manager");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -61,6 +64,10 @@ export default function AppShell({ children }: AppShellProps) {
 
   const pageTitle = currentItem?.label ?? toTitle(pathname.split("/").filter(Boolean).at(-1) ?? "workspace");
   const subtitle = `Role context: ${USER_ROLE_LABELS[role]}`;
+
+  if (isPublicRoute) {
+    return <PublicShell>{children}</PublicShell>;
+  }
 
   return (
     <div className="min-h-screen bg-[#020916] text-slate-100">
