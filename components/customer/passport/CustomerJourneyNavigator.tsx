@@ -7,6 +7,7 @@ import UIButton from "@/components/ui/Button";
 import UICard from "@/components/ui/Card";
 
 export type JourneyStepId =
+  | "product-home"
   | "dashboard"
   | "clients"
   | "business-passport"
@@ -24,6 +25,7 @@ interface JourneyStep {
 }
 
 const JOURNEY_STEPS: readonly JourneyStep[] = [
+  { id: "product-home", label: "Product Home", href: "/atlas/product-home" },
   { id: "dashboard", label: "Dashboard", href: "/atlas/dashboard" },
   { id: "clients", label: "Clients", href: "/atlas/clients" },
   { id: "business-passport", label: "Business Passport", href: "/atlas/business-passport" },

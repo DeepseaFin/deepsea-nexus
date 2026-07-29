@@ -2,13 +2,15 @@ import Link from "next/link";
 import PageHero from "@/components/marketing/PageHero";
 
 export default function LoginPage() {
+  const productHomeHref = "/atlas/product-home?workspace=atlas&customerId=cust-crescent-trade-holdings&passportId=BPP-UAE-2026-0148";
+
   return (
     <div className="space-y-12">
       <PageHero
         eyebrow="Client Access"
         title="Institutional Access Portal"
         description="Sign in to your Deepsea Nexus workspace to continue portfolio oversight, workflow progression, and institutional collaboration."
-        primaryCta={{ href: "/login", label: "Continue to Sign In" }}
+        primaryCta={{ href: productHomeHref, label: "Continue to Product Home" }}
         secondaryCta={{ href: "/contact", label: "Need Access Support" }}
       />
 
@@ -37,12 +39,12 @@ export default function LoginPage() {
             />
           </label>
 
-          <button
-            type="button"
+          <Link
+            href={productHomeHref}
             className="inline-flex w-full items-center justify-center rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
           >
             Sign In
-          </button>
+          </Link>
         </form>
 
         <div className="mt-4 flex items-center justify-between text-xs text-slate-400">

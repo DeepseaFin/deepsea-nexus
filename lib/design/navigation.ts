@@ -22,6 +22,20 @@ export interface NavigationItem {
 
 export const primaryNavigation: readonly NavigationItem[] = [
   {
+    id: "product-home",
+    label: "Product Home",
+    href: "/atlas/product-home",
+    icon: "layout-dashboard",
+    roles: [
+      "executive",
+      "relationship_manager",
+      "credit_analyst",
+      "operations_lead",
+      "compliance_officer",
+      "observer",
+    ],
+  },
+  {
     id: "dashboard",
     label: "Dashboard",
     href: "/atlas/dashboard",
@@ -41,6 +55,20 @@ export const primaryNavigation: readonly NavigationItem[] = [
     href: "/atlas/clients",
     icon: "building-2",
     roles: ["executive", "relationship_manager", "credit_analyst", "observer"],
+  },
+  {
+    id: "business-passport",
+    label: "Business Passport",
+    href: "/atlas/business-passport",
+    icon: "building-2",
+    roles: [
+      "executive",
+      "relationship_manager",
+      "credit_analyst",
+      "operations_lead",
+      "compliance_officer",
+      "observer",
+    ],
   },
   {
     id: "deals",
