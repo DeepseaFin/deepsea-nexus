@@ -1,3 +1,10 @@
+import {
+  createWorkspacePolicyRegistry,
+  type WorkspacePolicy,
+  type WorkspacePolicyEvaluationResult,
+  type WorkspacePolicyRegistry,
+} from "@/lib/workspaces/workspace-policy-engine";
+
 export interface WorkspaceCommandExecutionContext<
   TCommand,
   TContext,
@@ -5,8 +12,8 @@ export interface WorkspaceCommandExecutionContext<
   TState extends Record<string, unknown> = Record<string, unknown>,
 > {
   command: TCommand;
-  readonly context: TContext;
-  readonly state: TState;
+  context: TContext;
+  state: TState & WorkspaceCommandPipelineState;
   readonly isShortCircuited: boolean;
   readonly shortCircuitResult: TResult | undefined;
   shortCircuit: (result: TResult) => void;
@@ -19,6 +26,7 @@ export interface WorkspaceCommandMiddleware<
   TState extends Record<string, unknown> = Record<string, unknown>,
 > {
   readonly id: string;
+  readonly phase?: "pre-policy" | "post-policy";
   beforeExecute?: (execution: WorkspaceCommandExecutionContext<TCommand, TContext, TResult, TState>) => void;
   afterExecute?: (
     execution: WorkspaceCommandExecutionContext<TCommand, TContext, TResult, TState>,
@@ -28,6 +36,10 @@ export interface WorkspaceCommandMiddleware<
     execution: WorkspaceCommandExecutionContext<TCommand, TContext, TResult, TState>,
     error: Error,
   ) => TResult | void;
+}
+
+export interface WorkspaceCommandPipelineState {
+  policyEvaluation?: WorkspacePolicyEvaluationResult;
 }
 
 export interface WorkspaceCommandPipeline<
@@ -41,6 +53,12 @@ export interface WorkspaceCommandPipeline<
   ) => () => void;
   unregisterMiddleware: (
     middlewareOrId: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState> | string,
+  ) => void;
+  registerPolicy: (
+    policy: WorkspacePolicy<TCommand, TState>,
+  ) => () => void;
+  unregisterPolicy: (
+    policyOrId: WorkspacePolicy<TCommand, TState> | string,
   ) => void;
   executePipeline: (input: {
     readonly command: TCommand;
@@ -58,6 +76,28 @@ function createEmptyState<TState extends Record<string, unknown>>(): TState {
   return {} as TState;
 }
 
+function isValidationMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
+  middleware: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>,
+): boolean {
+  return middleware.phase === "pre-policy" || middleware.id === "workspace.command.middleware.validation";
+}
+
+function isEventPublicationMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
+  middleware: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>,
+): boolean {
+  return middleware.id === "workspace.command.middleware.event-publication";
+}
+
+class WorkspacePolicyDeniedError extends Error {
+  readonly policyEvaluation: WorkspacePolicyEvaluationResult;
+
+  constructor(policyEvaluation: WorkspacePolicyEvaluationResult) {
+    super("Workspace command execution denied by policy.");
+    this.name = "WorkspacePolicyDeniedError";
+    this.policyEvaluation = policyEvaluation;
+  }
+}
+
 export function createWorkspaceCommandPipeline<
   TCommand,
   TContext,
@@ -65,6 +105,7 @@ export function createWorkspaceCommandPipeline<
   TState extends Record<string, unknown> = Record<string, unknown>,
 >(): WorkspaceCommandPipeline<TCommand, TContext, TResult, TState> {
   const middlewares: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>[] = [];
+  const policyRegistry: WorkspacePolicyRegistry<TCommand, TState> = createWorkspacePolicyRegistry<TCommand, TState>();
 
   const registerMiddleware: WorkspaceCommandPipeline<TCommand, TContext, TResult, TState>["registerMiddleware"] = (
     middleware,
@@ -93,10 +134,20 @@ export function createWorkspaceCommandPipeline<
     middlewares.splice(index, 1);
   };
 
+  const registerPolicy: WorkspaceCommandPipeline<TCommand, TContext, TResult, TState>["registerPolicy"] = (policy) => {
+    return policyRegistry.registerPolicy(policy);
+  };
+
+  const unregisterPolicy: WorkspaceCommandPipeline<TCommand, TContext, TResult, TState>["unregisterPolicy"] = (
+    policyOrId,
+  ) => {
+    policyRegistry.unregisterPolicy(policyOrId);
+  };
+
   const executePipeline: WorkspaceCommandPipeline<TCommand, TContext, TResult, TState>["executePipeline"] = (
     input,
   ) => {
-    const state = input.initialState ?? createEmptyState<TState>();
+    const state = (input.initialState ?? createEmptyState<TState>()) as TState & WorkspaceCommandPipelineState;
     let isShortCircuited = false;
     let shortCircuitResult: TResult | undefined;
 
@@ -116,17 +167,29 @@ export function createWorkspaceCommandPipeline<
       },
     };
 
+    const validationMiddlewares = middlewares.filter(isValidationMiddleware);
+    const postPolicyMiddlewares = middlewares.filter((middleware) => !isValidationMiddleware(middleware));
     const beforeExecutedMiddlewares: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>[] = [];
 
-    const resolveFromError = (error: unknown): TResult | undefined => {
-      const normalized = normalizeError(error);
+    const runOnError = (error: Error): TResult | undefined => {
+      const eventPublicationMiddleware = postPolicyMiddlewares.find(isEventPublicationMiddleware);
+      if (eventPublicationMiddleware?.onError) {
+        const recovered = eventPublicationMiddleware.onError(execution, error);
+        if (typeof recovered !== "undefined") {
+          return recovered;
+        }
+      }
 
-      for (const middleware of beforeExecutedMiddlewares) {
+      for (const middleware of [...beforeExecutedMiddlewares].reverse()) {
+        if (isEventPublicationMiddleware(middleware)) {
+          continue;
+        }
+
         if (!middleware.onError) {
           continue;
         }
 
-        const recovered = middleware.onError(execution, normalized);
+        const recovered = middleware.onError(execution, error);
         if (typeof recovered !== "undefined") {
           return recovered;
         }
@@ -138,11 +201,32 @@ export function createWorkspaceCommandPipeline<
     let outcome: TResult | undefined;
 
     try {
-      for (const middleware of middlewares) {
+      for (const middleware of validationMiddlewares) {
         beforeExecutedMiddlewares.push(middleware);
         middleware.beforeExecute?.(execution);
         if (execution.isShortCircuited) {
           break;
+        }
+      }
+
+      if (!execution.isShortCircuited) {
+        const policyEvaluation = policyRegistry.evaluate({
+          command: input.command,
+          context: input.context,
+          state,
+        });
+        state.policyEvaluation = policyEvaluation;
+
+        if (!policyEvaluation.allowed) {
+          throw new WorkspacePolicyDeniedError(policyEvaluation);
+        }
+
+        for (const middleware of postPolicyMiddlewares) {
+          beforeExecutedMiddlewares.push(middleware);
+          middleware.beforeExecute?.(execution);
+          if (execution.isShortCircuited) {
+            break;
+          }
         }
       }
 
@@ -155,9 +239,10 @@ export function createWorkspaceCommandPipeline<
         outcome = input.execute(execution);
       }
     } catch (error) {
-      outcome = resolveFromError(error);
+      const normalizedError = error instanceof Error ? error : normalizeError(error);
+      outcome = runOnError(normalizedError);
       if (typeof outcome === "undefined") {
-        throw normalizeError(error);
+        throw normalizedError;
       }
     }
 
@@ -166,9 +251,10 @@ export function createWorkspaceCommandPipeline<
         middleware.afterExecute?.(execution, outcome);
       }
     } catch (error) {
-      const recovered = resolveFromError(error);
+      const normalizedError = error instanceof Error ? error : normalizeError(error);
+      const recovered = runOnError(normalizedError);
       if (typeof recovered === "undefined") {
-        throw normalizeError(error);
+        throw normalizedError;
       }
 
       return recovered;
@@ -180,6 +266,8 @@ export function createWorkspaceCommandPipeline<
   return {
     registerMiddleware,
     unregisterMiddleware,
+    registerPolicy,
+    unregisterPolicy,
     executePipeline,
   };
 }
