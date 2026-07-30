@@ -26,7 +26,7 @@ export interface WorkspaceCommandMiddleware<
   TState extends Record<string, unknown> = Record<string, unknown>,
 > {
   readonly id: string;
-  readonly phase?: "pre-policy" | "post-policy";
+  readonly phase?: "pre-policy" | "pre-handler" | "post-handler";
   beforeExecute?: (execution: WorkspaceCommandExecutionContext<TCommand, TContext, TResult, TState>) => void;
   afterExecute?: (
     execution: WorkspaceCommandExecutionContext<TCommand, TContext, TResult, TState>,
@@ -68,6 +68,16 @@ export interface WorkspaceCommandPipeline<
   }) => TResult;
 }
 
+export class WorkspacePolicyDeniedError extends Error {
+  readonly policyEvaluation: WorkspacePolicyEvaluationResult;
+
+  constructor(policyEvaluation: WorkspacePolicyEvaluationResult) {
+    super("Workspace command execution denied by policy.");
+    this.name = "WorkspacePolicyDeniedError";
+    this.policyEvaluation = policyEvaluation;
+  }
+}
+
 function normalizeError(error: unknown): Error {
   return error instanceof Error ? error : new Error("Workspace command pipeline execution failed.");
 }
@@ -76,26 +86,22 @@ function createEmptyState<TState extends Record<string, unknown>>(): TState {
   return {} as TState;
 }
 
-function isValidationMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
+function isPrePolicyMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
   middleware: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>,
 ): boolean {
   return middleware.phase === "pre-policy" || middleware.id === "workspace.command.middleware.validation";
 }
 
-function isEventPublicationMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
+function isPreHandlerMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
   middleware: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>,
 ): boolean {
-  return middleware.id === "workspace.command.middleware.event-publication";
+  return middleware.phase === "pre-handler";
 }
 
-class WorkspacePolicyDeniedError extends Error {
-  readonly policyEvaluation: WorkspacePolicyEvaluationResult;
-
-  constructor(policyEvaluation: WorkspacePolicyEvaluationResult) {
-    super("Workspace command execution denied by policy.");
-    this.name = "WorkspacePolicyDeniedError";
-    this.policyEvaluation = policyEvaluation;
-  }
+function isPostHandlerMiddleware<TCommand, TContext, TResult, TState extends Record<string, unknown>>(
+  middleware: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>,
+): boolean {
+  return middleware.phase === "post-handler";
 }
 
 export function createWorkspaceCommandPipeline<
@@ -167,24 +173,13 @@ export function createWorkspaceCommandPipeline<
       },
     };
 
-    const validationMiddlewares = middlewares.filter(isValidationMiddleware);
-    const postPolicyMiddlewares = middlewares.filter((middleware) => !isValidationMiddleware(middleware));
+    const prePolicyMiddlewares = middlewares.filter(isPrePolicyMiddleware);
+    const preHandlerMiddlewares = middlewares.filter(isPreHandlerMiddleware);
+    const postHandlerMiddlewares = middlewares.filter(isPostHandlerMiddleware);
     const beforeExecutedMiddlewares: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>[] = [];
 
     const runOnError = (error: Error): TResult | undefined => {
-      const eventPublicationMiddleware = postPolicyMiddlewares.find(isEventPublicationMiddleware);
-      if (eventPublicationMiddleware?.onError) {
-        const recovered = eventPublicationMiddleware.onError(execution, error);
-        if (typeof recovered !== "undefined") {
-          return recovered;
-        }
-      }
-
       for (const middleware of [...beforeExecutedMiddlewares].reverse()) {
-        if (isEventPublicationMiddleware(middleware)) {
-          continue;
-        }
-
         if (!middleware.onError) {
           continue;
         }
@@ -198,10 +193,27 @@ export function createWorkspaceCommandPipeline<
       return undefined;
     };
 
+    const executedPreHandlerMiddlewares: WorkspaceCommandMiddleware<TCommand, TContext, TResult, TState>[] = [];
+    let reachedHandlerStage = false;
+
+    const runAfterMiddlewares = (outcome: TResult): void => {
+      for (const middleware of executedPreHandlerMiddlewares) {
+        middleware.afterExecute?.(execution, outcome);
+      }
+
+      if (!reachedHandlerStage) {
+        return;
+      }
+
+      for (const middleware of postHandlerMiddlewares) {
+        middleware.afterExecute?.(execution, outcome);
+      }
+    };
+
     let outcome: TResult | undefined;
 
     try {
-      for (const middleware of validationMiddlewares) {
+      for (const middleware of prePolicyMiddlewares) {
         beforeExecutedMiddlewares.push(middleware);
         middleware.beforeExecute?.(execution);
         if (execution.isShortCircuited) {
@@ -209,7 +221,12 @@ export function createWorkspaceCommandPipeline<
         }
       }
 
-      if (!execution.isShortCircuited) {
+      if (execution.isShortCircuited) {
+        if (typeof execution.shortCircuitResult === "undefined") {
+          throw new Error("Workspace command pipeline short-circuited without a result.");
+        }
+        outcome = execution.shortCircuitResult;
+      } else {
         const policyEvaluation = policyRegistry.evaluate({
           command: input.command,
           context: input.context,
@@ -221,35 +238,45 @@ export function createWorkspaceCommandPipeline<
           throw new WorkspacePolicyDeniedError(policyEvaluation);
         }
 
-        for (const middleware of postPolicyMiddlewares) {
+        for (const middleware of preHandlerMiddlewares) {
           beforeExecutedMiddlewares.push(middleware);
+          executedPreHandlerMiddlewares.push(middleware);
           middleware.beforeExecute?.(execution);
           if (execution.isShortCircuited) {
             break;
           }
         }
-      }
 
-      if (execution.isShortCircuited) {
-        if (typeof execution.shortCircuitResult === "undefined") {
-          throw new Error("Workspace command pipeline short-circuited without a result.");
+        if (execution.isShortCircuited) {
+          if (typeof execution.shortCircuitResult === "undefined") {
+            throw new Error("Workspace command pipeline short-circuited without a result.");
+          }
+          outcome = execution.shortCircuitResult;
+        } else {
+          reachedHandlerStage = true;
+          outcome = input.execute(execution);
         }
-        outcome = execution.shortCircuitResult;
-      } else {
-        outcome = input.execute(execution);
       }
     } catch (error) {
       const normalizedError = error instanceof Error ? error : normalizeError(error);
-      outcome = runOnError(normalizedError);
-      if (typeof outcome === "undefined") {
+      if (error instanceof WorkspacePolicyDeniedError) {
         throw normalizedError;
       }
+
+      const recovered = runOnError(normalizedError);
+      if (typeof recovered === "undefined") {
+        throw normalizedError;
+      }
+
+      outcome = recovered;
     }
 
     try {
-      for (const middleware of beforeExecutedMiddlewares) {
-        middleware.afterExecute?.(execution, outcome);
+      if (typeof outcome === "undefined") {
+        throw new Error("Workspace command pipeline produced no outcome.");
       }
+
+      runAfterMiddlewares(outcome);
     } catch (error) {
       const normalizedError = error instanceof Error ? error : normalizeError(error);
       const recovered = runOnError(normalizedError);

@@ -1,4 +1,9 @@
 import {
+  buildWorkspaceAuditEntry,
+  getWorkspaceAuditRecorder,
+  type WorkspaceAuditMiddlewareState,
+} from "@/lib/workspaces/workspace-audit-engine";
+import {
   getWorkspaceEventBus,
   nowWorkspaceEventTimestamp,
   resolveWorkspaceId,
@@ -9,6 +14,8 @@ import {
   createWorkspaceCommandPipeline,
   type WorkspaceCommandMiddleware,
   type WorkspaceCommandPipeline,
+  type WorkspaceCommandPipelineState as BaseWorkspaceCommandPipelineState,
+  WorkspacePolicyDeniedError,
 } from "@/lib/workspaces/workspace-command-pipeline";
 import type {
   WorkspaceAttributes,
@@ -63,6 +70,11 @@ export type WorkspaceCommandAfterExecuteHook = (
   outcome: WorkspaceCommandResult,
   context: WorkspaceCommandContext,
 ) => void;
+
+interface WorkspaceCommandPipelineState extends BaseWorkspaceCommandPipelineState {
+  validation?: WorkspaceValidationResult;
+  audit?: WorkspaceAuditMiddlewareState;
+}
 
 interface WorkspaceCommandEngineState {
   readonly eventBus: WorkspaceEventBus;
@@ -133,10 +145,6 @@ function createDefaultContext(
   };
 }
 
-interface WorkspaceCommandPipelineState extends Record<string, unknown> {
-  validation?: WorkspaceValidationResult;
-}
-
 function toFailureOutcome(
   command: WorkspaceCommand,
   context: WorkspaceCommandContext,
@@ -171,6 +179,10 @@ function toSuccessOutcome<TResult>(
   };
 }
 
+function createEventId(workspaceId: string, commandId: string, label: string, index: number): string {
+  return `${workspaceId}:${commandId}:${label}:${index}`;
+}
+
 export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEngineOptions): WorkspaceCommandEngine {
   const handlers = new Map<string, WorkspaceCommandHandler>();
   const validators = new Map<string, Set<WorkspaceCommandValidator>>();
@@ -181,6 +193,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     WorkspaceCommandPipelineState
   > = createWorkspaceCommandPipeline();
   let middlewareCounter = 0;
+  const auditRecorder = getWorkspaceAuditRecorder();
 
   const state: WorkspaceCommandEngineState = {
     eventBus: options?.eventBus ?? getWorkspaceEventBus(),
@@ -238,13 +251,138 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     WorkspaceCommandPipelineState
   > = {
     id: "workspace.command.middleware.validation",
+    phase: "pre-policy",
     beforeExecute: (execution) => {
       const validation = validateCommand(execution.command, execution.context);
       execution.state.validation = validation;
 
       if (!validation.valid) {
+        auditRecorder.record(
+          buildWorkspaceAuditEntry({
+            command: execution.command,
+            context: execution.context,
+            state: execution.state,
+            timestamp: execution.context.occurredAt,
+            workspaceId: execution.context.workspaceId,
+            commandId: execution.context.commandId,
+            commandName: execution.command.type,
+            executionResult: "invalid",
+            policyEvaluation: execution.state.policyEvaluation,
+            emittedEventIds: [],
+            warnings: [],
+            errors: validation.issues.map((issue) => issue.message),
+          }),
+        );
+
         execution.shortCircuit(toFailureOutcome(execution.command, execution.context, validation));
       }
+    },
+  };
+
+  const auditMiddleware: WorkspaceCommandMiddleware<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  > = {
+    id: "workspace.command.middleware.audit",
+    phase: "pre-handler",
+    beforeExecute: (execution) => {
+      const timestamp = execution.context.occurredAt;
+      execution.state.audit = {
+        entryId: `${execution.context.workspaceId}:${execution.context.commandId}:${timestamp}`,
+        entryTimestamp: timestamp,
+        warnings: [...(execution.state.policyEvaluation?.warnings ?? [])],
+        errors: [],
+        emittedEventIds: [],
+        policyOutcome: execution.state.policyEvaluation
+          ? {
+              allowed: execution.state.policyEvaluation.allowed,
+              policyIds: [...execution.state.policyEvaluation.policyIds],
+              warnings: [...execution.state.policyEvaluation.warnings],
+              advisoryMessages: [...execution.state.policyEvaluation.advisoryMessages],
+            }
+          : null,
+      };
+
+      auditRecorder.record(
+        buildWorkspaceAuditEntry({
+          command: execution.command,
+          context: execution.context,
+          state: execution.state,
+          timestamp,
+          workspaceId: execution.context.workspaceId,
+          commandId: execution.context.commandId,
+          commandName: execution.command.type,
+          executionResult: "started",
+          policyEvaluation: execution.state.policyEvaluation,
+          emittedEventIds: execution.state.audit.emittedEventIds,
+          warnings: execution.state.audit.warnings,
+          errors: execution.state.audit.errors,
+        }),
+      );
+    },
+    afterExecute: (execution, outcome) => {
+      if (!execution.state.audit) {
+        return;
+      }
+
+      auditRecorder.record(
+        buildWorkspaceAuditEntry({
+          command: execution.command,
+          context: execution.context,
+          state: execution.state,
+          timestamp: execution.state.audit.entryTimestamp,
+          workspaceId: execution.context.workspaceId,
+          commandId: execution.context.commandId,
+          commandName: execution.command.type,
+          executionResult: outcome.success ? "completed" : "failed",
+          policyEvaluation: execution.state.policyEvaluation,
+          emittedEventIds: execution.state.audit.emittedEventIds,
+          warnings: execution.state.audit.warnings,
+          errors: execution.state.audit.errors,
+        }),
+      );
+    },
+    onError: (execution, error) => {
+      if (!execution.state.audit) {
+        execution.state.audit = {
+          entryId: `${execution.context.workspaceId}:${execution.context.commandId}:${execution.context.occurredAt}`,
+          entryTimestamp: execution.context.occurredAt,
+          warnings: [],
+          errors: [],
+          emittedEventIds: [],
+          policyOutcome: execution.state.policyEvaluation
+            ? {
+                allowed: execution.state.policyEvaluation.allowed,
+                policyIds: [...execution.state.policyEvaluation.policyIds],
+                warnings: [...execution.state.policyEvaluation.warnings],
+                advisoryMessages: [...execution.state.policyEvaluation.advisoryMessages],
+              }
+            : null,
+        };
+      }
+
+      execution.state.audit.errors = [...execution.state.audit.errors, error.message];
+
+      auditRecorder.record(
+        buildWorkspaceAuditEntry({
+          command: execution.command,
+          context: execution.context,
+          state: execution.state,
+          timestamp: execution.state.audit.entryTimestamp,
+          workspaceId: execution.context.workspaceId,
+          commandId: execution.context.commandId,
+          commandName: execution.command.type,
+          executionResult: "failed",
+          policyEvaluation: execution.state.policyEvaluation,
+          emittedEventIds: execution.state.audit.emittedEventIds,
+          warnings: execution.state.audit.warnings,
+          errors: execution.state.audit.errors,
+        }),
+      );
+
+      return toFailureOutcome(execution.command, execution.context, execution.state.validation ?? validResult(), error);
     },
   };
 
@@ -255,82 +393,129 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     WorkspaceCommandPipelineState
   > = {
     id: "workspace.command.middleware.event-publication",
-    beforeExecute: (execution) => {
-      execution.context.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandBeforeExecute,
-        workspaceId: execution.context.workspaceId,
-        occurredAt: execution.context.occurredAt,
-        payload: {
+    phase: "post-handler",
+    afterExecute: (execution, outcome) => {
+      const emittedEventIds: string[] = [];
+      const auditState = execution.state.audit;
+      const publishEvent = <TType extends keyof typeof WORKSPACE_EVENT_TYPES>(
+        eventType: (typeof WORKSPACE_EVENT_TYPES)[TType],
+        payload: unknown,
+        index: number,
+      ): void => {
+        const eventId = createEventId(execution.context.workspaceId, execution.context.commandId, eventType, index);
+        emittedEventIds.push(eventId);
+        execution.context.eventBus.publish({
+          eventId,
+          type: eventType as never,
+          workspaceId: execution.context.workspaceId,
+          occurredAt: execution.context.occurredAt,
+          payload: payload as never,
+        });
+      };
+
+      publishEvent(
+        WORKSPACE_EVENT_TYPES.CommandBeforeExecute,
+        {
           commandType: execution.command.type,
           commandId: execution.context.commandId,
         },
-      });
-    },
-    afterExecute: (execution, outcome) => {
-      execution.context.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandAfterExecute,
-        workspaceId: execution.context.workspaceId,
-        occurredAt: execution.context.occurredAt,
-        payload: {
+        1,
+      );
+
+      if (!outcome.success) {
+        publishEvent(
+          WORKSPACE_EVENT_TYPES.CommandFailed,
+          {
+            commandType: execution.command.type,
+            commandId: execution.context.commandId,
+            errorMessage: outcome.error?.message ?? "Workspace command execution failed.",
+          },
+          2,
+        );
+      }
+
+      publishEvent(
+        WORKSPACE_EVENT_TYPES.CommandAfterExecute,
+        {
           commandType: execution.command.type,
           commandId: execution.context.commandId,
           success: outcome.success,
         },
-      });
-    },
-    onError: (execution, error) => {
-      const validation = execution.state.validation ?? validResult();
+        outcome.success ? 2 : 3,
+      );
 
-      execution.context.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandFailed,
-        workspaceId: execution.context.workspaceId,
-        occurredAt: execution.context.occurredAt,
-        payload: {
-          commandType: execution.command.type,
-          commandId: execution.context.commandId,
-          errorMessage: error.message,
-        },
-      });
-
-      execution.context.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandAfterExecute,
-        workspaceId: execution.context.workspaceId,
-        occurredAt: execution.context.occurredAt,
-        payload: {
-          commandType: execution.command.type,
-          commandId: execution.context.commandId,
-          success: false,
-        },
-      });
-
-      return toFailureOutcome(execution.command, execution.context, validation, error);
+      if (auditState) {
+        auditState.emittedEventIds = [...auditState.emittedEventIds, ...emittedEventIds];
+        auditRecorder.record(
+          buildWorkspaceAuditEntry({
+            command: execution.command,
+            context: execution.context,
+            state: execution.state,
+            timestamp: auditState.entryTimestamp,
+            workspaceId: execution.context.workspaceId,
+            commandId: execution.context.commandId,
+            commandName: execution.command.type,
+            executionResult: outcome.success ? "completed" : "failed",
+            policyEvaluation: execution.state.policyEvaluation,
+            emittedEventIds: auditState.emittedEventIds,
+            warnings: auditState.warnings,
+            errors: auditState.errors,
+          }),
+        );
+      }
     },
   };
 
   pipeline.registerMiddleware(validationMiddleware);
+  pipeline.registerMiddleware(auditMiddleware);
   pipeline.registerMiddleware(eventPublicationMiddleware);
 
   const execute: WorkspaceCommandEngine["execute"] = (command) => {
     const context = createDefaultContext(command, state);
 
-    const outcome = pipeline.executePipeline({
-      command,
-      context,
-      initialState: {},
-      execute: (execution): WorkspaceCommandResult => {
-        const handler = handlers.get(execution.command.type);
-        const validation = execution.state.validation ?? validateCommand(execution.command, execution.context);
+    try {
+      const outcome = pipeline.executePipeline({
+        command,
+        context,
+        initialState: {},
+        execute: (execution): WorkspaceCommandResult => {
+          const handler = handlers.get(execution.command.type);
+          const validation = execution.state.validation ?? validateCommand(execution.command, execution.context);
 
-        if (!handler) {
-          return toFailureOutcome(execution.command, execution.context, validation);
-        }
+          if (!handler) {
+            return toFailureOutcome(execution.command, execution.context, validation);
+          }
 
-        const result = handler(execution.command, execution.context);
-        return toSuccessOutcome(execution.command, execution.context, validation, result);
-      },
-    });
+          const result = handler(execution.command, execution.context);
+          return toSuccessOutcome(execution.command, execution.context, validation, result);
+        },
+      });
 
-    return outcome as WorkspaceCommandResult<TResult>;
+      return outcome as WorkspaceCommandResult<TResult>;
+    } catch (error) {
+      if (error instanceof WorkspacePolicyDeniedError) {
+        auditRecorder.record(
+          buildWorkspaceAuditEntry({
+            command,
+            context,
+            state: { policyEvaluation: error.policyEvaluation } as WorkspaceCommandPipelineState,
+            timestamp: context.occurredAt,
+            workspaceId: context.workspaceId,
+            commandId: context.commandId,
+            commandName: command.type,
+            executionResult: "denied",
+            policyEvaluation: error.policyEvaluation,
+            emittedEventIds: [],
+            warnings: [...error.policyEvaluation.warnings],
+            errors: error.policyEvaluation.validation.issues.map((issue) => issue.message),
+          }),
+        );
+
+        return toFailureOutcome(command, context, error.policyEvaluation.validation, error);
+      }
+
+      throw error;
+    }
   };
 
   const registerHandler: WorkspaceCommandEngine["registerHandler"] = (commandType, handler) => {
@@ -353,6 +538,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     const middlewareId = `workspace.command.middleware.before-hook.${middlewareCounter++}`;
     return pipeline.registerMiddleware({
       id: middlewareId,
+      phase: "pre-handler",
       beforeExecute: (execution) => {
         hook(execution.command, execution.context);
       },
@@ -363,6 +549,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     const middlewareId = `workspace.command.middleware.after-hook.${middlewareCounter++}`;
     return pipeline.registerMiddleware({
       id: middlewareId,
+      phase: "pre-handler",
       afterExecute: (execution, outcome) => {
         hook(execution.command, outcome, execution.context);
       },

@@ -72,6 +72,7 @@ export type WorkspaceEventMap = {
 };
 
 export interface WorkspaceEventEnvelope<TType extends WorkspaceEventType = WorkspaceEventType> {
+  readonly eventId?: string;
   readonly type: TType;
   readonly workspaceId: string;
   readonly occurredAt: string;
