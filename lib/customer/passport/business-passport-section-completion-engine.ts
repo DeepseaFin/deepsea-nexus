@@ -15,6 +15,10 @@ import {
   getEnabledSections,
 } from "@/lib/customer/passport/business-passport-section-registry";
 import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+import {
+  completionStatusFromPercentage,
+  ratioToWorkspacePercentage,
+} from "@/lib/workspaces/workspace-completion";
 
 export interface BusinessPassportCompletionEngineInput {
   readonly passportPanelModel: PassportPanelModel;
@@ -58,28 +62,8 @@ interface SectionStrategyEvaluation {
   readonly hasWarning: boolean;
 }
 
-function toCompletionStatus(percent: number): BusinessPassportSectionCompletionStatus {
-  if (percent <= 0) {
-    return "not_started";
-  }
-
-  if (percent >= 100) {
-    return "completed";
-  }
-
-  return "in_progress";
-}
-
-function clampPercent(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
 function ratioToPercent(completed: number, total: number): number {
-  if (total <= 0) {
-    return 0;
-  }
-
-  return clampPercent((completed / total) * 100);
+  return ratioToWorkspacePercentage(completed, total);
 }
 
 function mapValidation(hasError: boolean, hasWarning: boolean): BusinessPassportValidationStatus {
@@ -296,8 +280,9 @@ function evidenceProgress(input: BusinessPassportCompletionEngineInput): Section
 function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const averageConfidence = input.knowledgeState.length === 0
     ? 0
-    : clampPercent(
+    : ratioToWorkspacePercentage(
       input.knowledgeState.reduce((sum, signal) => sum + signal.confidence, 0) / input.knowledgeState.length,
+      1,
     );
 
   return {
@@ -359,7 +344,9 @@ export function computeBusinessPassportSectionStates(
       anchorId: section.anchorId,
       disabled: !section.enabled,
       completionPercentage: completionEvaluation.completionPercentage,
-      completionStatus: toCompletionStatus(completionEvaluation.completionPercentage),
+      completionStatus: completionStatusFromPercentage(
+        completionEvaluation.completionPercentage,
+      ) as BusinessPassportSectionCompletionStatus,
       validationStatus,
       missingRequiredFields: completionEvaluation.missingRequiredFields,
     };

@@ -1,0 +1,432 @@
+diff --git a/lib/customer/passport/business-passport-section-completion-engine.ts b/lib/customer/passport/business-passport-section-completion-engine.ts
+index 9492367..c5decb6 100644
+--- a/lib/customer/passport/business-passport-section-completion-engine.ts
++++ b/lib/customer/passport/business-passport-section-completion-engine.ts
+@@ -15,6 +15,10 @@ import {
+   getEnabledSections,
+ } from "@/lib/customer/passport/business-passport-section-registry";
+ import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import {
++  completionStatusFromPercentage,
++  ratioToWorkspacePercentage,
++} from "@/lib/workspaces/workspace-completion";
+ 
+ export interface BusinessPassportCompletionEngineInput {
+   readonly passportPanelModel: PassportPanelModel;
+@@ -58,28 +62,8 @@ interface SectionStrategyEvaluation {
+   readonly hasWarning: boolean;
+ }
+ 
+-function toCompletionStatus(percent: number): BusinessPassportSectionCompletionStatus {
+-  if (percent <= 0) {
+-    return "not_started";
+-  }
+-
+-  if (percent >= 100) {
+-    return "completed";
+-  }
+-
+-  return "in_progress";
+-}
+-
+-function clampPercent(value: number): number {
+-  return Math.max(0, Math.min(100, Math.round(value)));
+-}
+-
+ function ratioToPercent(completed: number, total: number): number {
+-  if (total <= 0) {
+-    return 0;
+-  }
+-
+-  return clampPercent((completed / total) * 100);
++  return ratioToWorkspacePercentage(completed, total);
+ }
+ 
+ function mapValidation(hasError: boolean, hasWarning: boolean): BusinessPassportValidationStatus {
+@@ -296,8 +280,9 @@ function evidenceProgress(input: BusinessPassportCompletionEngineInput): Section
+ function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const averageConfidence = input.knowledgeState.length === 0
+     ? 0
+-    : clampPercent(
++    : ratioToWorkspacePercentage(
+       input.knowledgeState.reduce((sum, signal) => sum + signal.confidence, 0) / input.knowledgeState.length,
++      1,
+     );
+ 
+   return {
+@@ -359,7 +344,9 @@ export function computeBusinessPassportSectionStates(
+       anchorId: section.anchorId,
+       disabled: !section.enabled,
+       completionPercentage: completionEvaluation.completionPercentage,
+-      completionStatus: toCompletionStatus(completionEvaluation.completionPercentage),
++      completionStatus: completionStatusFromPercentage(
++        completionEvaluation.completionPercentage,
++      ) as BusinessPassportSectionCompletionStatus,
+       validationStatus,
+       missingRequiredFields: completionEvaluation.missingRequiredFields,
+     };
+diff --git a/lib/customer/passport/business-passport-section-registry.ts b/lib/customer/passport/business-passport-section-registry.ts
+index 82b125b..ef45873 100644
+--- a/lib/customer/passport/business-passport-section-registry.ts
++++ b/lib/customer/passport/business-passport-section-registry.ts
+@@ -1,3 +1,6 @@
++import { createWorkspaceRegistry } from "@/lib/workspaces/workspace-registry";
++import type { WorkspaceSectionDefinition } from "@/lib/workspaces/workspace.types";
++
+ export const BUSINESS_PASSPORT_SECTION_IDS = [
+   "identity",
+   "ownership",
+@@ -39,20 +42,11 @@ export type BusinessPassportCompletionStrategyId =
+ 
+ export type BusinessPassportValidationStrategyId = BusinessPassportCompletionStrategyId;
+ 
+-export interface BusinessPassportSectionRegistryItem {
+-  readonly id: BusinessPassportSectionId;
+-  readonly title: string;
+-  readonly description: string;
+-  readonly order: number;
+-  readonly workflowOrder?: number;
+-  readonly enabled: boolean;
++export interface BusinessPassportSectionRegistryItem extends WorkspaceSectionDefinition<BusinessPassportSectionId> {
+   readonly icon: BusinessPassportSectionIconId;
+   readonly completionStrategy: BusinessPassportCompletionStrategyId;
+   readonly validationStrategy: BusinessPassportValidationStrategyId;
+-  readonly navigationVisible: boolean;
+   readonly anchorId: string;
+-  readonly prerequisites?: readonly BusinessPassportSectionId[];
+-  readonly recommended?: boolean;
+ }
+ 
+ const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegistryItem[] = [
+@@ -197,42 +191,28 @@ const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegist
+     anchorId: "passport-activity",
+     prerequisites: ["workflow"],
+   },
+-] as const;
++];
+ 
+-function sortedSections(): readonly BusinessPassportSectionRegistryItem[] {
+-  return [...BUSINESS_PASSPORT_SECTION_REGISTRY].sort(
+-    (left, right) => (left.workflowOrder ?? left.order) - (right.workflowOrder ?? right.order),
+-  );
+-}
++const sectionRegistry = createWorkspaceRegistry<BusinessPassportSectionId, BusinessPassportSectionRegistryItem>(
++  BUSINESS_PASSPORT_SECTION_REGISTRY,
++);
+ 
+ export function getAllSections(): readonly BusinessPassportSectionRegistryItem[] {
+-  return sortedSections();
++  return sectionRegistry.getAllSections();
+ }
+ 
+ export function getSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
+-  return BUSINESS_PASSPORT_SECTION_REGISTRY.find((section) => section.id === id);
++  return sectionRegistry.getSection(id);
+ }
+ 
+ export function getEnabledSections(): readonly BusinessPassportSectionRegistryItem[] {
+-  return sortedSections().filter((section) => section.enabled);
++  return sectionRegistry.getEnabledSections();
+ }
+ 
+ export function getNextSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
+-  const enabledSections = getEnabledSections();
+-  const currentIndex = enabledSections.findIndex((section) => section.id === id);
+-  if (currentIndex < 0) {
+-    return undefined;
+-  }
+-
+-  return enabledSections[currentIndex + 1];
++  return sectionRegistry.getNextSection(id);
+ }
+ 
+ export function getPreviousSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
+-  const enabledSections = getEnabledSections();
+-  const currentIndex = enabledSections.findIndex((section) => section.id === id);
+-  if (currentIndex <= 0) {
+-    return undefined;
+-  }
+-
+-  return enabledSections[currentIndex - 1];
++  return sectionRegistry.getPreviousSection(id);
+ }
+diff --git a/lib/customer/passport/business-passport-workflow-engine.ts b/lib/customer/passport/business-passport-workflow-engine.ts
+index 62b9720..fb78f6b 100644
+--- a/lib/customer/passport/business-passport-workflow-engine.ts
++++ b/lib/customer/passport/business-passport-workflow-engine.ts
+@@ -3,6 +3,10 @@ import {
+   type BusinessPassportSectionId,
+ } from "@/lib/customer/passport/business-passport-section-registry";
+ import type { BusinessPassportWorkspaceSectionState } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import {
++  canNavigateWorkspaceSection,
++  evaluateWorkspaceWorkflow,
++} from "@/lib/workspaces/workspace-workflow";
+ 
+ export interface BusinessPassportWorkflowEvaluation {
+   readonly availableSections: readonly BusinessPassportSectionId[];
+@@ -15,75 +19,19 @@ export interface EvaluateBusinessPassportWorkflowInput {
+   readonly sections: readonly BusinessPassportWorkspaceSectionState[];
+ }
+ 
+-function completedSet(sections: readonly BusinessPassportWorkspaceSectionState[]): ReadonlySet<BusinessPassportSectionId> {
+-  return new Set(
+-    sections
+-      .filter((section) => section.completionStatus === "completed")
+-      .map((section) => section.id),
+-  );
+-}
+-
+-function blockedSectionIds(completedIds: ReadonlySet<BusinessPassportSectionId>): readonly BusinessPassportSectionId[] {
+-  return getEnabledSections()
+-    .filter((definition) => {
+-      const prerequisites = definition.prerequisites ?? [];
+-      return prerequisites.some((prerequisite) => !completedIds.has(prerequisite));
+-    })
+-    .map((definition) => definition.id);
+-}
+-
+-function disabledSectionIds(sections: readonly BusinessPassportWorkspaceSectionState[]): readonly BusinessPassportSectionId[] {
+-  return sections
+-    .filter((section) => section.disabled)
+-    .map((section) => section.id);
+-}
+-
+-function availableSectionIds(blockedIds: ReadonlySet<BusinessPassportSectionId>): readonly BusinessPassportSectionId[] {
+-  return getEnabledSections()
+-    .filter((definition) => !blockedIds.has(definition.id))
+-    .map((definition) => definition.id);
+-}
+-
+-function resolveNextRecommendedSection(
+-  availableIds: ReadonlySet<BusinessPassportSectionId>,
+-  completedIds: ReadonlySet<BusinessPassportSectionId>,
+-): BusinessPassportSectionId | null {
+-  const preferred = getEnabledSections().find(
+-    (definition) => definition.recommended && availableIds.has(definition.id) && !completedIds.has(definition.id),
+-  );
+-
+-  if (preferred) {
+-    return preferred.id;
+-  }
+-
+-  const firstIncompleteAvailable = getEnabledSections().find(
+-    (definition) => availableIds.has(definition.id) && !completedIds.has(definition.id),
+-  );
+-
+-  if (firstIncompleteAvailable) {
+-    return firstIncompleteAvailable.id;
+-  }
+-
+-  const firstAvailable = getEnabledSections().find((definition) => availableIds.has(definition.id));
+-  return firstAvailable?.id ?? null;
+-}
+-
+ export function evaluateBusinessPassportWorkflow(
+   input: EvaluateBusinessPassportWorkflowInput,
+ ): BusinessPassportWorkflowEvaluation {
+-  const completedIds = completedSet(input.sections);
+-  const blockedByPrerequisites = blockedSectionIds(completedIds);
+-  const blockedByDisabledState = disabledSectionIds(input.sections);
+-  const blockedSections = Array.from(new Set([...blockedByPrerequisites, ...blockedByDisabledState]));
+-  const blockedSet = new Set(blockedSections);
+-  const availableSections = availableSectionIds(blockedSet);
+-  const availableSet = new Set(availableSections);
++  const workflow = evaluateWorkspaceWorkflow({
++    sectionDefinitions: getEnabledSections(),
++    sectionStates: input.sections,
++  });
+ 
+   return {
+-    availableSections,
+-    blockedSections,
+-    completedSections: Array.from(completedIds),
+-    nextRecommendedSection: resolveNextRecommendedSection(availableSet, completedIds),
++    availableSections: workflow.availableSections,
++    blockedSections: workflow.blockedSections,
++    completedSections: workflow.completedSections,
++    nextRecommendedSection: workflow.nextRecommendedSection,
+   };
+ }
+ 
+@@ -91,5 +39,5 @@ export function canNavigateToSection(
+   sectionId: BusinessPassportSectionId,
+   workflow: BusinessPassportWorkflowEvaluation,
+ ): boolean {
+-  return workflow.availableSections.includes(sectionId);
++  return canNavigateWorkspaceSection(sectionId, workflow);
+ }
+diff --git a/lib/customer/passport/business-passport-workspace-persistence.ts b/lib/customer/passport/business-passport-workspace-persistence.ts
+index 6330795..5d73f11 100644
+--- a/lib/customer/passport/business-passport-workspace-persistence.ts
++++ b/lib/customer/passport/business-passport-workspace-persistence.ts
+@@ -2,17 +2,14 @@ import type {
+   BusinessPassportSectionId,
+   BusinessPassportWorkspaceFilters,
+ } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import {
++  loadWorkspacePersistence,
++  sanitizeWorkspaceFilters,
++  saveWorkspacePersistence,
++} from "@/lib/workspaces/workspace-persistence";
+ 
+ const DEFAULT_PERSISTENCE_KEY = "atlas.business-passport.workspace.v1";
+ 
+-interface PersistedBusinessPassportWorkspaceState {
+-  readonly activeSection: string | null;
+-  readonly expandedSections: Record<string, boolean>;
+-  readonly selectedTab: string;
+-  readonly filters: BusinessPassportWorkspaceFilters;
+-  readonly lastVisitedAt: string | null;
+-}
+-
+ export interface BusinessPassportWorkspacePersistenceSnapshot {
+   readonly activeSection: BusinessPassportSectionId | null;
+   readonly expandedSections: Readonly<Record<BusinessPassportSectionId, boolean>>;
+@@ -31,130 +28,30 @@ export interface SaveBusinessPassportWorkspacePersistenceInput {
+   readonly lastVisitedAt: string;
+ }
+ 
+-function resolveStorageKey(storageKey?: string): string {
+-  const key = storageKey?.trim();
+-  return key && key.length > 0 ? key : DEFAULT_PERSISTENCE_KEY;
+-}
+-
+-function createDefaultExpandedSections(
+-  sectionIds: readonly BusinessPassportSectionId[],
+-): Readonly<Record<BusinessPassportSectionId, boolean>> {
+-  return sectionIds.reduce(
+-    (accumulator, sectionId) => ({
+-      ...accumulator,
+-      [sectionId]: true,
+-    }),
+-    {} as Record<BusinessPassportSectionId, boolean>,
+-  );
+-}
+-
+-function sanitizeFilters(filters: unknown): BusinessPassportWorkspaceFilters {
+-  if (!filters || typeof filters !== "object" || Array.isArray(filters)) {
+-    return {};
+-  }
+-
+-  const entries = Object.entries(filters as Record<string, unknown>).filter(([, value]) => {
+-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+-      return true;
+-    }
+-
+-    return Array.isArray(value) && value.every((item) => typeof item === "string");
+-  });
+-
+-  return entries.reduce((accumulator, [key, value]) => {
+-    accumulator[key] = value as string | number | boolean | readonly string[];
+-    return accumulator;
+-  }, {} as Record<string, string | number | boolean | readonly string[]>);
+-}
+-
+-function sanitizeExpandedSections(
+-  expandedSections: Record<string, boolean> | undefined,
+-  sectionIds: readonly BusinessPassportSectionId[],
+-): Readonly<Record<BusinessPassportSectionId, boolean>> {
+-  const defaults = createDefaultExpandedSections(sectionIds);
+-
+-  if (!expandedSections) {
+-    return defaults;
+-  }
+-
+-  return sectionIds.reduce(
+-    (accumulator, sectionId) => ({
+-      ...accumulator,
+-      [sectionId]: typeof expandedSections[sectionId] === "boolean" ? expandedSections[sectionId] : defaults[sectionId],
+-    }),
+-    {} as Record<BusinessPassportSectionId, boolean>,
+-  );
+-}
+-
+-function safeRead(storageKey: string): PersistedBusinessPassportWorkspaceState | null {
+-  if (typeof window === "undefined") {
+-    return null;
+-  }
+-
+-  const raw = window.localStorage.getItem(storageKey);
+-  if (!raw) {
+-    return null;
+-  }
+-
+-  try {
+-    return JSON.parse(raw) as PersistedBusinessPassportWorkspaceState;
+-  } catch {
+-    return null;
+-  }
+-}
+-
+ export function loadBusinessPassportWorkspacePersistence(input: {
+   readonly storageKey?: string;
+   readonly sectionIds: readonly BusinessPassportSectionId[];
+ }): BusinessPassportWorkspacePersistenceSnapshot {
+-  const storageKey = resolveStorageKey(input.storageKey);
+-  const savedState = safeRead(storageKey);
+-
+-  const defaultExpandedSections = createDefaultExpandedSections(input.sectionIds);
+-
+-  if (!savedState) {
+-    return {
+-      activeSection: null,
+-      expandedSections: defaultExpandedSections,
+-      selectedTab: "overview",
+-      filters: {},
+-      lastVisitedAt: null,
+-    };
+-  }
+-
+-  const activeSection = input.sectionIds.find((sectionId) => sectionId === savedState.activeSection) ?? null;
+-
+-  return {
+-    activeSection,
+-    expandedSections: sanitizeExpandedSections(savedState.expandedSections, input.sectionIds),
+-    selectedTab: typeof savedState.selectedTab === "string" && savedState.selectedTab.length > 0
+-      ? savedState.selectedTab
+-      : "overview",
+-    filters: sanitizeFilters(savedState.filters),
+-    lastVisitedAt: typeof savedState.lastVisitedAt === "string" ? savedState.lastVisitedAt : null,
+-  };
++  return loadWorkspacePersistence<BusinessPassportSectionId, BusinessPassportWorkspaceFilters>({
++    storageKey: input.storageKey,
++    defaultStorageKey: DEFAULT_PERSISTENCE_KEY,
++    sectionIds: input.sectionIds,
++    defaultSelectedTab: "overview",
++    defaultFilters: {},
++    sanitizeFilters: (filters) => sanitizeWorkspaceFilters(filters),
++  });
+ }
+ 
+ export function saveBusinessPassportWorkspacePersistence(input: SaveBusinessPassportWorkspacePersistenceInput): void {
+-  if (typeof window === "undefined") {
+-    return;
+-  }
+-
+-  const storageKey = resolveStorageKey(input.storageKey);
+-
+-  const serialized: PersistedBusinessPassportWorkspaceState = {
++  saveWorkspacePersistence<BusinessPassportSectionId, BusinessPassportWorkspaceFilters>({
++    storageKey: input.storageKey,
++    defaultStorageKey: DEFAULT_PERSISTENCE_KEY,
++    sectionIds: input.sectionIds,
+     activeSection: input.activeSection,
+-    expandedSections: input.sectionIds.reduce(
+-      (accumulator, sectionId) => ({
+-        ...accumulator,
+-        [sectionId]: Boolean(input.expandedSections[sectionId]),
+-      }),
+-      {} as Record<string, boolean>,
+-    ),
++    expandedSections: input.expandedSections,
+     selectedTab: input.selectedTab,
+-    filters: sanitizeFilters(input.filters),
++    filters: input.filters,
+     lastVisitedAt: input.lastVisitedAt,
+-  };
+-
+-  window.localStorage.setItem(storageKey, JSON.stringify(serialized));
++    sanitizeFilters: (filters) => sanitizeWorkspaceFilters(filters),
++  });
+ }

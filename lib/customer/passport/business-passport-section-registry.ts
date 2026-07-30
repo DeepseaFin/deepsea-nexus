@@ -1,3 +1,6 @@
+import { createWorkspaceRegistry } from "@/lib/workspaces/workspace-registry";
+import type { WorkspaceSectionDefinition } from "@/lib/workspaces/workspace.types";
+
 export const BUSINESS_PASSPORT_SECTION_IDS = [
   "identity",
   "ownership",
@@ -39,20 +42,11 @@ export type BusinessPassportCompletionStrategyId =
 
 export type BusinessPassportValidationStrategyId = BusinessPassportCompletionStrategyId;
 
-export interface BusinessPassportSectionRegistryItem {
-  readonly id: BusinessPassportSectionId;
-  readonly title: string;
-  readonly description: string;
-  readonly order: number;
-  readonly workflowOrder?: number;
-  readonly enabled: boolean;
+export interface BusinessPassportSectionRegistryItem extends WorkspaceSectionDefinition<BusinessPassportSectionId> {
   readonly icon: BusinessPassportSectionIconId;
   readonly completionStrategy: BusinessPassportCompletionStrategyId;
   readonly validationStrategy: BusinessPassportValidationStrategyId;
-  readonly navigationVisible: boolean;
   readonly anchorId: string;
-  readonly prerequisites?: readonly BusinessPassportSectionId[];
-  readonly recommended?: boolean;
 }
 
 const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegistryItem[] = [
@@ -197,42 +191,28 @@ const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegist
     anchorId: "passport-activity",
     prerequisites: ["workflow"],
   },
-] as const;
+];
 
-function sortedSections(): readonly BusinessPassportSectionRegistryItem[] {
-  return [...BUSINESS_PASSPORT_SECTION_REGISTRY].sort(
-    (left, right) => (left.workflowOrder ?? left.order) - (right.workflowOrder ?? right.order),
-  );
-}
+const sectionRegistry = createWorkspaceRegistry<BusinessPassportSectionId, BusinessPassportSectionRegistryItem>(
+  BUSINESS_PASSPORT_SECTION_REGISTRY,
+);
 
 export function getAllSections(): readonly BusinessPassportSectionRegistryItem[] {
-  return sortedSections();
+  return sectionRegistry.getAllSections();
 }
 
 export function getSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
-  return BUSINESS_PASSPORT_SECTION_REGISTRY.find((section) => section.id === id);
+  return sectionRegistry.getSection(id);
 }
 
 export function getEnabledSections(): readonly BusinessPassportSectionRegistryItem[] {
-  return sortedSections().filter((section) => section.enabled);
+  return sectionRegistry.getEnabledSections();
 }
 
 export function getNextSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
-  const enabledSections = getEnabledSections();
-  const currentIndex = enabledSections.findIndex((section) => section.id === id);
-  if (currentIndex < 0) {
-    return undefined;
-  }
-
-  return enabledSections[currentIndex + 1];
+  return sectionRegistry.getNextSection(id);
 }
 
 export function getPreviousSection(id: BusinessPassportSectionId): BusinessPassportSectionRegistryItem | undefined {
-  const enabledSections = getEnabledSections();
-  const currentIndex = enabledSections.findIndex((section) => section.id === id);
-  if (currentIndex <= 0) {
-    return undefined;
-  }
-
-  return enabledSections[currentIndex - 1];
+  return sectionRegistry.getPreviousSection(id);
 }
