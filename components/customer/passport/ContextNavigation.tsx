@@ -12,6 +12,7 @@ export interface ContextNavigationItem {
   readonly disabled?: boolean;
   readonly dirty?: boolean;
   readonly validation?: BusinessPassportValidationStatus;
+  readonly recommended?: boolean;
 }
 
 export interface ContextNavigationProps {
@@ -21,6 +22,7 @@ export interface ContextNavigationProps {
   readonly onNextSection?: () => void;
   readonly canGoPrevious?: boolean;
   readonly canGoNext?: boolean;
+  readonly recommendedSectionId?: string | null;
 }
 
 function validationClass(status: BusinessPassportValidationStatus | undefined): string {
@@ -46,6 +48,7 @@ export default function ContextNavigation({
   onNextSection,
   canGoPrevious = false,
   canGoNext = false,
+  recommendedSectionId,
 }: ContextNavigationProps) {
   const visibleItems = useMemo(() => {
     const orderById = new Map(getAllSections().map((section) => [section.id, section.order] as const));
@@ -79,7 +82,16 @@ export default function ContextNavigation({
       <nav aria-label="Section navigation" className="mt-3">
         <ul className="flex flex-wrap gap-2">
           {visibleItems.map((item) => {
-            const stateLabel = item.completed ? "Completed" : item.disabled ? "Disabled" : item.dirty ? "Edited" : "Open";
+            const isRecommended = item.recommended ?? (recommendedSectionId != null && recommendedSectionId === item.id);
+            const stateLabel = item.completed
+              ? "Completed"
+              : item.disabled
+                ? "Blocked"
+                : isRecommended
+                  ? "Recommended"
+                  : item.dirty
+                    ? "Edited"
+                    : "Open";
 
             return (
               <li key={item.id}>

@@ -59,6 +59,13 @@ export interface BusinessPassportWorkspaceLoadingState {
   readonly isLoading: boolean;
 }
 
+export interface BusinessPassportWorkflowState {
+  readonly availableSections: readonly BusinessPassportSectionId[];
+  readonly blockedSections: readonly BusinessPassportSectionId[];
+  readonly completedSections: readonly BusinessPassportSectionId[];
+  readonly nextRecommendedSection: BusinessPassportSectionId | null;
+}
+
 export type BusinessPassportWorkspaceFilters = Readonly<Record<string, string | number | boolean | readonly string[]>>;
 
 export interface BusinessPassportWorkspaceViewState {
@@ -84,6 +91,10 @@ export interface BusinessPassportWorkspaceOrchestrator {
   readonly completion: BusinessPassportCompletionState;
   readonly validation: BusinessPassportValidationState;
   readonly dirtyState: BusinessPassportDirtyState;
+  readonly availableSections: readonly BusinessPassportSectionId[];
+  readonly blockedSections: readonly BusinessPassportSectionId[];
+  readonly nextRecommendedSection: BusinessPassportSectionId | null;
+  readonly workflow: BusinessPassportWorkflowState;
   readonly viewState: BusinessPassportWorkspaceViewState;
   readonly workspaceActions: readonly BusinessPassportWorkspaceAction[];
   readonly setActiveSection: (sectionId: BusinessPassportSectionId) => void;
@@ -99,4 +110,5 @@ export interface BusinessPassportWorkspaceOrchestrator {
   readonly markSectionCompleted: (sectionId: BusinessPassportSectionId, completed: boolean) => void;
   readonly setSectionValidation: (sectionId: BusinessPassportSectionId, status: BusinessPassportValidationStatus) => void;
   readonly setSectionDirty: (sectionId: BusinessPassportSectionId, dirty: boolean) => void;
+  readonly canNavigate: (sectionId: BusinessPassportSectionId) => boolean;
 }

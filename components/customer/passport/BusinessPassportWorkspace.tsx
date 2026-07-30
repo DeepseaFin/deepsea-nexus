@@ -294,8 +294,9 @@ export default function BusinessPassportWorkspace({
         disabled: section.disabled,
         dirty: section.dirty,
         validation: section.validationStatus,
+        recommended: orchestrator.nextRecommendedSection === section.id,
       })),
-    [orchestrator.sections],
+    [orchestrator.nextRecommendedSection, orchestrator.sections],
   );
 
   const actionItems = useMemo<readonly PassportQuickAction[]>(
@@ -374,6 +375,7 @@ export default function BusinessPassportWorkspace({
           onNextSection={orchestrator.goToNextSection}
           canGoPrevious={canGoPrevious}
           canGoNext={canGoNext}
+          recommendedSectionId={orchestrator.nextRecommendedSection}
         />
       </section>
 

@@ -7,6 +7,10 @@ import {
   getPreviousSection,
 } from "@/lib/customer/passport/business-passport-section-registry";
 import {
+  canNavigateToSection,
+  evaluateBusinessPassportWorkflow,
+} from "@/lib/customer/passport/business-passport-workflow-engine";
+import {
   loadBusinessPassportWorkspacePersistence,
   saveBusinessPassportWorkspacePersistence,
 } from "@/lib/customer/passport/business-passport-workspace-persistence";
@@ -188,16 +192,29 @@ export function useBusinessPassportWorkspaceOrchestrator(
     };
   }, [sections]);
 
+  const workflow = useMemo(
+    () =>
+      evaluateBusinessPassportWorkflow({
+        sections,
+      }),
+    [sections],
+  );
+
+  const canNavigate = useCallback(
+    (sectionId: BusinessPassportSectionId) => canNavigateToSection(sectionId, workflow),
+    [workflow],
+  );
+
   const setActiveSection = useCallback(
     (sectionId: BusinessPassportSectionId) => {
       const target = sections.find((section) => section.id === sectionId);
-      if (!target || target.disabled) {
+      if (!target || target.disabled || !canNavigate(sectionId)) {
         return;
       }
 
       setActiveSectionState(sectionId);
     },
-    [sections],
+    [canNavigate, sections],
   );
 
   const jumpToSection = useCallback(
@@ -208,18 +225,30 @@ export function useBusinessPassportWorkspaceOrchestrator(
   );
 
   const goToPreviousSection = useCallback(() => {
-    const previousSection = getPreviousSection(activeSection)?.id;
-    if (previousSection) {
-      setActiveSectionState(previousSection);
+    let previousSection = getPreviousSection(activeSection)?.id;
+
+    while (previousSection) {
+      if (canNavigate(previousSection)) {
+        setActiveSectionState(previousSection);
+        return;
+      }
+
+      previousSection = getPreviousSection(previousSection)?.id;
     }
-  }, [activeSection]);
+  }, [activeSection, canNavigate]);
 
   const goToNextSection = useCallback(() => {
-    const nextSection = getNextSection(activeSection)?.id;
-    if (nextSection) {
-      setActiveSectionState(nextSection);
+    let nextSection = getNextSection(activeSection)?.id;
+
+    while (nextSection) {
+      if (canNavigate(nextSection)) {
+        setActiveSectionState(nextSection);
+        return;
+      }
+
+      nextSection = getNextSection(nextSection)?.id;
     }
-  }, [activeSection]);
+  }, [activeSection, canNavigate]);
 
   const markSectionCompleted = useCallback((sectionId: BusinessPassportSectionId, completed: boolean) => {
     setSectionStateById((currentState) => ({
@@ -303,8 +332,15 @@ export function useBusinessPassportWorkspaceOrchestrator(
   }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
 
   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
-    const previousSectionId = getPreviousSection(activeSection)?.id;
-    const nextSectionId = getNextSection(activeSection)?.id;
+    let previousSectionId = getPreviousSection(activeSection)?.id;
+    while (previousSectionId && !canNavigate(previousSectionId)) {
+      previousSectionId = getPreviousSection(previousSectionId)?.id;
+    }
+
+    let nextSectionId = getNextSection(activeSection)?.id;
+    while (nextSectionId && !canNavigate(nextSectionId)) {
+      nextSectionId = getNextSection(nextSectionId)?.id;
+    }
 
     const baseActions: readonly BusinessPassportWorkspaceAction[] = [
       {
@@ -342,17 +378,32 @@ export function useBusinessPassportWorkspaceOrchestrator(
     }));
 
     return [...baseActions, ...customActions];
-  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
+  }, [activeSection, canNavigate, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
+
+  const workflowDisabledSet = useMemo(() => new Set(workflow.blockedSections), [workflow.blockedSections]);
+
+  const workflowAwareSections = useMemo(
+    () =>
+      sections.map((section) => ({
+        ...section,
+        disabled: section.disabled || workflowDisabledSet.has(section.id),
+      })),
+    [sections, workflowDisabledSet],
+  );
 
   return {
     loadingState: {
       isLoading: Boolean(input.isLoading),
     },
     activeSection,
-    sections,
+    sections: workflowAwareSections,
     completion,
     validation,
     dirtyState,
+    availableSections: workflow.availableSections,
+    blockedSections: workflow.blockedSections,
+    nextRecommendedSection: workflow.nextRecommendedSection,
+    workflow,
     viewState: {
       expandedSections,
       selectedTab,
@@ -373,5 +424,6 @@ export function useBusinessPassportWorkspaceOrchestrator(
     markSectionCompleted,
     setSectionValidation,
     setSectionDirty,
+    canNavigate,
   };
 }
