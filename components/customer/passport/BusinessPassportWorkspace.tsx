@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo } from "react";
 import ActivitySummary, { type ActivitySummaryItem } from "@/components/customer/passport/ActivitySummary";
 import AIInsightPlaceholderPanel from "@/components/customer/passport/AIInsightPlaceholderPanel";
 import BusinessIdentityCard from "@/components/customer/passport/BusinessIdentityCard";
@@ -12,6 +15,12 @@ import PassportQuickActions, { type PassportQuickAction } from "@/components/cus
 import PassportTimeline, { type PassportTimelineEntry } from "@/components/customer/passport/PassportTimeline";
 import RelationshipHealthCard from "@/components/customer/passport/RelationshipHealthCard";
 import WorkflowSummary, { type WorkflowSummaryItem } from "@/components/customer/passport/WorkflowSummary";
+import UICard from "@/components/ui/Card";
+import {
+  type BusinessPassportSectionId,
+  type BusinessPassportWorkspaceSectionConfig,
+} from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+import { useBusinessPassportWorkspaceOrchestrator } from "@/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator";
 
 export interface BusinessPassportWorkspaceProps {
   readonly currentJourneyStep?: JourneyStepId;
@@ -207,18 +216,96 @@ export default function BusinessPassportWorkspace({
   timelineEntries = defaultTimelineEntries,
   quickActions = defaultQuickActions,
 }: BusinessPassportWorkspaceProps) {
-  const contextSections = [
-    { id: "passport-identity", label: "Identity" },
-    { id: "passport-health", label: "Health" },
-    { id: "passport-metrics", label: "Metrics" },
-    { id: "passport-documents", label: "Documents" },
-    { id: "passport-evidence", label: "Evidence" },
-    { id: "passport-knowledge", label: "Knowledge" },
-    { id: "passport-workflow", label: "Workflow" },
-    { id: "passport-activity", label: "Activity" },
-    { id: "passport-ai", label: "AI Placeholder" },
-    { id: "passport-actions", label: "Quick Actions" },
-  ] as const;
+  const orchestratorSections = useMemo<readonly BusinessPassportWorkspaceSectionConfig[]>(
+    () => [
+      { id: "identity", label: "Identity", anchorId: "passport-identity", completed: true, validation: "valid" },
+      { id: "ownership", label: "Ownership", anchorId: "passport-identity", disabled: true, validation: "unknown" },
+      { id: "documents", label: "Documents", anchorId: "passport-documents", dirty: true, validation: "warning" },
+      { id: "relationships", label: "Relationships", anchorId: "passport-health", completed: true, validation: "valid" },
+      { id: "compliance", label: "Compliance", anchorId: "passport-evidence", validation: "warning" },
+      { id: "financials", label: "Financials", anchorId: "passport-metrics", completed: true, validation: "valid" },
+      { id: "evidence", label: "Evidence", anchorId: "passport-evidence", validation: "warning" },
+      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge", completed: true, validation: "valid" },
+      { id: "workflow", label: "Workflow", anchorId: "passport-workflow", validation: "warning" },
+      { id: "activity", label: "Activity", anchorId: "passport-activity", completed: true, validation: "valid" },
+    ],
+    [],
+  );
+
+  const orchestrator = useBusinessPassportWorkspaceOrchestrator({
+    sections: orchestratorSections,
+    initialActiveSection: "identity",
+    actions: quickActions.map((action) => ({
+      id: action.id,
+      label: action.label,
+      variant: action.variant,
+    })),
+    isLoading: false,
+  });
+
+  const contextSections = useMemo(
+    () =>
+      orchestrator.sections.map((section) => ({
+        id: section.id,
+        label: section.label,
+        active: section.active,
+        completed: section.completed,
+        disabled: section.disabled,
+        dirty: section.dirty,
+        validation: section.validation,
+      })),
+    [orchestrator.sections],
+  );
+
+  const actionItems = useMemo<readonly PassportQuickAction[]>(
+    () =>
+      orchestrator.workspaceActions
+        .filter((action) => action.id.startsWith("q-"))
+        .map((action) => ({
+          id: action.id,
+          label: action.label,
+          variant: action.variant === "danger" ? "ghost" : action.variant,
+          disabled: action.disabled,
+        })),
+    [orchestrator.workspaceActions],
+  );
+
+  const actionById = useMemo(() => {
+    return new Map(orchestrator.workspaceActions.map((action) => [action.id, action] as const));
+  }, [orchestrator.workspaceActions]);
+
+  const canGoPrevious = useMemo(() => {
+    const enabledSections = orchestrator.sections.filter((section) => !section.disabled);
+    const activeIndex = enabledSections.findIndex((section) => section.id === orchestrator.activeSection);
+    return activeIndex > 0;
+  }, [orchestrator.activeSection, orchestrator.sections]);
+
+  const canGoNext = useMemo(() => {
+    const enabledSections = orchestrator.sections.filter((section) => !section.disabled);
+    const activeIndex = enabledSections.findIndex((section) => section.id === orchestrator.activeSection);
+    return activeIndex >= 0 && activeIndex < enabledSections.length - 1;
+  }, [orchestrator.activeSection, orchestrator.sections]);
+
+  const jumpToSection = (sectionId: string) => {
+    const typedSectionId = sectionId as BusinessPassportSectionId;
+    const targetSection = orchestrator.sections.find((section) => section.id === typedSectionId);
+
+    if (!targetSection || targetSection.disabled) {
+      return;
+    }
+
+    orchestrator.jumpToSection(typedSectionId);
+
+    const anchorId = targetSection.anchorId;
+    if (!anchorId || typeof document === "undefined") {
+      return;
+    }
+
+    const sectionElement = document.getElementById(anchorId);
+    if (sectionElement) {
+      sectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -238,8 +325,43 @@ export default function BusinessPassportWorkspace({
       </section>
 
       <section id="passport-context" aria-label="Business passport context links">
-        <ContextNavigation items={contextSections} />
+        <ContextNavigation
+          items={contextSections}
+          onSelectSection={jumpToSection}
+          onPreviousSection={orchestrator.goToPreviousSection}
+          onNextSection={orchestrator.goToNextSection}
+          canGoPrevious={canGoPrevious}
+          canGoNext={canGoNext}
+        />
       </section>
+
+      <UICard variant="subtle" className="p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Completion</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.completion.percent}%</p>
+            <p className="text-xs text-slate-400">
+              {orchestrator.completion.completedSections}/{orchestrator.completion.totalSections} sections complete
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Validation</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.validation.validSections} Valid</p>
+            <p className="text-xs text-slate-400">
+              {orchestrator.validation.warningSections} warning • {orchestrator.validation.errorSections} error
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Dirty State</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.dirtyState.isDirty ? "Changes Pending" : "Clean"}</p>
+            <p className="text-xs text-slate-400">
+              {orchestrator.dirtyState.dirtySections.length} section{orchestrator.dirtyState.dirtySections.length === 1 ? "" : "s"} marked
+            </p>
+          </div>
+        </div>
+      </UICard>
 
       <section id="passport-metrics" aria-label="Business passport metrics">
         <BusinessMetrics metrics={metrics} />
@@ -298,7 +420,13 @@ export default function BusinessPassportWorkspace({
           <PassportTimeline entries={timelineEntries} />
         </section>
         <section id="passport-actions" aria-label="Passport quick actions section">
-          <PassportQuickActions actions={quickActions} />
+          <PassportQuickActions
+            actions={actionItems}
+            onAction={(actionId) => {
+              const action = actionById.get(actionId);
+              action?.execute?.();
+            }}
+          />
         </section>
       </div>
     </div>
