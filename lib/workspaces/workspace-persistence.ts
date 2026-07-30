@@ -9,6 +9,10 @@ import {
   WORKSPACE_EVENT_TYPES,
   type WorkspaceEventBus,
 } from "@/lib/workspaces/workspace-event-bus";
+import type {
+  WorkspaceCommand,
+  WorkspaceCommandEngine,
+} from "@/lib/workspaces/workspace-command-engine";
 
 interface WorkspaceStoredState<TFilters> {
   readonly activeSection: string | null;
@@ -41,7 +45,30 @@ export interface SaveWorkspacePersistenceInput<TSectionId extends string, TFilte
   readonly sanitizeFilters: (filters: unknown) => TFilters;
   readonly workspaceId?: string;
   readonly eventBus?: WorkspaceEventBus;
+  readonly commandEngine?: WorkspaceCommandEngine;
 }
+
+export const WORKSPACE_PERSISTENCE_SAVE_COMMAND = "workspace.persistence.save";
+
+interface WorkspacePersistenceSavePayload<TSectionId extends string, TFilters> {
+  readonly storageKey?: string;
+  readonly defaultStorageKey: string;
+  readonly sectionIds: readonly TSectionId[];
+  readonly activeSection: TSectionId;
+  readonly expandedSections: Readonly<Record<TSectionId, boolean>>;
+  readonly selectedTab: string;
+  readonly filters: TFilters;
+  readonly lastVisitedAt: string;
+  readonly sanitizeFilters: (filters: unknown) => TFilters;
+  readonly workspaceId?: string;
+  readonly eventBus?: WorkspaceEventBus;
+}
+
+type WorkspacePersistenceSaveCommand<TSectionId extends string, TFilters> = WorkspaceCommand<
+  WorkspacePersistenceSavePayload<TSectionId, TFilters>
+>;
+
+const registeredPersistenceCommandEngines = new WeakSet<WorkspaceCommandEngine>();
 
 export function sanitizeWorkspaceFilters(filters: unknown): WorkspaceFilters {
   if (!filters || typeof filters !== "object" || Array.isArray(filters)) {
@@ -194,6 +221,50 @@ export function loadWorkspacePersistence<TSectionId extends string, TFilters>(
 export function saveWorkspacePersistence<TSectionId extends string, TFilters>(
   input: SaveWorkspacePersistenceInput<TSectionId, TFilters>,
 ): void {
+  if (input.commandEngine) {
+    ensureWorkspacePersistenceSaveCommandRegistered<TSectionId, TFilters>(input.commandEngine);
+
+    const commandResult = input.commandEngine.execute<WorkspacePersistenceSaveCommand<TSectionId, TFilters>, void>({
+      type: WORKSPACE_PERSISTENCE_SAVE_COMMAND,
+      workspaceId: input.workspaceId,
+      payload: {
+        storageKey: input.storageKey,
+        defaultStorageKey: input.defaultStorageKey,
+        sectionIds: input.sectionIds,
+        activeSection: input.activeSection,
+        expandedSections: input.expandedSections,
+        selectedTab: input.selectedTab,
+        filters: input.filters,
+        lastVisitedAt: input.lastVisitedAt,
+        sanitizeFilters: input.sanitizeFilters,
+        workspaceId: input.workspaceId,
+        eventBus: input.eventBus,
+      },
+    });
+
+    if (commandResult.success) {
+      return;
+    }
+  }
+
+  persistWorkspaceState(input);
+}
+
+function persistWorkspaceState<TSectionId extends string, TFilters>(
+  input: {
+    readonly storageKey?: string;
+    readonly defaultStorageKey: string;
+    readonly sectionIds: readonly TSectionId[];
+    readonly activeSection: TSectionId;
+    readonly expandedSections: Readonly<Record<TSectionId, boolean>>;
+    readonly selectedTab: string;
+    readonly filters: TFilters;
+    readonly lastVisitedAt: string;
+    readonly sanitizeFilters: (filters: unknown) => TFilters;
+    readonly workspaceId?: string;
+    readonly eventBus?: WorkspaceEventBus;
+  },
+): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -248,4 +319,21 @@ export function saveWorkspacePersistence<TSectionId extends string, TFilters>(
       },
     });
   }
+}
+
+export function ensureWorkspacePersistenceSaveCommandRegistered<TSectionId extends string, TFilters>(
+  commandEngine: WorkspaceCommandEngine,
+): void {
+  if (registeredPersistenceCommandEngines.has(commandEngine)) {
+    return;
+  }
+
+  commandEngine.registerHandler<WorkspacePersistenceSaveCommand<TSectionId, TFilters>, void>(
+    WORKSPACE_PERSISTENCE_SAVE_COMMAND,
+    (command) => {
+      persistWorkspaceState(command.payload);
+    },
+  );
+
+  registeredPersistenceCommandEngines.add(commandEngine);
 }

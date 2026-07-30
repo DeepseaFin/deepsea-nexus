@@ -5,6 +5,10 @@ export const WORKSPACE_EVENT_TYPES = {
   CompletionChanged: "workspace.completion-changed",
   WorkflowChanged: "workspace.workflow-changed",
   Persisted: "workspace.persisted",
+  CommandValidated: "workspace.command.validated",
+  CommandBeforeExecute: "workspace.command.before-execute",
+  CommandAfterExecute: "workspace.command.after-execute",
+  CommandFailed: "workspace.command.failed",
 } as const;
 
 export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[keyof typeof WORKSPACE_EVENT_TYPES];
@@ -45,6 +49,25 @@ export type WorkspaceEventMap = {
     readonly activeSection: string;
     readonly selectedTab: string;
     readonly lastVisitedAt: string;
+  };
+  [WORKSPACE_EVENT_TYPES.CommandValidated]: {
+    readonly commandType: string;
+    readonly valid: boolean;
+    readonly issueCodes: readonly string[];
+  };
+  [WORKSPACE_EVENT_TYPES.CommandBeforeExecute]: {
+    readonly commandType: string;
+    readonly commandId: string;
+  };
+  [WORKSPACE_EVENT_TYPES.CommandAfterExecute]: {
+    readonly commandType: string;
+    readonly commandId: string;
+    readonly success: boolean;
+  };
+  [WORKSPACE_EVENT_TYPES.CommandFailed]: {
+    readonly commandType: string;
+    readonly commandId: string;
+    readonly errorMessage: string;
   };
 };
 
