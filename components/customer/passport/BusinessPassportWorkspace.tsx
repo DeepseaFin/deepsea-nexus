@@ -20,6 +20,8 @@ import {
   type BusinessPassportSectionId,
   type BusinessPassportWorkspaceSectionConfig,
 } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
+import { computeBusinessPassportSectionStates } from "@/lib/customer/passport/business-passport-section-completion-engine";
 import { useBusinessPassportWorkspaceOrchestrator } from "@/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator";
 
 export interface BusinessPassportWorkspaceProps {
@@ -218,28 +220,87 @@ export default function BusinessPassportWorkspace({
 }: BusinessPassportWorkspaceProps) {
   const orchestratorSections = useMemo<readonly BusinessPassportWorkspaceSectionConfig[]>(
     () => [
-      { id: "identity", label: "Identity", anchorId: "passport-identity", completed: true, validation: "valid" },
-      { id: "ownership", label: "Ownership", anchorId: "passport-identity", disabled: true, validation: "unknown" },
-      { id: "documents", label: "Documents", anchorId: "passport-documents", dirty: true, validation: "warning" },
-      { id: "relationships", label: "Relationships", anchorId: "passport-health", completed: true, validation: "valid" },
-      { id: "compliance", label: "Compliance", anchorId: "passport-evidence", validation: "warning" },
-      { id: "financials", label: "Financials", anchorId: "passport-metrics", completed: true, validation: "valid" },
-      { id: "evidence", label: "Evidence", anchorId: "passport-evidence", validation: "warning" },
-      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge", completed: true, validation: "valid" },
-      { id: "workflow", label: "Workflow", anchorId: "passport-workflow", validation: "warning" },
-      { id: "activity", label: "Activity", anchorId: "passport-activity", completed: true, validation: "valid" },
+      { id: "identity", label: "Identity", anchorId: "passport-identity" },
+      { id: "ownership", label: "Ownership", anchorId: "passport-identity" },
+      { id: "documents", label: "Documents", anchorId: "passport-documents" },
+      { id: "relationships", label: "Relationships", anchorId: "passport-health" },
+      { id: "compliance", label: "Compliance", anchorId: "passport-evidence" },
+      { id: "financials", label: "Financials", anchorId: "passport-metrics" },
+      { id: "evidence", label: "Evidence", anchorId: "passport-evidence" },
+      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge" },
+      { id: "workflow", label: "Workflow", anchorId: "passport-workflow" },
+      { id: "activity", label: "Activity", anchorId: "passport-activity" },
     ],
     [],
   );
 
+  const computedSectionStates = useMemo(
+    () =>
+      computeBusinessPassportSectionStates({
+        sectionConfigs: orchestratorSections,
+        passportPanelModel: defaultPassportPanelModel,
+        businessIdentity: {
+          legalName: business.legalName,
+          registrationNumber: business.registrationNumber,
+          jurisdiction: business.jurisdiction,
+          country: business.jurisdiction,
+          incorporationDate: business.incorporationDate,
+          entityType: business.legalForm,
+          industry: business.sector,
+        },
+        documentState: documents.map((item) => ({
+          status: item.status,
+          name: item.category,
+        })),
+        evidenceState: evidenceItems.map((item) => ({
+          status: item.status,
+          name: item.category,
+        })),
+        relationshipState: {
+          score: relationshipHealth.score,
+          posture: relationshipHealth.posture,
+          watchItems: relationshipHealth.watchItems,
+        },
+        workflowState: workflowStages.map((item) => ({
+          status: item.status,
+          name: item.stage,
+        })),
+        knowledgeState: knowledgeSignals.map((item) => ({
+          confidence: item.confidence,
+          title: item.title,
+        })),
+        activityCount: activityItems.length,
+      }),
+    [
+      activityItems.length,
+      business.incorporationDate,
+      business.jurisdiction,
+      business.legalForm,
+      business.legalName,
+      business.registrationNumber,
+      business.sector,
+      documents,
+      evidenceItems,
+      knowledgeSignals,
+      orchestratorSections,
+      relationshipHealth.posture,
+      relationshipHealth.score,
+      relationshipHealth.watchItems,
+      workflowStages,
+    ],
+  );
+
   const orchestrator = useBusinessPassportWorkspaceOrchestrator({
-    sections: orchestratorSections,
+    sectionStates: computedSectionStates,
     initialActiveSection: "identity",
     actions: quickActions.map((action) => ({
       id: action.id,
       label: action.label,
       variant: action.variant,
     })),
+    initialDirtyBySectionId: {
+      documents: true,
+    },
     isLoading: false,
   });
 
@@ -249,10 +310,10 @@ export default function BusinessPassportWorkspace({
         id: section.id,
         label: section.label,
         active: section.active,
-        completed: section.completed,
+        completed: section.completionStatus === "completed",
         disabled: section.disabled,
         dirty: section.dirty,
-        validation: section.validation,
+        validation: section.validationStatus,
       })),
     [orchestrator.sections],
   );
@@ -339,7 +400,7 @@ export default function BusinessPassportWorkspace({
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Completion</p>
-            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.completion.percent}%</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.completion.overallPercentage}%</p>
             <p className="text-xs text-slate-400">
               {orchestrator.completion.completedSections}/{orchestrator.completion.totalSections} sections complete
             </p>
@@ -347,7 +408,7 @@ export default function BusinessPassportWorkspace({
 
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Validation</p>
-            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.validation.validSections} Valid</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.validation.successSections} Success</p>
             <p className="text-xs text-slate-400">
               {orchestrator.validation.warningSections} warning • {orchestrator.validation.errorSections} error
             </p>

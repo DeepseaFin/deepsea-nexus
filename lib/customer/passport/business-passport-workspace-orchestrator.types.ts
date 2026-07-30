@@ -15,22 +15,26 @@ export const BUSINESS_PASSPORT_SECTION_IDS = [
 
 export type BusinessPassportSectionId = (typeof BUSINESS_PASSPORT_SECTION_IDS)[number];
 
-export type BusinessPassportValidationStatus = "valid" | "warning" | "error" | "unknown";
+export type BusinessPassportSectionCompletionStatus = "not_started" | "in_progress" | "completed";
+
+export type BusinessPassportValidationStatus = "success" | "warning" | "error";
 
 export interface BusinessPassportWorkspaceSectionConfig {
   readonly id: BusinessPassportSectionId;
   readonly label: string;
   readonly anchorId?: string;
   readonly disabled?: boolean;
-  readonly completed?: boolean;
-  readonly dirty?: boolean;
-  readonly validation?: BusinessPassportValidationStatus;
 }
 
-export interface BusinessPassportWorkspaceSectionState extends BusinessPassportWorkspaceSectionConfig {
-  readonly completed: boolean;
+export interface BusinessPassportWorkspaceSectionComputedState extends BusinessPassportWorkspaceSectionConfig {
+  readonly completionPercentage: number;
+  readonly completionStatus: BusinessPassportSectionCompletionStatus;
+  readonly validationStatus: BusinessPassportValidationStatus;
+  readonly missingRequiredFields: readonly string[];
+}
+
+export interface BusinessPassportWorkspaceSectionState extends BusinessPassportWorkspaceSectionComputedState {
   readonly dirty: boolean;
-  readonly validation: BusinessPassportValidationStatus;
   readonly disabled: boolean;
   readonly active: boolean;
 }
@@ -44,14 +48,16 @@ export interface BusinessPassportWorkspaceAction {
 }
 
 export interface BusinessPassportCompletionState {
+  readonly overallPercentage: number;
   readonly completedSections: number;
   readonly totalSections: number;
-  readonly percent: number;
+  readonly inProgressSections: number;
+  readonly notStartedSections: number;
 }
 
 export interface BusinessPassportValidationState {
   readonly bySection: Readonly<Record<BusinessPassportSectionId, BusinessPassportValidationStatus>>;
-  readonly validSections: number;
+  readonly successSections: number;
   readonly warningSections: number;
   readonly errorSections: number;
 }
@@ -66,9 +72,10 @@ export interface BusinessPassportWorkspaceLoadingState {
 }
 
 export interface UseBusinessPassportWorkspaceOrchestratorInput {
-  readonly sections: readonly BusinessPassportWorkspaceSectionConfig[];
+  readonly sectionStates: readonly BusinessPassportWorkspaceSectionComputedState[];
   readonly initialActiveSection?: BusinessPassportSectionId;
-  readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute" | "disabled">[];
+  readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute">[];
+  readonly initialDirtyBySectionId?: Partial<Record<BusinessPassportSectionId, boolean>>;
   readonly isLoading?: boolean;
 }
 
