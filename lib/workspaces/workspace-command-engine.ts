@@ -4,6 +4,11 @@ import {
   type WorkspaceAuditMiddlewareState,
 } from "@/lib/workspaces/workspace-audit-engine";
 import {
+  getWorkspaceChangeRecorder,
+  createWorkspaceChangeMiddleware,
+  type WorkspaceChangeMiddlewareState,
+} from "@/lib/workspaces/workspace-change-engine";
+import {
   getWorkspaceEventBus,
   nowWorkspaceEventTimestamp,
   resolveWorkspaceId,
@@ -74,6 +79,7 @@ export type WorkspaceCommandAfterExecuteHook = (
 interface WorkspaceCommandPipelineState extends BaseWorkspaceCommandPipelineState {
   validation?: WorkspaceValidationResult;
   audit?: WorkspaceAuditMiddlewareState;
+  change?: WorkspaceChangeMiddlewareState;
 }
 
 interface WorkspaceCommandEngineState {
@@ -115,10 +121,6 @@ export interface CreateWorkspaceCommandEngineOptions {
 
 function invalidResult(issue: WorkspaceValidationIssue): WorkspaceValidationResult {
   return { valid: false, issues: [issue] };
-}
-
-function validResult(): WorkspaceValidationResult {
-  return { valid: true, issues: [] };
 }
 
 function mergeValidationResults(results: readonly WorkspaceValidationResult[]): WorkspaceValidationResult {
@@ -183,6 +185,20 @@ function createEventId(workspaceId: string, commandId: string, label: string, in
   return `${workspaceId}:${commandId}:${label}:${index}`;
 }
 
+function createAuditOutcomeResult(
+  execution: {
+    command: WorkspaceCommand;
+    context: WorkspaceCommandContext;
+    state: WorkspaceCommandPipelineState;
+  },
+  outcome: WorkspaceCommandResult,
+): WorkspaceCommandResult {
+  return {
+    ...outcome,
+    validation: execution.state.validation ?? outcome.validation,
+  };
+}
+
 export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEngineOptions): WorkspaceCommandEngine {
   const handlers = new Map<string, WorkspaceCommandHandler>();
   const validators = new Map<string, Set<WorkspaceCommandValidator>>();
@@ -194,6 +210,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
   > = createWorkspaceCommandPipeline();
   let middlewareCounter = 0;
   const auditRecorder = getWorkspaceAuditRecorder();
+  const changeRecorder = getWorkspaceChangeRecorder();
 
   const state: WorkspaceCommandEngineState = {
     eventBus: options?.eventBus ?? getWorkspaceEventBus(),
@@ -239,11 +256,6 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     return validation;
   };
 
-  const validate: WorkspaceCommandEngine["validate"] = (command) => {
-    const context = createDefaultContext(command, state);
-    return validateCommand(command, context);
-  };
-
   const validationMiddleware: WorkspaceCommandMiddleware<
     WorkspaceCommand,
     WorkspaceCommandContext,
@@ -279,13 +291,13 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     },
   };
 
-  const auditMiddleware: WorkspaceCommandMiddleware<
+  const auditStartMiddleware: WorkspaceCommandMiddleware<
     WorkspaceCommand,
     WorkspaceCommandContext,
     WorkspaceCommandResult,
     WorkspaceCommandPipelineState
   > = {
-    id: "workspace.command.middleware.audit",
+    id: "workspace.command.middleware.audit-start",
     phase: "pre-handler",
     beforeExecute: (execution) => {
       const timestamp = execution.context.occurredAt;
@@ -322,11 +334,32 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
         }),
       );
     },
+  };
+
+  const changeMiddleware = createWorkspaceChangeMiddleware<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  >({
+    recorder: changeRecorder,
+    id: "workspace.command.middleware.change-tracking",
+  });
+
+  const auditCompletionMiddleware: WorkspaceCommandMiddleware<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  > = {
+    id: "workspace.command.middleware.audit-completion",
+    phase: "post-handler",
     afterExecute: (execution, outcome) => {
       if (!execution.state.audit) {
         return;
       }
 
+      const finalOutcome = createAuditOutcomeResult(execution, outcome);
       auditRecorder.record(
         buildWorkspaceAuditEntry({
           command: execution.command,
@@ -336,53 +369,13 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
           workspaceId: execution.context.workspaceId,
           commandId: execution.context.commandId,
           commandName: execution.command.type,
-          executionResult: outcome.success ? "completed" : "failed",
+          executionResult: finalOutcome.success ? "completed" : "failed",
           policyEvaluation: execution.state.policyEvaluation,
           emittedEventIds: execution.state.audit.emittedEventIds,
           warnings: execution.state.audit.warnings,
           errors: execution.state.audit.errors,
         }),
       );
-    },
-    onError: (execution, error) => {
-      if (!execution.state.audit) {
-        execution.state.audit = {
-          entryId: `${execution.context.workspaceId}:${execution.context.commandId}:${execution.context.occurredAt}`,
-          entryTimestamp: execution.context.occurredAt,
-          warnings: [],
-          errors: [],
-          emittedEventIds: [],
-          policyOutcome: execution.state.policyEvaluation
-            ? {
-                allowed: execution.state.policyEvaluation.allowed,
-                policyIds: [...execution.state.policyEvaluation.policyIds],
-                warnings: [...execution.state.policyEvaluation.warnings],
-                advisoryMessages: [...execution.state.policyEvaluation.advisoryMessages],
-              }
-            : null,
-        };
-      }
-
-      execution.state.audit.errors = [...execution.state.audit.errors, error.message];
-
-      auditRecorder.record(
-        buildWorkspaceAuditEntry({
-          command: execution.command,
-          context: execution.context,
-          state: execution.state,
-          timestamp: execution.state.audit.entryTimestamp,
-          workspaceId: execution.context.workspaceId,
-          commandId: execution.context.commandId,
-          commandName: execution.command.type,
-          executionResult: "failed",
-          policyEvaluation: execution.state.policyEvaluation,
-          emittedEventIds: execution.state.audit.emittedEventIds,
-          warnings: execution.state.audit.warnings,
-          errors: execution.state.audit.errors,
-        }),
-      );
-
-      return toFailureOutcome(execution.command, execution.context, execution.state.validation ?? validResult(), error);
     },
   };
 
@@ -467,7 +460,9 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
   };
 
   pipeline.registerMiddleware(validationMiddleware);
-  pipeline.registerMiddleware(auditMiddleware);
+  pipeline.registerMiddleware(auditStartMiddleware);
+  pipeline.registerMiddleware(changeMiddleware);
+  pipeline.registerMiddleware(auditCompletionMiddleware);
   pipeline.registerMiddleware(eventPublicationMiddleware);
 
   const execute: WorkspaceCommandEngine["execute"] = (command) => {
