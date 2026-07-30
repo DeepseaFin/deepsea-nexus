@@ -1,0 +1,294 @@
+diff --git a/lib/workspaces/workspace-persistence.ts b/lib/workspaces/workspace-persistence.ts
+index 53dda10..a894f61 100644
+--- a/lib/workspaces/workspace-persistence.ts
++++ b/lib/workspaces/workspace-persistence.ts
+@@ -2,6 +2,13 @@ import type {
+   WorkspaceFilters,
+   WorkspacePersistenceSnapshot,
+ } from "@/lib/workspaces/workspace.types";
++import {
++  getWorkspaceEventBus,
++  nowWorkspaceEventTimestamp,
++  resolveWorkspaceId,
++  WORKSPACE_EVENT_TYPES,
++  type WorkspaceEventBus,
++} from "@/lib/workspaces/workspace-event-bus";
+ 
+ interface WorkspaceStoredState<TFilters> {
+   readonly activeSection: string | null;
+@@ -18,6 +25,8 @@ export interface LoadWorkspacePersistenceInput<TSectionId extends string, TFilte
+   readonly defaultSelectedTab: string;
+   readonly defaultFilters: TFilters;
+   readonly sanitizeFilters: (filters: unknown) => TFilters;
++  readonly workspaceId?: string;
++  readonly eventBus?: WorkspaceEventBus;
+ }
+ 
+ export interface SaveWorkspacePersistenceInput<TSectionId extends string, TFilters> {
+@@ -30,6 +39,8 @@ export interface SaveWorkspacePersistenceInput<TSectionId extends string, TFilte
+   readonly filters: TFilters;
+   readonly lastVisitedAt: string;
+   readonly sanitizeFilters: (filters: unknown) => TFilters;
++  readonly workspaceId?: string;
++  readonly eventBus?: WorkspaceEventBus;
+ }
+ 
+ export function sanitizeWorkspaceFilters(filters: unknown): WorkspaceFilters {
+@@ -109,22 +120,39 @@ export function loadWorkspacePersistence<TSectionId extends string, TFilters>(
+ ): WorkspacePersistenceSnapshot<TSectionId, TFilters> {
+   const storageKey = resolveStorageKey(input.storageKey, input.defaultStorageKey);
+   const savedState = safeRead<TFilters>(storageKey);
++  const workspaceId = resolveWorkspaceId(input.workspaceId, input.defaultStorageKey);
++  const eventBus = input.eventBus ?? getWorkspaceEventBus();
+ 
+   const defaultExpandedSections = createDefaultExpandedSections(input.sectionIds);
+ 
+   if (!savedState) {
+-    return {
++    const snapshot: WorkspacePersistenceSnapshot<TSectionId, TFilters> = {
+       activeSection: null,
+       expandedSections: defaultExpandedSections,
+       selectedTab: input.defaultSelectedTab,
+       filters: input.defaultFilters,
+       lastVisitedAt: null,
+     };
++
++    eventBus.publish({
++      type: WORKSPACE_EVENT_TYPES.Hydrated,
++      workspaceId,
++      occurredAt: nowWorkspaceEventTimestamp(),
++      payload: {
++        storageKey,
++        sectionIds: input.sectionIds,
++        activeSection: snapshot.activeSection,
++        selectedTab: snapshot.selectedTab,
++        lastVisitedAt: snapshot.lastVisitedAt,
++      },
++    });
++
++    return snapshot;
+   }
+ 
+   const activeSection = input.sectionIds.find((sectionId) => sectionId === savedState.activeSection) ?? null;
+ 
+-  return {
++  const snapshot: WorkspacePersistenceSnapshot<TSectionId, TFilters> = {
+     activeSection,
+     expandedSections: sanitizeExpandedSections(savedState.expandedSections, input.sectionIds),
+     selectedTab: typeof savedState.selectedTab === "string" && savedState.selectedTab.length > 0
+@@ -133,6 +161,34 @@ export function loadWorkspacePersistence<TSectionId extends string, TFilters>(
+     filters: input.sanitizeFilters(savedState.filters),
+     lastVisitedAt: typeof savedState.lastVisitedAt === "string" ? savedState.lastVisitedAt : null,
+   };
++
++  eventBus.publish({
++    type: WORKSPACE_EVENT_TYPES.Hydrated,
++    workspaceId,
++    occurredAt: nowWorkspaceEventTimestamp(),
++    payload: {
++      storageKey,
++      sectionIds: input.sectionIds,
++      activeSection: snapshot.activeSection,
++      selectedTab: snapshot.selectedTab,
++      lastVisitedAt: snapshot.lastVisitedAt,
++    },
++  });
++
++  if (savedState.activeSection !== snapshot.activeSection) {
++    eventBus.publish({
++      type: WORKSPACE_EVENT_TYPES.ActiveSectionChanged,
++      workspaceId,
++      occurredAt: nowWorkspaceEventTimestamp(),
++      payload: {
++        previousActiveSection: typeof savedState.activeSection === "string" ? savedState.activeSection : null,
++        activeSection: snapshot.activeSection,
++        reason: "hydrated",
++      },
++    });
++  }
++
++  return snapshot;
+ }
+ 
+ export function saveWorkspacePersistence<TSectionId extends string, TFilters>(
+@@ -143,6 +199,9 @@ export function saveWorkspacePersistence<TSectionId extends string, TFilters>(
+   }
+ 
+   const storageKey = resolveStorageKey(input.storageKey, input.defaultStorageKey);
++  const workspaceId = resolveWorkspaceId(input.workspaceId, input.defaultStorageKey);
++  const eventBus = input.eventBus ?? getWorkspaceEventBus();
++  const previousState = safeRead<TFilters>(storageKey);
+ 
+   const serialized: WorkspaceStoredState<TFilters> = {
+     activeSection: input.activeSection,
+@@ -159,4 +218,34 @@ export function saveWorkspacePersistence<TSectionId extends string, TFilters>(
+   };
+ 
+   window.localStorage.setItem(storageKey, JSON.stringify(serialized));
++
++  eventBus.publish({
++    type: WORKSPACE_EVENT_TYPES.Persisted,
++    workspaceId,
++    occurredAt: nowWorkspaceEventTimestamp(),
++    payload: {
++      storageKey,
++      sectionIds: input.sectionIds,
++      activeSection: input.activeSection,
++      selectedTab: input.selectedTab,
++      lastVisitedAt: input.lastVisitedAt,
++    },
++  });
++
++  const previousActiveSection = typeof previousState?.activeSection === "string"
++    ? previousState.activeSection
++    : null;
++
++  if (previousActiveSection !== input.activeSection) {
++    eventBus.publish({
++      type: WORKSPACE_EVENT_TYPES.ActiveSectionChanged,
++      workspaceId,
++      occurredAt: nowWorkspaceEventTimestamp(),
++      payload: {
++        previousActiveSection,
++        activeSection: input.activeSection,
++        reason: "persisted",
++      },
++    });
++  }
+ }
+diff --git a/lib/workspaces/workspace-registry.ts b/lib/workspaces/workspace-registry.ts
+index e535d37..c10375b 100644
+--- a/lib/workspaces/workspace-registry.ts
++++ b/lib/workspaces/workspace-registry.ts
+@@ -1,4 +1,16 @@
+ import type { WorkspaceSectionDefinition } from "@/lib/workspaces/workspace.types";
++import {
++  getWorkspaceEventBus,
++  nowWorkspaceEventTimestamp,
++  resolveWorkspaceId,
++  WORKSPACE_EVENT_TYPES,
++  type WorkspaceEventBus,
++} from "@/lib/workspaces/workspace-event-bus";
++
++export interface CreateWorkspaceRegistryOptions {
++  readonly workspaceId?: string;
++  readonly eventBus?: WorkspaceEventBus;
++}
+ 
+ export interface WorkspaceRegistry<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>> {
+   getAllSections: () => readonly TSection[];
+@@ -16,9 +28,22 @@ function sortSections<TSectionId extends string, TSection extends WorkspaceSecti
+ 
+ export function createWorkspaceRegistry<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>>(
+   sections: readonly TSection[],
++  options?: CreateWorkspaceRegistryOptions,
+ ): WorkspaceRegistry<TSectionId, TSection> {
+   const sorted = sortSections(sections);
+   const enabled = sorted.filter((section) => section.enabled);
++  const inferredWorkspaceId = sorted.map((section) => section.id).join("|");
++  const workspaceId = resolveWorkspaceId(options?.workspaceId, inferredWorkspaceId || "workspace");
++
++  (options?.eventBus ?? getWorkspaceEventBus()).publish({
++    type: WORKSPACE_EVENT_TYPES.Initialized,
++    workspaceId,
++    occurredAt: nowWorkspaceEventTimestamp(),
++    payload: {
++      sectionIds: sorted.map((section) => section.id),
++      enabledSectionIds: enabled.map((section) => section.id),
++    },
++  });
+ 
+   return {
+     getAllSections: () => sorted,
+diff --git a/lib/workspaces/workspace-workflow.ts b/lib/workspaces/workspace-workflow.ts
+index 1a12d13..cb84eff 100644
+--- a/lib/workspaces/workspace-workflow.ts
++++ b/lib/workspaces/workspace-workflow.ts
+@@ -3,12 +3,24 @@ import type {
+   WorkspaceSectionStateLike,
+   WorkspaceWorkflowEvaluation,
+ } from "@/lib/workspaces/workspace.types";
++import {
++  getWorkspaceEventBus,
++  nowWorkspaceEventTimestamp,
++  resolveWorkspaceId,
++  WORKSPACE_EVENT_TYPES,
++  type WorkspaceEventBus,
++} from "@/lib/workspaces/workspace-event-bus";
+ 
+ export interface EvaluateWorkspaceWorkflowInput<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>> {
+   readonly sectionDefinitions: readonly TSection[];
+   readonly sectionStates: readonly WorkspaceSectionStateLike<TSectionId>[];
++  readonly workspaceId?: string;
++  readonly eventBus?: WorkspaceEventBus;
+ }
+ 
++const lastWorkflowSignatureByWorkspace = new Map<string, string>();
++const lastCompletionSignatureByWorkspace = new Map<string, string>();
++
+ export function evaluateWorkspaceWorkflow<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>>(
+   input: EvaluateWorkspaceWorkflowInput<TSectionId, TSection>,
+ ): WorkspaceWorkflowEvaluation<TSectionId> {
+@@ -49,12 +61,61 @@ export function evaluateWorkspaceWorkflow<TSectionId extends string, TSection ex
+ 
+   const firstAvailable = input.sectionDefinitions.find((definition) => availableSet.has(definition.id));
+ 
+-  return {
++  const workflow: WorkspaceWorkflowEvaluation<TSectionId> = {
+     availableSections,
+     blockedSections: Array.from(blockedSet),
+     completedSections: Array.from(completedIds),
+     nextRecommendedSection: preferred?.id ?? firstIncompleteAvailable?.id ?? firstAvailable?.id ?? null,
+   };
++
++  const inferredWorkspaceId = input.sectionDefinitions.map((definition) => definition.id).join("|");
++  const workspaceId = resolveWorkspaceId(input.workspaceId, inferredWorkspaceId || "workspace");
++  const eventBus = input.eventBus ?? getWorkspaceEventBus();
++  const totalCount = input.sectionDefinitions.length;
++  const completedCount = workflow.completedSections.length;
++  const completionPercentage = totalCount <= 0 ? 0 : Math.max(0, Math.min(100, Math.round((completedCount / totalCount) * 100)));
++  const completionStatus = completionPercentage <= 0
++    ? "not_started"
++    : completionPercentage >= 100
++      ? "completed"
++      : "in_progress";
++
++  const workflowPayload = {
++    availableSectionIds: workflow.availableSections,
++    blockedSectionIds: workflow.blockedSections,
++    completedSectionIds: workflow.completedSections,
++    nextRecommendedSectionId: workflow.nextRecommendedSection,
++  };
++  const workflowSignature = JSON.stringify(workflowPayload);
++  if (lastWorkflowSignatureByWorkspace.get(workspaceId) !== workflowSignature) {
++    eventBus.publish({
++      type: WORKSPACE_EVENT_TYPES.WorkflowChanged,
++      workspaceId,
++      occurredAt: nowWorkspaceEventTimestamp(),
++      payload: workflowPayload,
++    });
++    lastWorkflowSignatureByWorkspace.set(workspaceId, workflowSignature);
++  }
++
++  const completionPayload = {
++    completedCount,
++    totalCount,
++    completionPercentage,
++    completionStatus,
++    completedSectionIds: workflow.completedSections,
++  };
++  const completionSignature = JSON.stringify(completionPayload);
++  if (lastCompletionSignatureByWorkspace.get(workspaceId) !== completionSignature) {
++    eventBus.publish({
++      type: WORKSPACE_EVENT_TYPES.CompletionChanged,
++      workspaceId,
++      occurredAt: nowWorkspaceEventTimestamp(),
++      payload: completionPayload,
++    });
++    lastCompletionSignatureByWorkspace.set(workspaceId, completionSignature);
++  }
++
++  return workflow;
+ }
+ 
+ export function canNavigateWorkspaceSection<TSectionId extends string>(

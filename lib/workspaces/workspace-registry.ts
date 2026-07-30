@@ -1,4 +1,16 @@
 import type { WorkspaceSectionDefinition } from "@/lib/workspaces/workspace.types";
+import {
+  getWorkspaceEventBus,
+  nowWorkspaceEventTimestamp,
+  resolveWorkspaceId,
+  WORKSPACE_EVENT_TYPES,
+  type WorkspaceEventBus,
+} from "@/lib/workspaces/workspace-event-bus";
+
+export interface CreateWorkspaceRegistryOptions {
+  readonly workspaceId?: string;
+  readonly eventBus?: WorkspaceEventBus;
+}
 
 export interface WorkspaceRegistry<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>> {
   getAllSections: () => readonly TSection[];
@@ -16,9 +28,22 @@ function sortSections<TSectionId extends string, TSection extends WorkspaceSecti
 
 export function createWorkspaceRegistry<TSectionId extends string, TSection extends WorkspaceSectionDefinition<TSectionId>>(
   sections: readonly TSection[],
+  options?: CreateWorkspaceRegistryOptions,
 ): WorkspaceRegistry<TSectionId, TSection> {
   const sorted = sortSections(sections);
   const enabled = sorted.filter((section) => section.enabled);
+  const inferredWorkspaceId = sorted.map((section) => section.id).join("|");
+  const workspaceId = resolveWorkspaceId(options?.workspaceId, inferredWorkspaceId || "workspace");
+
+  (options?.eventBus ?? getWorkspaceEventBus()).publish({
+    type: WORKSPACE_EVENT_TYPES.Initialized,
+    workspaceId,
+    occurredAt: nowWorkspaceEventTimestamp(),
+    payload: {
+      sectionIds: sorted.map((section) => section.id),
+      enabledSectionIds: enabled.map((section) => section.id),
+    },
+  });
 
   return {
     getAllSections: () => sorted,
