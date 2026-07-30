@@ -16,10 +16,7 @@ import PassportTimeline, { type PassportTimelineEntry } from "@/components/custo
 import RelationshipHealthCard from "@/components/customer/passport/RelationshipHealthCard";
 import WorkflowSummary, { type WorkflowSummaryItem } from "@/components/customer/passport/WorkflowSummary";
 import UICard from "@/components/ui/Card";
-import {
-  type BusinessPassportSectionId,
-  type BusinessPassportWorkspaceSectionConfig,
-} from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+import { type BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
 import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
 import { computeBusinessPassportSectionStates } from "@/lib/customer/passport/business-passport-section-completion-engine";
 import { useBusinessPassportWorkspaceOrchestrator } from "@/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator";
@@ -218,26 +215,9 @@ export default function BusinessPassportWorkspace({
   timelineEntries = defaultTimelineEntries,
   quickActions = defaultQuickActions,
 }: BusinessPassportWorkspaceProps) {
-  const orchestratorSections = useMemo<readonly BusinessPassportWorkspaceSectionConfig[]>(
-    () => [
-      { id: "identity", label: "Identity", anchorId: "passport-identity" },
-      { id: "ownership", label: "Ownership", anchorId: "passport-identity" },
-      { id: "documents", label: "Documents", anchorId: "passport-documents" },
-      { id: "relationships", label: "Relationships", anchorId: "passport-health" },
-      { id: "compliance", label: "Compliance", anchorId: "passport-evidence" },
-      { id: "financials", label: "Financials", anchorId: "passport-metrics" },
-      { id: "evidence", label: "Evidence", anchorId: "passport-evidence" },
-      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge" },
-      { id: "workflow", label: "Workflow", anchorId: "passport-workflow" },
-      { id: "activity", label: "Activity", anchorId: "passport-activity" },
-    ],
-    [],
-  );
-
   const computedSectionStates = useMemo(
     () =>
       computeBusinessPassportSectionStates({
-        sectionConfigs: orchestratorSections,
         passportPanelModel: defaultPassportPanelModel,
         businessIdentity: {
           legalName: business.legalName,
@@ -282,7 +262,6 @@ export default function BusinessPassportWorkspace({
       documents,
       evidenceItems,
       knowledgeSignals,
-      orchestratorSections,
       relationshipHealth.posture,
       relationshipHealth.score,
       relationshipHealth.watchItems,

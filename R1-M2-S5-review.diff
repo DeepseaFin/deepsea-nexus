@@ -1,0 +1,611 @@
+diff --git a/components/customer/passport/BusinessPassportWorkspace.tsx b/components/customer/passport/BusinessPassportWorkspace.tsx
+index add24f6..d7664b2 100644
+--- a/components/customer/passport/BusinessPassportWorkspace.tsx
++++ b/components/customer/passport/BusinessPassportWorkspace.tsx
+@@ -16,10 +16,7 @@ import PassportTimeline, { type PassportTimelineEntry } from "@/components/custo
+ import RelationshipHealthCard from "@/components/customer/passport/RelationshipHealthCard";
+ import WorkflowSummary, { type WorkflowSummaryItem } from "@/components/customer/passport/WorkflowSummary";
+ import UICard from "@/components/ui/Card";
+-import {
+-  type BusinessPassportSectionId,
+-  type BusinessPassportWorkspaceSectionConfig,
+-} from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import { type BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+ import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
+ import { computeBusinessPassportSectionStates } from "@/lib/customer/passport/business-passport-section-completion-engine";
+ import { useBusinessPassportWorkspaceOrchestrator } from "@/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator";
+@@ -218,26 +215,9 @@ export default function BusinessPassportWorkspace({
+   timelineEntries = defaultTimelineEntries,
+   quickActions = defaultQuickActions,
+ }: BusinessPassportWorkspaceProps) {
+-  const orchestratorSections = useMemo<readonly BusinessPassportWorkspaceSectionConfig[]>(
+-    () => [
+-      { id: "identity", label: "Identity", anchorId: "passport-identity" },
+-      { id: "ownership", label: "Ownership", anchorId: "passport-identity" },
+-      { id: "documents", label: "Documents", anchorId: "passport-documents" },
+-      { id: "relationships", label: "Relationships", anchorId: "passport-health" },
+-      { id: "compliance", label: "Compliance", anchorId: "passport-evidence" },
+-      { id: "financials", label: "Financials", anchorId: "passport-metrics" },
+-      { id: "evidence", label: "Evidence", anchorId: "passport-evidence" },
+-      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge" },
+-      { id: "workflow", label: "Workflow", anchorId: "passport-workflow" },
+-      { id: "activity", label: "Activity", anchorId: "passport-activity" },
+-    ],
+-    [],
+-  );
+-
+   const computedSectionStates = useMemo(
+     () =>
+       computeBusinessPassportSectionStates({
+-        sectionConfigs: orchestratorSections,
+         passportPanelModel: defaultPassportPanelModel,
+         businessIdentity: {
+           legalName: business.legalName,
+@@ -282,7 +262,6 @@ export default function BusinessPassportWorkspace({
+       documents,
+       evidenceItems,
+       knowledgeSignals,
+-      orchestratorSections,
+       relationshipHealth.posture,
+       relationshipHealth.score,
+       relationshipHealth.watchItems,
+diff --git a/components/customer/passport/ContextNavigation.tsx b/components/customer/passport/ContextNavigation.tsx
+index f1594c9..d48e401 100644
+--- a/components/customer/passport/ContextNavigation.tsx
++++ b/components/customer/passport/ContextNavigation.tsx
+@@ -1,5 +1,7 @@
++import { useMemo } from "react";
+ import UIButton from "@/components/ui/Button";
+ import UICard from "@/components/ui/Card";
++import { getAllSections, getSection, type BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-section-registry";
+ import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+ 
+ export interface ContextNavigationItem {
+@@ -45,6 +47,21 @@ export default function ContextNavigation({
+   canGoPrevious = false,
+   canGoNext = false,
+ }: ContextNavigationProps) {
++  const visibleItems = useMemo(() => {
++    const orderById = new Map(getAllSections().map((section) => [section.id, section.order] as const));
++
++    return items
++      .filter((item) => {
++        const section = getSection(item.id as BusinessPassportSectionId);
++        return section?.navigationVisible ?? true;
++      })
++      .sort((left, right) => {
++        const leftOrder = orderById.get(left.id as BusinessPassportSectionId) ?? Number.MAX_SAFE_INTEGER;
++        const rightOrder = orderById.get(right.id as BusinessPassportSectionId) ?? Number.MAX_SAFE_INTEGER;
++        return leftOrder - rightOrder;
++      });
++  }, [items]);
++
+   return (
+     <UICard variant="subtle" className="p-4 sm:p-5" aria-label="Business passport context navigation">
+       <div className="flex flex-wrap items-center justify-between gap-2">
+@@ -61,7 +78,7 @@ export default function ContextNavigation({
+ 
+       <nav aria-label="Section navigation" className="mt-3">
+         <ul className="flex flex-wrap gap-2">
+-          {items.map((item) => {
++          {visibleItems.map((item) => {
+             const stateLabel = item.completed ? "Completed" : item.disabled ? "Disabled" : item.dirty ? "Edited" : "Open";
+ 
+             return (
+diff --git a/lib/customer/passport/business-passport-section-completion-engine.ts b/lib/customer/passport/business-passport-section-completion-engine.ts
+index 40726f1..9492367 100644
+--- a/lib/customer/passport/business-passport-section-completion-engine.ts
++++ b/lib/customer/passport/business-passport-section-completion-engine.ts
+@@ -7,15 +7,16 @@ import type {
+ import { businessPassportProfileService } from "@/lib/business-passport/services/BusinessPassportProfileService";
+ import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
+ import type {
+-  BusinessPassportSectionId,
+   BusinessPassportSectionCompletionStatus,
+-  BusinessPassportValidationStatus,
+   BusinessPassportWorkspaceSectionComputedState,
+-  BusinessPassportWorkspaceSectionConfig,
+ } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import {
++  type BusinessPassportCompletionStrategyId,
++  getEnabledSections,
++} from "@/lib/customer/passport/business-passport-section-registry";
++import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+ 
+ export interface BusinessPassportCompletionEngineInput {
+-  readonly sectionConfigs: readonly BusinessPassportWorkspaceSectionConfig[];
+   readonly passportPanelModel: PassportPanelModel;
+   readonly businessIdentity: {
+     readonly legalName: string;
+@@ -50,10 +51,11 @@ export interface BusinessPassportCompletionEngineInput {
+   readonly activityCount: number;
+ }
+ 
+-interface SectionProgress {
++interface SectionStrategyEvaluation {
+   readonly completionPercentage: number;
+-  readonly validationStatus: BusinessPassportValidationStatus;
+   readonly missingRequiredFields: readonly string[];
++  readonly hasError: boolean;
++  readonly hasWarning: boolean;
+ }
+ 
+ function toCompletionStatus(percent: number): BusinessPassportSectionCompletionStatus {
+@@ -157,7 +159,7 @@ function toRelationshipProfile(input: BusinessPassportCompletionEngineInput): Re
+   };
+ }
+ 
+-function identityProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function identityProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const summaries = businessPassportProfileService.summarizeProfiles(
+     {
+       identityProfile: input.passportPanelModel.identityProfile,
+@@ -171,15 +173,13 @@ function identityProgress(input: BusinessPassportCompletionEngineInput): Section
+ 
+   return {
+     completionPercentage: summaries.identity.completeness.percentage,
+-    validationStatus: mapValidation(
+-      summaries.identity.validation.issues.some((issue) => issue.severity === "error"),
+-      summaries.identity.validation.issues.some((issue) => issue.severity === "warning"),
+-    ),
+     missingRequiredFields: summaries.identity.completeness.missingFields,
++    hasError: summaries.identity.validation.issues.some((issue) => issue.severity === "error"),
++    hasWarning: summaries.identity.validation.issues.some((issue) => issue.severity === "warning"),
+   };
+ }
+ 
+-function ownershipProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function ownershipProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const profile = toInstitutionProfile(input);
+   const validation = businessPassportProfileService.validateProfiles(
+     {
+@@ -197,27 +197,26 @@ function ownershipProgress(input: BusinessPassportCompletionEngineInput): Sectio
+ 
+   return {
+     completionPercentage: ratioToPercent(completedFields, 7),
+-    validationStatus: mapValidation(
+-      validation.issues.some((issue) => issue.severity === "error"),
+-      validation.issues.some((issue) => issue.severity === "warning"),
+-    ),
+     missingRequiredFields: missing,
++    hasError: validation.issues.some((issue) => issue.severity === "error"),
++    hasWarning: validation.issues.some((issue) => issue.severity === "warning"),
+   };
+ }
+ 
+-function documentsProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function documentsProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const completed = input.documentState.filter((item) => item.status === "current").length;
+   const reviews = input.documentState.filter((item) => item.status === "review");
+   const expiring = input.documentState.filter((item) => item.status === "expiring");
+ 
+   return {
+     completionPercentage: ratioToPercent(completed, input.documentState.length),
+-    validationStatus: mapValidation(expiring.length > 0, reviews.length > 0),
+     missingRequiredFields: [...expiring, ...reviews].map((item) => item.name),
++    hasError: expiring.length > 0,
++    hasWarning: reviews.length > 0,
+   };
+ }
+ 
+-function relationshipsProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function relationshipsProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const profile = toRelationshipProfile(input);
+   const completedSignals = [profile.relationshipStage, profile.engagementLevel, profile.responsiveness, profile.relationshipOwner].filter(Boolean).length;
+   const missing = [
+@@ -229,12 +228,13 @@ function relationshipsProgress(input: BusinessPassportCompletionEngineInput): Se
+ 
+   return {
+     completionPercentage: ratioToPercent(completedSignals, 4),
+-    validationStatus: mapValidation(input.relationshipState.score < 60, input.relationshipState.score < 80),
+     missingRequiredFields: missing,
++    hasError: input.relationshipState.score < 60,
++    hasWarning: input.relationshipState.score < 80,
+   };
+ }
+ 
+-function complianceProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function complianceProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const summaries = businessPassportProfileService.summarizeProfiles(
+     {
+       identityProfile: input.passportPanelModel.identityProfile,
+@@ -254,12 +254,13 @@ function complianceProgress(input: BusinessPassportCompletionEngineInput): Secti
+       input.evidenceState.filter((item) => item.status === "verified").length + summaries.governance.completeness.completedFields.length,
+       input.evidenceState.length + summaries.governance.completeness.completedFields.length + governanceMissing.length,
+     ),
+-    validationStatus: mapValidation(evidenceMissing.length > 0, governanceMissing.length > 0),
+     missingRequiredFields: [...evidenceMissing, ...governanceMissing],
++    hasError: evidenceMissing.length > 0,
++    hasWarning: governanceMissing.length > 0,
+   };
+ }
+ 
+-function financialProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function financialProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const summaries = businessPassportProfileService.summarizeProfiles(
+     {
+       identityProfile: input.passportPanelModel.identityProfile,
+@@ -273,27 +274,26 @@ function financialProgress(input: BusinessPassportCompletionEngineInput): Sectio
+ 
+   return {
+     completionPercentage: summaries.financial.completeness.percentage,
+-    validationStatus: mapValidation(
+-      summaries.financial.validation.issues.some((issue) => issue.severity === "error"),
+-      summaries.financial.validation.issues.some((issue) => issue.severity === "warning"),
+-    ),
+     missingRequiredFields: summaries.financial.completeness.missingFields,
++    hasError: summaries.financial.validation.issues.some((issue) => issue.severity === "error"),
++    hasWarning: summaries.financial.validation.issues.some((issue) => issue.severity === "warning"),
+   };
+ }
+ 
+-function evidenceProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function evidenceProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const verified = input.evidenceState.filter((item) => item.status === "verified").length;
+   const missing = input.evidenceState.filter((item) => item.status === "missing").map((item) => item.name);
+   const review = input.evidenceState.filter((item) => item.status === "review").map((item) => item.name);
+ 
+   return {
+     completionPercentage: ratioToPercent(verified, input.evidenceState.length),
+-    validationStatus: mapValidation(missing.length > 0, review.length > 0),
+     missingRequiredFields: [...missing, ...review],
++    hasError: missing.length > 0,
++    hasWarning: review.length > 0,
+   };
+ }
+ 
+-function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const averageConfidence = input.knowledgeState.length === 0
+     ? 0
+     : clampPercent(
+@@ -302,89 +302,66 @@ function knowledgeProgress(input: BusinessPassportCompletionEngineInput): Sectio
+ 
+   return {
+     completionPercentage: averageConfidence,
+-    validationStatus: mapValidation(averageConfidence < 50, averageConfidence < 75),
+     missingRequiredFields: input.knowledgeState.length > 0 ? [] : ["knowledgeSignals"],
++    hasError: averageConfidence < 50,
++    hasWarning: averageConfidence < 75,
+   };
+ }
+ 
+-function workflowProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function workflowProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const onTrack = input.workflowState.filter((item) => item.status === "on_track").length;
+   const attention = input.workflowState.filter((item) => item.status === "attention").map((item) => item.name);
+   const blocked = input.workflowState.filter((item) => item.status === "blocked").map((item) => item.name);
+ 
+   return {
+     completionPercentage: ratioToPercent(onTrack, input.workflowState.length),
+-    validationStatus: mapValidation(blocked.length > 0, attention.length > 0),
+     missingRequiredFields: [...blocked, ...attention],
++    hasError: blocked.length > 0,
++    hasWarning: attention.length > 0,
+   };
+ }
+ 
+-function activityProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
++function activityProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
+   const completionPercentage = input.activityCount >= 4 ? 100 : ratioToPercent(input.activityCount, 4);
+ 
+   return {
+     completionPercentage,
+-    validationStatus: mapValidation(input.activityCount === 0, input.activityCount < 2),
+     missingRequiredFields: input.activityCount > 0 ? [] : ["activityEvents"],
++    hasError: input.activityCount === 0,
++    hasWarning: input.activityCount < 2,
+   };
+ }
+ 
+-function computeSectionProgress(
+-  sectionId: BusinessPassportSectionId,
+-  input: BusinessPassportCompletionEngineInput,
+-): SectionProgress {
+-  if (sectionId === "identity") {
+-    return identityProgress(input);
+-  }
+-
+-  if (sectionId === "ownership") {
+-    return ownershipProgress(input);
+-  }
+-
+-  if (sectionId === "documents") {
+-    return documentsProgress(input);
+-  }
+-
+-  if (sectionId === "relationships") {
+-    return relationshipsProgress(input);
+-  }
+-
+-  if (sectionId === "compliance") {
+-    return complianceProgress(input);
+-  }
+-
+-  if (sectionId === "financials") {
+-    return financialProgress(input);
+-  }
+-
+-  if (sectionId === "evidence") {
+-    return evidenceProgress(input);
+-  }
+-
+-  if (sectionId === "knowledge") {
+-    return knowledgeProgress(input);
+-  }
+-
+-  if (sectionId === "workflow") {
+-    return workflowProgress(input);
+-  }
+-
+-  return activityProgress(input);
+-}
++const STRATEGY_HANDLERS: Readonly<Record<BusinessPassportCompletionStrategyId, (input: BusinessPassportCompletionEngineInput) => SectionStrategyEvaluation>> = {
++  identity: identityProgress,
++  ownership: ownershipProgress,
++  documents: documentsProgress,
++  relationships: relationshipsProgress,
++  compliance: complianceProgress,
++  financials: financialProgress,
++  evidence: evidenceProgress,
++  knowledge: knowledgeProgress,
++  workflow: workflowProgress,
++  activity: activityProgress,
++};
+ 
+ export function computeBusinessPassportSectionStates(
+   input: BusinessPassportCompletionEngineInput,
+ ): readonly BusinessPassportWorkspaceSectionComputedState[] {
+-  return input.sectionConfigs.map((section) => {
+-    const progress = computeSectionProgress(section.id, input);
++  return getEnabledSections().map((section) => {
++    const completionEvaluation = STRATEGY_HANDLERS[section.completionStrategy](input);
++    const validationEvaluation = STRATEGY_HANDLERS[section.validationStrategy](input);
++    const validationStatus = mapValidation(validationEvaluation.hasError, validationEvaluation.hasWarning);
+ 
+     return {
+-      ...section,
+-      completionPercentage: progress.completionPercentage,
+-      completionStatus: toCompletionStatus(progress.completionPercentage),
+-      validationStatus: progress.validationStatus,
+-      missingRequiredFields: progress.missingRequiredFields,
+-      disabled: Boolean(section.disabled),
++      id: section.id,
++      label: section.title,
++      anchorId: section.anchorId,
++      disabled: !section.enabled,
++      completionPercentage: completionEvaluation.completionPercentage,
++      completionStatus: toCompletionStatus(completionEvaluation.completionPercentage),
++      validationStatus,
++      missingRequiredFields: completionEvaluation.missingRequiredFields,
+     };
+   });
+ }
+diff --git a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+index f7ed2cd..788446f 100644
+--- a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
++++ b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+@@ -1,19 +1,7 @@
+ import type { UIButtonVariant } from "@/components/ui/Button";
++import type { BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-section-registry";
+ 
+-export const BUSINESS_PASSPORT_SECTION_IDS = [
+-  "identity",
+-  "ownership",
+-  "documents",
+-  "relationships",
+-  "compliance",
+-  "financials",
+-  "evidence",
+-  "knowledge",
+-  "workflow",
+-  "activity",
+-] as const;
+-
+-export type BusinessPassportSectionId = (typeof BUSINESS_PASSPORT_SECTION_IDS)[number];
++export type { BusinessPassportSectionId };
+ 
+ export type BusinessPassportSectionCompletionStatus = "not_started" | "in_progress" | "completed";
+ 
+diff --git a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+index 576a265..ea35806 100644
+--- a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
++++ b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+@@ -1,6 +1,11 @@
+ "use client";
+ 
+ import { useCallback, useEffect, useMemo, useState } from "react";
++import {
++  getEnabledSections,
++  getNextSection,
++  getPreviousSection,
++} from "@/lib/customer/passport/business-passport-section-registry";
+ import {
+   loadBusinessPassportWorkspacePersistence,
+   saveBusinessPassportWorkspacePersistence,
+@@ -8,6 +13,7 @@ import {
+ import type {
+   BusinessPassportCompletionState,
+   BusinessPassportDirtyState,
++  BusinessPassportValidationStatus,
+   BusinessPassportWorkspaceFilters,
+   BusinessPassportSectionId,
+   BusinessPassportSectionCompletionStatus,
+@@ -26,6 +32,14 @@ interface MutableSectionState {
+   readonly missingRequiredFields: readonly string[];
+ }
+ 
++interface SectionStateSource {
++  readonly completionPercentage: number;
++  readonly completionStatus: BusinessPassportSectionCompletionStatus;
++  readonly validationStatus: BusinessPassportValidationStatus;
++  readonly missingRequiredFields: readonly string[];
++  readonly disabled?: boolean;
++}
++
+ function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestratorInput): Readonly<Record<BusinessPassportSectionId, MutableSectionState>> {
+   return input.sectionStates.reduce((accumulator, section) => {
+     return {
+@@ -42,57 +56,38 @@ function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestrat
+ }
+ 
+ function resolveInitialActiveSection(input: UseBusinessPassportWorkspaceOrchestratorInput): BusinessPassportSectionId {
++  const enabledSectionIds = getEnabledSections().map((section) => section.id);
++
+   if (input.initialActiveSection) {
+     const candidate = input.sectionStates.find((section) => section.id === input.initialActiveSection);
+-    if (candidate && !candidate.disabled) {
+-      return candidate.id;
+-    }
+-  }
+-
+-  const firstEnabled = input.sectionStates.find((section) => !section.disabled);
+-  return firstEnabled?.id ?? input.sectionStates[0]?.id ?? "identity";
+-}
+-
+-function findPreviousEnabledSection(
+-  sections: readonly BusinessPassportWorkspaceSectionState[],
+-  activeSection: BusinessPassportSectionId,
+-): BusinessPassportSectionId | null {
+-  const activeIndex = sections.findIndex((section) => section.id === activeSection);
+-  if (activeIndex <= 0) {
+-    return null;
+-  }
+-
+-  for (let index = activeIndex - 1; index >= 0; index -= 1) {
+-    if (!sections[index].disabled) {
+-      return sections[index].id;
++    if (candidate && enabledSectionIds.includes(candidate.id) && !candidate.disabled) {
++      return input.initialActiveSection;
+     }
+   }
+ 
+-  return null;
+-}
+-
+-function findNextEnabledSection(
+-  sections: readonly BusinessPassportWorkspaceSectionState[],
+-  activeSection: BusinessPassportSectionId,
+-): BusinessPassportSectionId | null {
+-  const activeIndex = sections.findIndex((section) => section.id === activeSection);
+-  if (activeIndex < 0) {
+-    return null;
+-  }
+-
+-  for (let index = activeIndex + 1; index < sections.length; index += 1) {
+-    if (!sections[index].disabled) {
+-      return sections[index].id;
+-    }
+-  }
+-
+-  return null;
++  return enabledSectionIds[0] ?? input.sectionStates[0]?.id ?? "identity";
+ }
+ 
+ export function useBusinessPassportWorkspaceOrchestrator(
+   input: UseBusinessPassportWorkspaceOrchestratorInput,
+ ): BusinessPassportWorkspaceOrchestrator {
+-  const sectionIds = useMemo(() => input.sectionStates.map((section) => section.id), [input.sectionStates]);
++  const enabledSections = useMemo(() => getEnabledSections(), []);
++  const sectionIds = useMemo(() => enabledSections.map((section) => section.id), [enabledSections]);
++
++  const sectionStateSourceById = useMemo<Readonly<Record<BusinessPassportSectionId, SectionStateSource>>>(() => {
++    return input.sectionStates.reduce((accumulator, section) => {
++      return {
++        ...accumulator,
++        [section.id]: {
++          completionPercentage: section.completionPercentage,
++          completionStatus: section.completionStatus,
++          validationStatus: section.validationStatus,
++          missingRequiredFields: section.missingRequiredFields,
++          disabled: section.disabled,
++        },
++      };
++    }, {} as Record<BusinessPassportSectionId, SectionStateSource>);
++  }, [input.sectionStates]);
+ 
+   const persistedWorkspaceState = useMemo(
+     () =>
+@@ -123,20 +118,29 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   const [filters, setFiltersState] = useState<BusinessPassportWorkspaceFilters>(() => persistedWorkspaceState.filters);
+ 
+   const sections = useMemo<readonly BusinessPassportWorkspaceSectionState[]>(() => {
+-    return input.sectionStates.map((section) => {
+-      const state = sectionStateById[section.id];
++    return enabledSections.map((definition) => {
++      const source = sectionStateSourceById[definition.id];
++      const state = sectionStateById[definition.id];
++
++      const completionPercentage = state?.completionPercentage ?? source?.completionPercentage ?? 0;
++      const completionStatus = state?.completionStatus ?? source?.completionStatus ?? "not_started";
++      const validationStatus = state?.validationStatus ?? source?.validationStatus ?? "success";
++      const missingRequiredFields = state?.missingRequiredFields ?? source?.missingRequiredFields ?? [];
++
+       return {
+-        ...section,
+-        disabled: Boolean(section.disabled),
+-        completionPercentage: state?.completionPercentage ?? section.completionPercentage,
+-        completionStatus: state?.completionStatus ?? section.completionStatus,
++        id: definition.id,
++        label: definition.title,
++        anchorId: definition.anchorId,
++        disabled: Boolean(source?.disabled) || !definition.enabled,
++        completionPercentage,
++        completionStatus,
+         dirty: state?.dirty ?? false,
+-        validationStatus: state?.validationStatus ?? section.validationStatus,
+-        missingRequiredFields: state?.missingRequiredFields ?? section.missingRequiredFields,
+-        active: activeSection === section.id,
++        validationStatus,
++        missingRequiredFields,
++        active: activeSection === definition.id,
+       };
+     });
+-  }, [activeSection, input.sectionStates, sectionStateById]);
++  }, [activeSection, enabledSections, sectionStateById, sectionStateSourceById]);
+ 
+   const completion = useMemo<BusinessPassportCompletionState>(() => {
+     const availableSections = sections.filter((section) => !section.disabled);
+@@ -204,18 +208,18 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   );
+ 
+   const goToPreviousSection = useCallback(() => {
+-    const previousSection = findPreviousEnabledSection(sections, activeSection);
++    const previousSection = getPreviousSection(activeSection)?.id;
+     if (previousSection) {
+       setActiveSectionState(previousSection);
+     }
+-  }, [activeSection, sections]);
++  }, [activeSection]);
+ 
+   const goToNextSection = useCallback(() => {
+-    const nextSection = findNextEnabledSection(sections, activeSection);
++    const nextSection = getNextSection(activeSection)?.id;
+     if (nextSection) {
+       setActiveSectionState(nextSection);
+     }
+-  }, [activeSection, sections]);
++  }, [activeSection]);
+ 
+   const markSectionCompleted = useCallback((sectionId: BusinessPassportSectionId, completed: boolean) => {
+     setSectionStateById((currentState) => ({
+@@ -299,8 +303,8 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
+ 
+   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
+-    const previousSectionId = findPreviousEnabledSection(sections, activeSection);
+-    const nextSectionId = findNextEnabledSection(sections, activeSection);
++    const previousSectionId = getPreviousSection(activeSection)?.id;
++    const nextSectionId = getNextSection(activeSection)?.id;
+ 
+     const baseActions: readonly BusinessPassportWorkspaceAction[] = [
+       {
+@@ -338,7 +342,7 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     }));
+ 
+     return [...baseActions, ...customActions];
+-  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, sections, setSectionDirty, setSectionValidation]);
++  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
+ 
+   return {
+     loadingState: {

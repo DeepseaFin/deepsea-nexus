@@ -2,12 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  getEnabledSections,
+  getNextSection,
+  getPreviousSection,
+} from "@/lib/customer/passport/business-passport-section-registry";
+import {
   loadBusinessPassportWorkspacePersistence,
   saveBusinessPassportWorkspacePersistence,
 } from "@/lib/customer/passport/business-passport-workspace-persistence";
 import type {
   BusinessPassportCompletionState,
   BusinessPassportDirtyState,
+  BusinessPassportValidationStatus,
   BusinessPassportWorkspaceFilters,
   BusinessPassportSectionId,
   BusinessPassportSectionCompletionStatus,
@@ -26,6 +32,14 @@ interface MutableSectionState {
   readonly missingRequiredFields: readonly string[];
 }
 
+interface SectionStateSource {
+  readonly completionPercentage: number;
+  readonly completionStatus: BusinessPassportSectionCompletionStatus;
+  readonly validationStatus: BusinessPassportValidationStatus;
+  readonly missingRequiredFields: readonly string[];
+  readonly disabled?: boolean;
+}
+
 function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestratorInput): Readonly<Record<BusinessPassportSectionId, MutableSectionState>> {
   return input.sectionStates.reduce((accumulator, section) => {
     return {
@@ -42,57 +56,38 @@ function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestrat
 }
 
 function resolveInitialActiveSection(input: UseBusinessPassportWorkspaceOrchestratorInput): BusinessPassportSectionId {
+  const enabledSectionIds = getEnabledSections().map((section) => section.id);
+
   if (input.initialActiveSection) {
     const candidate = input.sectionStates.find((section) => section.id === input.initialActiveSection);
-    if (candidate && !candidate.disabled) {
-      return candidate.id;
+    if (candidate && enabledSectionIds.includes(candidate.id) && !candidate.disabled) {
+      return input.initialActiveSection;
     }
   }
 
-  const firstEnabled = input.sectionStates.find((section) => !section.disabled);
-  return firstEnabled?.id ?? input.sectionStates[0]?.id ?? "identity";
-}
-
-function findPreviousEnabledSection(
-  sections: readonly BusinessPassportWorkspaceSectionState[],
-  activeSection: BusinessPassportSectionId,
-): BusinessPassportSectionId | null {
-  const activeIndex = sections.findIndex((section) => section.id === activeSection);
-  if (activeIndex <= 0) {
-    return null;
-  }
-
-  for (let index = activeIndex - 1; index >= 0; index -= 1) {
-    if (!sections[index].disabled) {
-      return sections[index].id;
-    }
-  }
-
-  return null;
-}
-
-function findNextEnabledSection(
-  sections: readonly BusinessPassportWorkspaceSectionState[],
-  activeSection: BusinessPassportSectionId,
-): BusinessPassportSectionId | null {
-  const activeIndex = sections.findIndex((section) => section.id === activeSection);
-  if (activeIndex < 0) {
-    return null;
-  }
-
-  for (let index = activeIndex + 1; index < sections.length; index += 1) {
-    if (!sections[index].disabled) {
-      return sections[index].id;
-    }
-  }
-
-  return null;
+  return enabledSectionIds[0] ?? input.sectionStates[0]?.id ?? "identity";
 }
 
 export function useBusinessPassportWorkspaceOrchestrator(
   input: UseBusinessPassportWorkspaceOrchestratorInput,
 ): BusinessPassportWorkspaceOrchestrator {
-  const sectionIds = useMemo(() => input.sectionStates.map((section) => section.id), [input.sectionStates]);
+  const enabledSections = useMemo(() => getEnabledSections(), []);
+  const sectionIds = useMemo(() => enabledSections.map((section) => section.id), [enabledSections]);
+
+  const sectionStateSourceById = useMemo<Readonly<Record<BusinessPassportSectionId, SectionStateSource>>>(() => {
+    return input.sectionStates.reduce((accumulator, section) => {
+      return {
+        ...accumulator,
+        [section.id]: {
+          completionPercentage: section.completionPercentage,
+          completionStatus: section.completionStatus,
+          validationStatus: section.validationStatus,
+          missingRequiredFields: section.missingRequiredFields,
+          disabled: section.disabled,
+        },
+      };
+    }, {} as Record<BusinessPassportSectionId, SectionStateSource>);
+  }, [input.sectionStates]);
 
   const persistedWorkspaceState = useMemo(
     () =>
@@ -123,20 +118,29 @@ export function useBusinessPassportWorkspaceOrchestrator(
   const [filters, setFiltersState] = useState<BusinessPassportWorkspaceFilters>(() => persistedWorkspaceState.filters);
 
   const sections = useMemo<readonly BusinessPassportWorkspaceSectionState[]>(() => {
-    return input.sectionStates.map((section) => {
-      const state = sectionStateById[section.id];
+    return enabledSections.map((definition) => {
+      const source = sectionStateSourceById[definition.id];
+      const state = sectionStateById[definition.id];
+
+      const completionPercentage = state?.completionPercentage ?? source?.completionPercentage ?? 0;
+      const completionStatus = state?.completionStatus ?? source?.completionStatus ?? "not_started";
+      const validationStatus = state?.validationStatus ?? source?.validationStatus ?? "success";
+      const missingRequiredFields = state?.missingRequiredFields ?? source?.missingRequiredFields ?? [];
+
       return {
-        ...section,
-        disabled: Boolean(section.disabled),
-        completionPercentage: state?.completionPercentage ?? section.completionPercentage,
-        completionStatus: state?.completionStatus ?? section.completionStatus,
+        id: definition.id,
+        label: definition.title,
+        anchorId: definition.anchorId,
+        disabled: Boolean(source?.disabled) || !definition.enabled,
+        completionPercentage,
+        completionStatus,
         dirty: state?.dirty ?? false,
-        validationStatus: state?.validationStatus ?? section.validationStatus,
-        missingRequiredFields: state?.missingRequiredFields ?? section.missingRequiredFields,
-        active: activeSection === section.id,
+        validationStatus,
+        missingRequiredFields,
+        active: activeSection === definition.id,
       };
     });
-  }, [activeSection, input.sectionStates, sectionStateById]);
+  }, [activeSection, enabledSections, sectionStateById, sectionStateSourceById]);
 
   const completion = useMemo<BusinessPassportCompletionState>(() => {
     const availableSections = sections.filter((section) => !section.disabled);
@@ -204,18 +208,18 @@ export function useBusinessPassportWorkspaceOrchestrator(
   );
 
   const goToPreviousSection = useCallback(() => {
-    const previousSection = findPreviousEnabledSection(sections, activeSection);
+    const previousSection = getPreviousSection(activeSection)?.id;
     if (previousSection) {
       setActiveSectionState(previousSection);
     }
-  }, [activeSection, sections]);
+  }, [activeSection]);
 
   const goToNextSection = useCallback(() => {
-    const nextSection = findNextEnabledSection(sections, activeSection);
+    const nextSection = getNextSection(activeSection)?.id;
     if (nextSection) {
       setActiveSectionState(nextSection);
     }
-  }, [activeSection, sections]);
+  }, [activeSection]);
 
   const markSectionCompleted = useCallback((sectionId: BusinessPassportSectionId, completed: boolean) => {
     setSectionStateById((currentState) => ({
@@ -299,8 +303,8 @@ export function useBusinessPassportWorkspaceOrchestrator(
   }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
 
   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
-    const previousSectionId = findPreviousEnabledSection(sections, activeSection);
-    const nextSectionId = findNextEnabledSection(sections, activeSection);
+    const previousSectionId = getPreviousSection(activeSection)?.id;
+    const nextSectionId = getNextSection(activeSection)?.id;
 
     const baseActions: readonly BusinessPassportWorkspaceAction[] = [
       {
@@ -338,7 +342,7 @@ export function useBusinessPassportWorkspaceOrchestrator(
     }));
 
     return [...baseActions, ...customActions];
-  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, sections, setSectionDirty, setSectionValidation]);
+  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
 
   return {
     loadingState: {

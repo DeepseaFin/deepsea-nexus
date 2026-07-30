@@ -1,19 +1,7 @@
 import type { UIButtonVariant } from "@/components/ui/Button";
+import type { BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-section-registry";
 
-export const BUSINESS_PASSPORT_SECTION_IDS = [
-  "identity",
-  "ownership",
-  "documents",
-  "relationships",
-  "compliance",
-  "financials",
-  "evidence",
-  "knowledge",
-  "workflow",
-  "activity",
-] as const;
-
-export type BusinessPassportSectionId = (typeof BUSINESS_PASSPORT_SECTION_IDS)[number];
+export type { BusinessPassportSectionId };
 
 export type BusinessPassportSectionCompletionStatus = "not_started" | "in_progress" | "completed";
 

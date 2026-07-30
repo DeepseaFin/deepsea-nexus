@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import UIButton from "@/components/ui/Button";
 import UICard from "@/components/ui/Card";
+import { getAllSections, getSection, type BusinessPassportSectionId } from "@/lib/customer/passport/business-passport-section-registry";
 import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
 
 export interface ContextNavigationItem {
@@ -45,6 +47,21 @@ export default function ContextNavigation({
   canGoPrevious = false,
   canGoNext = false,
 }: ContextNavigationProps) {
+  const visibleItems = useMemo(() => {
+    const orderById = new Map(getAllSections().map((section) => [section.id, section.order] as const));
+
+    return items
+      .filter((item) => {
+        const section = getSection(item.id as BusinessPassportSectionId);
+        return section?.navigationVisible ?? true;
+      })
+      .sort((left, right) => {
+        const leftOrder = orderById.get(left.id as BusinessPassportSectionId) ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = orderById.get(right.id as BusinessPassportSectionId) ?? Number.MAX_SAFE_INTEGER;
+        return leftOrder - rightOrder;
+      });
+  }, [items]);
+
   return (
     <UICard variant="subtle" className="p-4 sm:p-5" aria-label="Business passport context navigation">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -61,7 +78,7 @@ export default function ContextNavigation({
 
       <nav aria-label="Section navigation" className="mt-3">
         <ul className="flex flex-wrap gap-2">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const stateLabel = item.completed ? "Completed" : item.disabled ? "Disabled" : item.dirty ? "Edited" : "Open";
 
             return (

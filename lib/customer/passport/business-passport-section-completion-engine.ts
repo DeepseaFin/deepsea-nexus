@@ -7,15 +7,16 @@ import type {
 import { businessPassportProfileService } from "@/lib/business-passport/services/BusinessPassportProfileService";
 import type { PassportPanelModel } from "@/lib/customer/business-passport/passport-panel.types";
 import type {
-  BusinessPassportSectionId,
   BusinessPassportSectionCompletionStatus,
-  BusinessPassportValidationStatus,
   BusinessPassportWorkspaceSectionComputedState,
-  BusinessPassportWorkspaceSectionConfig,
 } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+import {
+  type BusinessPassportCompletionStrategyId,
+  getEnabledSections,
+} from "@/lib/customer/passport/business-passport-section-registry";
+import type { BusinessPassportValidationStatus } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
 
 export interface BusinessPassportCompletionEngineInput {
-  readonly sectionConfigs: readonly BusinessPassportWorkspaceSectionConfig[];
   readonly passportPanelModel: PassportPanelModel;
   readonly businessIdentity: {
     readonly legalName: string;
@@ -50,10 +51,11 @@ export interface BusinessPassportCompletionEngineInput {
   readonly activityCount: number;
 }
 
-interface SectionProgress {
+interface SectionStrategyEvaluation {
   readonly completionPercentage: number;
-  readonly validationStatus: BusinessPassportValidationStatus;
   readonly missingRequiredFields: readonly string[];
+  readonly hasError: boolean;
+  readonly hasWarning: boolean;
 }
 
 function toCompletionStatus(percent: number): BusinessPassportSectionCompletionStatus {
@@ -157,7 +159,7 @@ function toRelationshipProfile(input: BusinessPassportCompletionEngineInput): Re
   };
 }
 
-function identityProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function identityProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const summaries = businessPassportProfileService.summarizeProfiles(
     {
       identityProfile: input.passportPanelModel.identityProfile,
@@ -171,15 +173,13 @@ function identityProgress(input: BusinessPassportCompletionEngineInput): Section
 
   return {
     completionPercentage: summaries.identity.completeness.percentage,
-    validationStatus: mapValidation(
-      summaries.identity.validation.issues.some((issue) => issue.severity === "error"),
-      summaries.identity.validation.issues.some((issue) => issue.severity === "warning"),
-    ),
     missingRequiredFields: summaries.identity.completeness.missingFields,
+    hasError: summaries.identity.validation.issues.some((issue) => issue.severity === "error"),
+    hasWarning: summaries.identity.validation.issues.some((issue) => issue.severity === "warning"),
   };
 }
 
-function ownershipProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function ownershipProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const profile = toInstitutionProfile(input);
   const validation = businessPassportProfileService.validateProfiles(
     {
@@ -197,27 +197,26 @@ function ownershipProgress(input: BusinessPassportCompletionEngineInput): Sectio
 
   return {
     completionPercentage: ratioToPercent(completedFields, 7),
-    validationStatus: mapValidation(
-      validation.issues.some((issue) => issue.severity === "error"),
-      validation.issues.some((issue) => issue.severity === "warning"),
-    ),
     missingRequiredFields: missing,
+    hasError: validation.issues.some((issue) => issue.severity === "error"),
+    hasWarning: validation.issues.some((issue) => issue.severity === "warning"),
   };
 }
 
-function documentsProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function documentsProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const completed = input.documentState.filter((item) => item.status === "current").length;
   const reviews = input.documentState.filter((item) => item.status === "review");
   const expiring = input.documentState.filter((item) => item.status === "expiring");
 
   return {
     completionPercentage: ratioToPercent(completed, input.documentState.length),
-    validationStatus: mapValidation(expiring.length > 0, reviews.length > 0),
     missingRequiredFields: [...expiring, ...reviews].map((item) => item.name),
+    hasError: expiring.length > 0,
+    hasWarning: reviews.length > 0,
   };
 }
 
-function relationshipsProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function relationshipsProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const profile = toRelationshipProfile(input);
   const completedSignals = [profile.relationshipStage, profile.engagementLevel, profile.responsiveness, profile.relationshipOwner].filter(Boolean).length;
   const missing = [
@@ -229,12 +228,13 @@ function relationshipsProgress(input: BusinessPassportCompletionEngineInput): Se
 
   return {
     completionPercentage: ratioToPercent(completedSignals, 4),
-    validationStatus: mapValidation(input.relationshipState.score < 60, input.relationshipState.score < 80),
     missingRequiredFields: missing,
+    hasError: input.relationshipState.score < 60,
+    hasWarning: input.relationshipState.score < 80,
   };
 }
 
-function complianceProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function complianceProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const summaries = businessPassportProfileService.summarizeProfiles(
     {
       identityProfile: input.passportPanelModel.identityProfile,
@@ -254,12 +254,13 @@ function complianceProgress(input: BusinessPassportCompletionEngineInput): Secti
       input.evidenceState.filter((item) => item.status === "verified").length + summaries.governance.completeness.completedFields.length,
       input.evidenceState.length + summaries.governance.completeness.completedFields.length + governanceMissing.length,
     ),
-    validationStatus: mapValidation(evidenceMissing.length > 0, governanceMissing.length > 0),
     missingRequiredFields: [...evidenceMissing, ...governanceMissing],
+    hasError: evidenceMissing.length > 0,
+    hasWarning: governanceMissing.length > 0,
   };
 }
 
-function financialProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function financialProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const summaries = businessPassportProfileService.summarizeProfiles(
     {
       identityProfile: input.passportPanelModel.identityProfile,
@@ -273,27 +274,26 @@ function financialProgress(input: BusinessPassportCompletionEngineInput): Sectio
 
   return {
     completionPercentage: summaries.financial.completeness.percentage,
-    validationStatus: mapValidation(
-      summaries.financial.validation.issues.some((issue) => issue.severity === "error"),
-      summaries.financial.validation.issues.some((issue) => issue.severity === "warning"),
-    ),
     missingRequiredFields: summaries.financial.completeness.missingFields,
+    hasError: summaries.financial.validation.issues.some((issue) => issue.severity === "error"),
+    hasWarning: summaries.financial.validation.issues.some((issue) => issue.severity === "warning"),
   };
 }
 
-function evidenceProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function evidenceProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const verified = input.evidenceState.filter((item) => item.status === "verified").length;
   const missing = input.evidenceState.filter((item) => item.status === "missing").map((item) => item.name);
   const review = input.evidenceState.filter((item) => item.status === "review").map((item) => item.name);
 
   return {
     completionPercentage: ratioToPercent(verified, input.evidenceState.length),
-    validationStatus: mapValidation(missing.length > 0, review.length > 0),
     missingRequiredFields: [...missing, ...review],
+    hasError: missing.length > 0,
+    hasWarning: review.length > 0,
   };
 }
 
-function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function knowledgeProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const averageConfidence = input.knowledgeState.length === 0
     ? 0
     : clampPercent(
@@ -302,89 +302,66 @@ function knowledgeProgress(input: BusinessPassportCompletionEngineInput): Sectio
 
   return {
     completionPercentage: averageConfidence,
-    validationStatus: mapValidation(averageConfidence < 50, averageConfidence < 75),
     missingRequiredFields: input.knowledgeState.length > 0 ? [] : ["knowledgeSignals"],
+    hasError: averageConfidence < 50,
+    hasWarning: averageConfidence < 75,
   };
 }
 
-function workflowProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function workflowProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const onTrack = input.workflowState.filter((item) => item.status === "on_track").length;
   const attention = input.workflowState.filter((item) => item.status === "attention").map((item) => item.name);
   const blocked = input.workflowState.filter((item) => item.status === "blocked").map((item) => item.name);
 
   return {
     completionPercentage: ratioToPercent(onTrack, input.workflowState.length),
-    validationStatus: mapValidation(blocked.length > 0, attention.length > 0),
     missingRequiredFields: [...blocked, ...attention],
+    hasError: blocked.length > 0,
+    hasWarning: attention.length > 0,
   };
 }
 
-function activityProgress(input: BusinessPassportCompletionEngineInput): SectionProgress {
+function activityProgress(input: BusinessPassportCompletionEngineInput): SectionStrategyEvaluation {
   const completionPercentage = input.activityCount >= 4 ? 100 : ratioToPercent(input.activityCount, 4);
 
   return {
     completionPercentage,
-    validationStatus: mapValidation(input.activityCount === 0, input.activityCount < 2),
     missingRequiredFields: input.activityCount > 0 ? [] : ["activityEvents"],
+    hasError: input.activityCount === 0,
+    hasWarning: input.activityCount < 2,
   };
 }
 
-function computeSectionProgress(
-  sectionId: BusinessPassportSectionId,
-  input: BusinessPassportCompletionEngineInput,
-): SectionProgress {
-  if (sectionId === "identity") {
-    return identityProgress(input);
-  }
-
-  if (sectionId === "ownership") {
-    return ownershipProgress(input);
-  }
-
-  if (sectionId === "documents") {
-    return documentsProgress(input);
-  }
-
-  if (sectionId === "relationships") {
-    return relationshipsProgress(input);
-  }
-
-  if (sectionId === "compliance") {
-    return complianceProgress(input);
-  }
-
-  if (sectionId === "financials") {
-    return financialProgress(input);
-  }
-
-  if (sectionId === "evidence") {
-    return evidenceProgress(input);
-  }
-
-  if (sectionId === "knowledge") {
-    return knowledgeProgress(input);
-  }
-
-  if (sectionId === "workflow") {
-    return workflowProgress(input);
-  }
-
-  return activityProgress(input);
-}
+const STRATEGY_HANDLERS: Readonly<Record<BusinessPassportCompletionStrategyId, (input: BusinessPassportCompletionEngineInput) => SectionStrategyEvaluation>> = {
+  identity: identityProgress,
+  ownership: ownershipProgress,
+  documents: documentsProgress,
+  relationships: relationshipsProgress,
+  compliance: complianceProgress,
+  financials: financialProgress,
+  evidence: evidenceProgress,
+  knowledge: knowledgeProgress,
+  workflow: workflowProgress,
+  activity: activityProgress,
+};
 
 export function computeBusinessPassportSectionStates(
   input: BusinessPassportCompletionEngineInput,
 ): readonly BusinessPassportWorkspaceSectionComputedState[] {
-  return input.sectionConfigs.map((section) => {
-    const progress = computeSectionProgress(section.id, input);
+  return getEnabledSections().map((section) => {
+    const completionEvaluation = STRATEGY_HANDLERS[section.completionStrategy](input);
+    const validationEvaluation = STRATEGY_HANDLERS[section.validationStrategy](input);
+    const validationStatus = mapValidation(validationEvaluation.hasError, validationEvaluation.hasWarning);
 
     return {
-      ...section,
-      completionPercentage: progress.completionPercentage,
-      completionStatus: toCompletionStatus(progress.completionPercentage),
-      validationStatus: progress.validationStatus,
-      missingRequiredFields: progress.missingRequiredFields,
-      disabled: Boolean(section.disabled),
+      id: section.id,
+      label: section.title,
+      anchorId: section.anchorId,
+      disabled: !section.enabled,
+      completionPercentage: completionEvaluation.completionPercentage,
+      completionStatus: toCompletionStatus(completionEvaluation.completionPercentage),
+      validationStatus,
+      missingRequiredFields: completionEvaluation.missingRequiredFields,
     };
   });
 }
