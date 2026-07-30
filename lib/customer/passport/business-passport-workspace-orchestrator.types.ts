@@ -71,11 +71,21 @@ export interface BusinessPassportWorkspaceLoadingState {
   readonly isLoading: boolean;
 }
 
+export type BusinessPassportWorkspaceFilters = Readonly<Record<string, string | number | boolean | readonly string[]>>;
+
+export interface BusinessPassportWorkspaceViewState {
+  readonly expandedSections: Readonly<Record<BusinessPassportSectionId, boolean>>;
+  readonly selectedTab: string;
+  readonly filters: BusinessPassportWorkspaceFilters;
+  readonly lastVisitedAt: string | null;
+}
+
 export interface UseBusinessPassportWorkspaceOrchestratorInput {
   readonly sectionStates: readonly BusinessPassportWorkspaceSectionComputedState[];
   readonly initialActiveSection?: BusinessPassportSectionId;
   readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute">[];
   readonly initialDirtyBySectionId?: Partial<Record<BusinessPassportSectionId, boolean>>;
+  readonly persistenceKey?: string;
   readonly isLoading?: boolean;
 }
 
@@ -86,11 +96,18 @@ export interface BusinessPassportWorkspaceOrchestrator {
   readonly completion: BusinessPassportCompletionState;
   readonly validation: BusinessPassportValidationState;
   readonly dirtyState: BusinessPassportDirtyState;
+  readonly viewState: BusinessPassportWorkspaceViewState;
   readonly workspaceActions: readonly BusinessPassportWorkspaceAction[];
   readonly setActiveSection: (sectionId: BusinessPassportSectionId) => void;
   readonly jumpToSection: (sectionId: BusinessPassportSectionId) => void;
   readonly goToPreviousSection: () => void;
   readonly goToNextSection: () => void;
+  readonly setSectionExpanded: (sectionId: BusinessPassportSectionId, expanded: boolean) => void;
+  readonly toggleSectionExpanded: (sectionId: BusinessPassportSectionId) => void;
+  readonly setSelectedTab: (tabId: string) => void;
+  readonly setFilters: (filters: BusinessPassportWorkspaceFilters) => void;
+  readonly mergeFilters: (filters: Partial<BusinessPassportWorkspaceFilters>) => void;
+  readonly clearFilters: () => void;
   readonly markSectionCompleted: (sectionId: BusinessPassportSectionId, completed: boolean) => void;
   readonly setSectionValidation: (sectionId: BusinessPassportSectionId, status: BusinessPassportValidationStatus) => void;
   readonly setSectionDirty: (sectionId: BusinessPassportSectionId, dirty: boolean) => void;

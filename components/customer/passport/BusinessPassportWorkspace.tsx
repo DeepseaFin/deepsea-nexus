@@ -293,6 +293,7 @@ export default function BusinessPassportWorkspace({
   const orchestrator = useBusinessPassportWorkspaceOrchestrator({
     sectionStates: computedSectionStates,
     initialActiveSection: "identity",
+    persistenceKey: "atlas.business-passport.workspace.v1",
     actions: quickActions.map((action) => ({
       id: action.id,
       label: action.label,
@@ -356,6 +357,7 @@ export default function BusinessPassportWorkspace({
     }
 
     orchestrator.jumpToSection(typedSectionId);
+    orchestrator.setSelectedTab(typedSectionId);
 
     const anchorId = targetSection.anchorId;
     if (!anchorId || typeof document === "undefined") {

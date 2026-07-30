@@ -30,7 +30,7 @@ function validationClass(status: BusinessPassportValidationStatus | undefined): 
     return "text-amber-300";
   }
 
-  if (status === "valid") {
+  if (status === "success") {
     return "text-emerald-300";
   }
 

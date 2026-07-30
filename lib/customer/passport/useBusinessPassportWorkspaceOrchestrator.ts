@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  loadBusinessPassportWorkspacePersistence,
+  saveBusinessPassportWorkspacePersistence,
+} from "@/lib/customer/passport/business-passport-workspace-persistence";
 import type {
   BusinessPassportCompletionState,
   BusinessPassportDirtyState,
+  BusinessPassportWorkspaceFilters,
   BusinessPassportSectionId,
   BusinessPassportSectionCompletionStatus,
   BusinessPassportValidationState,
@@ -87,10 +92,35 @@ function findNextEnabledSection(
 export function useBusinessPassportWorkspaceOrchestrator(
   input: UseBusinessPassportWorkspaceOrchestratorInput,
 ): BusinessPassportWorkspaceOrchestrator {
-  const [activeSection, setActiveSectionState] = useState<BusinessPassportSectionId>(() => resolveInitialActiveSection(input));
+  const sectionIds = useMemo(() => input.sectionStates.map((section) => section.id), [input.sectionStates]);
+
+  const persistedWorkspaceState = useMemo(
+    () =>
+      loadBusinessPassportWorkspacePersistence({
+        storageKey: input.persistenceKey,
+        sectionIds,
+      }),
+    [input.persistenceKey, sectionIds],
+  );
+
+  const resolvedInitialActiveSection = useMemo(
+    () =>
+      resolveInitialActiveSection({
+        ...input,
+        initialActiveSection: persistedWorkspaceState.activeSection ?? input.initialActiveSection,
+      }),
+    [input, persistedWorkspaceState.activeSection],
+  );
+
+  const [activeSection, setActiveSectionState] = useState<BusinessPassportSectionId>(() => resolvedInitialActiveSection);
   const [sectionStateById, setSectionStateById] = useState<Readonly<Record<BusinessPassportSectionId, MutableSectionState>>>(() =>
     createInitialSectionState(input),
   );
+  const [expandedSections, setExpandedSections] = useState<Readonly<Record<BusinessPassportSectionId, boolean>>>(
+    () => persistedWorkspaceState.expandedSections,
+  );
+  const [selectedTab, setSelectedTabState] = useState<string>(() => persistedWorkspaceState.selectedTab);
+  const [filters, setFiltersState] = useState<BusinessPassportWorkspaceFilters>(() => persistedWorkspaceState.filters);
 
   const sections = useMemo<readonly BusinessPassportWorkspaceSectionState[]>(() => {
     return input.sectionStates.map((section) => {
@@ -221,6 +251,53 @@ export function useBusinessPassportWorkspaceOrchestrator(
     }));
   }, []);
 
+  const setSectionExpanded = useCallback((sectionId: BusinessPassportSectionId, expanded: boolean) => {
+    setExpandedSections((current) => ({
+      ...current,
+      [sectionId]: expanded,
+    }));
+  }, []);
+
+  const toggleSectionExpanded = useCallback((sectionId: BusinessPassportSectionId) => {
+    setExpandedSections((current) => ({
+      ...current,
+      [sectionId]: !current[sectionId],
+    }));
+  }, []);
+
+  const setSelectedTab = useCallback((tabId: string) => {
+    setSelectedTabState(tabId);
+  }, []);
+
+  const setFilters = useCallback((nextFilters: BusinessPassportWorkspaceFilters) => {
+    setFiltersState(nextFilters);
+  }, []);
+
+  const mergeFilters = useCallback((nextFilters: Partial<BusinessPassportWorkspaceFilters>) => {
+    setFiltersState((current) => ({
+      ...current,
+      ...nextFilters,
+    }));
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFiltersState({});
+  }, []);
+
+  useEffect(() => {
+    const lastVisitedAt = new Date().toISOString();
+
+    saveBusinessPassportWorkspacePersistence({
+      storageKey: input.persistenceKey,
+      sectionIds,
+      activeSection,
+      expandedSections,
+      selectedTab,
+      filters,
+      lastVisitedAt,
+    });
+  }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
+
   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
     const previousSectionId = findPreviousEnabledSection(sections, activeSection);
     const nextSectionId = findNextEnabledSection(sections, activeSection);
@@ -272,11 +349,23 @@ export function useBusinessPassportWorkspaceOrchestrator(
     completion,
     validation,
     dirtyState,
+    viewState: {
+      expandedSections,
+      selectedTab,
+      filters,
+      lastVisitedAt: persistedWorkspaceState.lastVisitedAt,
+    },
     workspaceActions,
     setActiveSection,
     jumpToSection,
     goToPreviousSection,
     goToNextSection,
+    setSectionExpanded,
+    toggleSectionExpanded,
+    setSelectedTab,
+    setFilters,
+    mergeFilters,
+    clearFilters,
     markSectionCompleted,
     setSectionValidation,
     setSectionDirty,

@@ -1,0 +1,213 @@
+diff --git a/components/customer/passport/BusinessPassportWorkspace.tsx b/components/customer/passport/BusinessPassportWorkspace.tsx
+index 8aae2c9..add24f6 100644
+--- a/components/customer/passport/BusinessPassportWorkspace.tsx
++++ b/components/customer/passport/BusinessPassportWorkspace.tsx
+@@ -293,6 +293,7 @@ export default function BusinessPassportWorkspace({
+   const orchestrator = useBusinessPassportWorkspaceOrchestrator({
+     sectionStates: computedSectionStates,
+     initialActiveSection: "identity",
++    persistenceKey: "atlas.business-passport.workspace.v1",
+     actions: quickActions.map((action) => ({
+       id: action.id,
+       label: action.label,
+@@ -356,6 +357,7 @@ export default function BusinessPassportWorkspace({
+     }
+ 
+     orchestrator.jumpToSection(typedSectionId);
++    orchestrator.setSelectedTab(typedSectionId);
+ 
+     const anchorId = targetSection.anchorId;
+     if (!anchorId || typeof document === "undefined") {
+diff --git a/components/customer/passport/ContextNavigation.tsx b/components/customer/passport/ContextNavigation.tsx
+index 227a88a..f1594c9 100644
+--- a/components/customer/passport/ContextNavigation.tsx
++++ b/components/customer/passport/ContextNavigation.tsx
+@@ -30,7 +30,7 @@ function validationClass(status: BusinessPassportValidationStatus | undefined):
+     return "text-amber-300";
+   }
+ 
+-  if (status === "valid") {
++  if (status === "success") {
+     return "text-emerald-300";
+   }
+ 
+diff --git a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+index 3ea71ff..f7ed2cd 100644
+--- a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
++++ b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+@@ -71,11 +71,21 @@ export interface BusinessPassportWorkspaceLoadingState {
+   readonly isLoading: boolean;
+ }
+ 
++export type BusinessPassportWorkspaceFilters = Readonly<Record<string, string | number | boolean | readonly string[]>>;
++
++export interface BusinessPassportWorkspaceViewState {
++  readonly expandedSections: Readonly<Record<BusinessPassportSectionId, boolean>>;
++  readonly selectedTab: string;
++  readonly filters: BusinessPassportWorkspaceFilters;
++  readonly lastVisitedAt: string | null;
++}
++
+ export interface UseBusinessPassportWorkspaceOrchestratorInput {
+   readonly sectionStates: readonly BusinessPassportWorkspaceSectionComputedState[];
+   readonly initialActiveSection?: BusinessPassportSectionId;
+   readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute">[];
+   readonly initialDirtyBySectionId?: Partial<Record<BusinessPassportSectionId, boolean>>;
++  readonly persistenceKey?: string;
+   readonly isLoading?: boolean;
+ }
+ 
+@@ -86,11 +96,18 @@ export interface BusinessPassportWorkspaceOrchestrator {
+   readonly completion: BusinessPassportCompletionState;
+   readonly validation: BusinessPassportValidationState;
+   readonly dirtyState: BusinessPassportDirtyState;
++  readonly viewState: BusinessPassportWorkspaceViewState;
+   readonly workspaceActions: readonly BusinessPassportWorkspaceAction[];
+   readonly setActiveSection: (sectionId: BusinessPassportSectionId) => void;
+   readonly jumpToSection: (sectionId: BusinessPassportSectionId) => void;
+   readonly goToPreviousSection: () => void;
+   readonly goToNextSection: () => void;
++  readonly setSectionExpanded: (sectionId: BusinessPassportSectionId, expanded: boolean) => void;
++  readonly toggleSectionExpanded: (sectionId: BusinessPassportSectionId) => void;
++  readonly setSelectedTab: (tabId: string) => void;
++  readonly setFilters: (filters: BusinessPassportWorkspaceFilters) => void;
++  readonly mergeFilters: (filters: Partial<BusinessPassportWorkspaceFilters>) => void;
++  readonly clearFilters: () => void;
+   readonly markSectionCompleted: (sectionId: BusinessPassportSectionId, completed: boolean) => void;
+   readonly setSectionValidation: (sectionId: BusinessPassportSectionId, status: BusinessPassportValidationStatus) => void;
+   readonly setSectionDirty: (sectionId: BusinessPassportSectionId, dirty: boolean) => void;
+diff --git a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+index b494ff5..576a265 100644
+--- a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
++++ b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+@@ -1,9 +1,14 @@
+ "use client";
+ 
+-import { useCallback, useMemo, useState } from "react";
++import { useCallback, useEffect, useMemo, useState } from "react";
++import {
++  loadBusinessPassportWorkspacePersistence,
++  saveBusinessPassportWorkspacePersistence,
++} from "@/lib/customer/passport/business-passport-workspace-persistence";
+ import type {
+   BusinessPassportCompletionState,
+   BusinessPassportDirtyState,
++  BusinessPassportWorkspaceFilters,
+   BusinessPassportSectionId,
+   BusinessPassportSectionCompletionStatus,
+   BusinessPassportValidationState,
+@@ -87,10 +92,35 @@ function findNextEnabledSection(
+ export function useBusinessPassportWorkspaceOrchestrator(
+   input: UseBusinessPassportWorkspaceOrchestratorInput,
+ ): BusinessPassportWorkspaceOrchestrator {
+-  const [activeSection, setActiveSectionState] = useState<BusinessPassportSectionId>(() => resolveInitialActiveSection(input));
++  const sectionIds = useMemo(() => input.sectionStates.map((section) => section.id), [input.sectionStates]);
++
++  const persistedWorkspaceState = useMemo(
++    () =>
++      loadBusinessPassportWorkspacePersistence({
++        storageKey: input.persistenceKey,
++        sectionIds,
++      }),
++    [input.persistenceKey, sectionIds],
++  );
++
++  const resolvedInitialActiveSection = useMemo(
++    () =>
++      resolveInitialActiveSection({
++        ...input,
++        initialActiveSection: persistedWorkspaceState.activeSection ?? input.initialActiveSection,
++      }),
++    [input, persistedWorkspaceState.activeSection],
++  );
++
++  const [activeSection, setActiveSectionState] = useState<BusinessPassportSectionId>(() => resolvedInitialActiveSection);
+   const [sectionStateById, setSectionStateById] = useState<Readonly<Record<BusinessPassportSectionId, MutableSectionState>>>(() =>
+     createInitialSectionState(input),
+   );
++  const [expandedSections, setExpandedSections] = useState<Readonly<Record<BusinessPassportSectionId, boolean>>>(
++    () => persistedWorkspaceState.expandedSections,
++  );
++  const [selectedTab, setSelectedTabState] = useState<string>(() => persistedWorkspaceState.selectedTab);
++  const [filters, setFiltersState] = useState<BusinessPassportWorkspaceFilters>(() => persistedWorkspaceState.filters);
+ 
+   const sections = useMemo<readonly BusinessPassportWorkspaceSectionState[]>(() => {
+     return input.sectionStates.map((section) => {
+@@ -221,6 +251,53 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     }));
+   }, []);
+ 
++  const setSectionExpanded = useCallback((sectionId: BusinessPassportSectionId, expanded: boolean) => {
++    setExpandedSections((current) => ({
++      ...current,
++      [sectionId]: expanded,
++    }));
++  }, []);
++
++  const toggleSectionExpanded = useCallback((sectionId: BusinessPassportSectionId) => {
++    setExpandedSections((current) => ({
++      ...current,
++      [sectionId]: !current[sectionId],
++    }));
++  }, []);
++
++  const setSelectedTab = useCallback((tabId: string) => {
++    setSelectedTabState(tabId);
++  }, []);
++
++  const setFilters = useCallback((nextFilters: BusinessPassportWorkspaceFilters) => {
++    setFiltersState(nextFilters);
++  }, []);
++
++  const mergeFilters = useCallback((nextFilters: Partial<BusinessPassportWorkspaceFilters>) => {
++    setFiltersState((current) => ({
++      ...current,
++      ...nextFilters,
++    }));
++  }, []);
++
++  const clearFilters = useCallback(() => {
++    setFiltersState({});
++  }, []);
++
++  useEffect(() => {
++    const lastVisitedAt = new Date().toISOString();
++
++    saveBusinessPassportWorkspacePersistence({
++      storageKey: input.persistenceKey,
++      sectionIds,
++      activeSection,
++      expandedSections,
++      selectedTab,
++      filters,
++      lastVisitedAt,
++    });
++  }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
++
+   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
+     const previousSectionId = findPreviousEnabledSection(sections, activeSection);
+     const nextSectionId = findNextEnabledSection(sections, activeSection);
+@@ -272,11 +349,23 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     completion,
+     validation,
+     dirtyState,
++    viewState: {
++      expandedSections,
++      selectedTab,
++      filters,
++      lastVisitedAt: persistedWorkspaceState.lastVisitedAt,
++    },
+     workspaceActions,
+     setActiveSection,
+     jumpToSection,
+     goToPreviousSection,
+     goToNextSection,
++    setSectionExpanded,
++    toggleSectionExpanded,
++    setSelectedTab,
++    setFilters,
++    mergeFilters,
++    clearFilters,
+     markSectionCompleted,
+     setSectionValidation,
+     setSectionDirty,
