@@ -5,6 +5,11 @@ import {
   WORKSPACE_EVENT_TYPES,
   type WorkspaceEventBus,
 } from "@/lib/workspaces/workspace-event-bus";
+import {
+  createWorkspaceCommandPipeline,
+  type WorkspaceCommandMiddleware,
+  type WorkspaceCommandPipeline,
+} from "@/lib/workspaces/workspace-command-pipeline";
 import type {
   WorkspaceAttributes,
   WorkspaceValidationIssue,
@@ -69,6 +74,24 @@ export interface WorkspaceCommandEngine {
     commandType: TCommand["type"],
     handler: WorkspaceCommandHandler<TCommand, TResult>,
   ): () => void;
+  registerMiddleware(
+    middleware: WorkspaceCommandMiddleware<
+      WorkspaceCommand,
+      WorkspaceCommandContext,
+      WorkspaceCommandResult,
+      WorkspaceCommandPipelineState
+    >,
+  ): () => void;
+  unregisterMiddleware(
+    middlewareOrId:
+      | WorkspaceCommandMiddleware<
+          WorkspaceCommand,
+          WorkspaceCommandContext,
+          WorkspaceCommandResult,
+          WorkspaceCommandPipelineState
+        >
+      | string,
+  ): void;
   validate<TCommand extends WorkspaceCommand>(command: TCommand): WorkspaceValidationResult;
   beforeExecute(hook: WorkspaceCommandBeforeExecuteHook): () => void;
   afterExecute(hook: WorkspaceCommandAfterExecuteHook): () => void;
@@ -80,6 +103,10 @@ export interface CreateWorkspaceCommandEngineOptions {
 
 function invalidResult(issue: WorkspaceValidationIssue): WorkspaceValidationResult {
   return { valid: false, issues: [issue] };
+}
+
+function validResult(): WorkspaceValidationResult {
+  return { valid: true, issues: [] };
 }
 
 function mergeValidationResults(results: readonly WorkspaceValidationResult[]): WorkspaceValidationResult {
@@ -106,19 +133,60 @@ function createDefaultContext(
   };
 }
 
+interface WorkspaceCommandPipelineState extends Record<string, unknown> {
+  validation?: WorkspaceValidationResult;
+}
+
+function toFailureOutcome(
+  command: WorkspaceCommand,
+  context: WorkspaceCommandContext,
+  validation: WorkspaceValidationResult,
+  error?: Error,
+): WorkspaceCommandResult {
+  return {
+    commandType: command.type,
+    commandId: context.commandId,
+    workspaceId: context.workspaceId,
+    occurredAt: context.occurredAt,
+    validation,
+    success: false,
+    error,
+  };
+}
+
+function toSuccessOutcome<TResult>(
+  command: WorkspaceCommand,
+  context: WorkspaceCommandContext,
+  validation: WorkspaceValidationResult,
+  result: TResult,
+): WorkspaceCommandResult<TResult> {
+  return {
+    commandType: command.type,
+    commandId: context.commandId,
+    workspaceId: context.workspaceId,
+    occurredAt: context.occurredAt,
+    validation,
+    success: true,
+    result,
+  };
+}
+
 export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEngineOptions): WorkspaceCommandEngine {
   const handlers = new Map<string, WorkspaceCommandHandler>();
   const validators = new Map<string, Set<WorkspaceCommandValidator>>();
-  const beforeHooks = new Set<WorkspaceCommandBeforeExecuteHook>();
-  const afterHooks = new Set<WorkspaceCommandAfterExecuteHook>();
+  const pipeline: WorkspaceCommandPipeline<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  > = createWorkspaceCommandPipeline();
+  let middlewareCounter = 0;
 
   const state: WorkspaceCommandEngineState = {
     eventBus: options?.eventBus ?? getWorkspaceEventBus(),
   };
 
-  const validate: WorkspaceCommandEngine["validate"] = (command) => {
-    const context = createDefaultContext(command, state);
-
+  const validateCommand = (command: WorkspaceCommand, context: WorkspaceCommandContext): WorkspaceValidationResult => {
     const defaultChecks: WorkspaceValidationResult[] = [];
     if (!command.type || command.type.trim().length === 0) {
       defaultChecks.push(invalidResult({
@@ -158,122 +226,111 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     return validation;
   };
 
-  const execute: WorkspaceCommandEngine["execute"] = (command) => {
+  const validate: WorkspaceCommandEngine["validate"] = (command) => {
     const context = createDefaultContext(command, state);
-    const validation = validate(command);
+    return validateCommand(command, context);
+  };
 
-    if (!validation.valid) {
-      return {
-        commandType: command.type,
-        commandId: context.commandId,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
-        validation,
-        success: false,
-      };
-    }
+  const validationMiddleware: WorkspaceCommandMiddleware<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  > = {
+    id: "workspace.command.middleware.validation",
+    beforeExecute: (execution) => {
+      const validation = validateCommand(execution.command, execution.context);
+      execution.state.validation = validation;
 
-    const handler = handlers.get(command.type);
-    if (!handler) {
-      const fallbackValidation = invalidResult({
-        code: "workspace_command_handler_missing",
-        message: `No workspace command handler is registered for ${command.type}.`,
-        target: "type",
-      });
-
-      return {
-        commandType: command.type,
-        commandId: context.commandId,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
-        validation: fallbackValidation,
-        success: false,
-      };
-    }
-
-    state.eventBus.publish({
-      type: WORKSPACE_EVENT_TYPES.CommandBeforeExecute,
-      workspaceId: context.workspaceId,
-      occurredAt: context.occurredAt,
-      payload: {
-        commandType: command.type,
-        commandId: context.commandId,
-      },
-    });
-
-    for (const hook of beforeHooks) {
-      hook(command, context);
-    }
-
-    try {
-      const result = handler(command, context) as unknown;
-
-      const outcome: WorkspaceCommandResult = {
-        commandType: command.type,
-        commandId: context.commandId,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
-        validation,
-        success: true,
-        result,
-      };
-
-      state.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandAfterExecute,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
-        payload: {
-          commandType: command.type,
-          commandId: context.commandId,
-          success: true,
-        },
-      });
-
-      for (const hook of afterHooks) {
-        hook(command, outcome, context);
+      if (!validation.valid) {
+        execution.shortCircuit(toFailureOutcome(execution.command, execution.context, validation));
       }
+    },
+  };
 
-      return outcome;
-    } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error("Workspace command execution failed.");
-      const outcome: WorkspaceCommandResult = {
-        commandType: command.type,
-        commandId: context.commandId,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
-        validation,
-        success: false,
-        error: normalizedError,
-      };
-
-      state.eventBus.publish({
-        type: WORKSPACE_EVENT_TYPES.CommandFailed,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
+  const eventPublicationMiddleware: WorkspaceCommandMiddleware<
+    WorkspaceCommand,
+    WorkspaceCommandContext,
+    WorkspaceCommandResult,
+    WorkspaceCommandPipelineState
+  > = {
+    id: "workspace.command.middleware.event-publication",
+    beforeExecute: (execution) => {
+      execution.context.eventBus.publish({
+        type: WORKSPACE_EVENT_TYPES.CommandBeforeExecute,
+        workspaceId: execution.context.workspaceId,
+        occurredAt: execution.context.occurredAt,
         payload: {
-          commandType: command.type,
-          commandId: context.commandId,
-          errorMessage: normalizedError.message,
+          commandType: execution.command.type,
+          commandId: execution.context.commandId,
+        },
+      });
+    },
+    afterExecute: (execution, outcome) => {
+      execution.context.eventBus.publish({
+        type: WORKSPACE_EVENT_TYPES.CommandAfterExecute,
+        workspaceId: execution.context.workspaceId,
+        occurredAt: execution.context.occurredAt,
+        payload: {
+          commandType: execution.command.type,
+          commandId: execution.context.commandId,
+          success: outcome.success,
+        },
+      });
+    },
+    onError: (execution, error) => {
+      const validation = execution.state.validation ?? validResult();
+
+      execution.context.eventBus.publish({
+        type: WORKSPACE_EVENT_TYPES.CommandFailed,
+        workspaceId: execution.context.workspaceId,
+        occurredAt: execution.context.occurredAt,
+        payload: {
+          commandType: execution.command.type,
+          commandId: execution.context.commandId,
+          errorMessage: error.message,
         },
       });
 
-      state.eventBus.publish({
+      execution.context.eventBus.publish({
         type: WORKSPACE_EVENT_TYPES.CommandAfterExecute,
-        workspaceId: context.workspaceId,
-        occurredAt: context.occurredAt,
+        workspaceId: execution.context.workspaceId,
+        occurredAt: execution.context.occurredAt,
         payload: {
-          commandType: command.type,
-          commandId: context.commandId,
+          commandType: execution.command.type,
+          commandId: execution.context.commandId,
           success: false,
         },
       });
 
-      for (const hook of afterHooks) {
-        hook(command, outcome, context);
-      }
+      return toFailureOutcome(execution.command, execution.context, validation, error);
+    },
+  };
 
-      return outcome;
-    }
+  pipeline.registerMiddleware(validationMiddleware);
+  pipeline.registerMiddleware(eventPublicationMiddleware);
+
+  const execute: WorkspaceCommandEngine["execute"] = (command) => {
+    const context = createDefaultContext(command, state);
+
+    const outcome = pipeline.executePipeline({
+      command,
+      context,
+      initialState: {},
+      execute: (execution): WorkspaceCommandResult => {
+        const handler = handlers.get(execution.command.type);
+        const validation = execution.state.validation ?? validateCommand(execution.command, execution.context);
+
+        if (!handler) {
+          return toFailureOutcome(execution.command, execution.context, validation);
+        }
+
+        const result = handler(execution.command, execution.context);
+        return toSuccessOutcome(execution.command, execution.context, validation, result);
+      },
+    });
+
+    return outcome as WorkspaceCommandResult<TResult>;
   };
 
   const registerHandler: WorkspaceCommandEngine["registerHandler"] = (commandType, handler) => {
@@ -284,23 +341,39 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
     };
   };
 
+  const registerMiddleware: WorkspaceCommandEngine["registerMiddleware"] = (middleware) => {
+    return pipeline.registerMiddleware(middleware);
+  };
+
+  const unregisterMiddleware: WorkspaceCommandEngine["unregisterMiddleware"] = (middlewareOrId) => {
+    pipeline.unregisterMiddleware(middlewareOrId);
+  };
+
   const beforeExecute: WorkspaceCommandEngine["beforeExecute"] = (hook) => {
-    beforeHooks.add(hook);
-    return () => {
-      beforeHooks.delete(hook);
-    };
+    const middlewareId = `workspace.command.middleware.before-hook.${middlewareCounter++}`;
+    return pipeline.registerMiddleware({
+      id: middlewareId,
+      beforeExecute: (execution) => {
+        hook(execution.command, execution.context);
+      },
+    });
   };
 
   const afterExecute: WorkspaceCommandEngine["afterExecute"] = (hook) => {
-    afterHooks.add(hook);
-    return () => {
-      afterHooks.delete(hook);
-    };
+    const middlewareId = `workspace.command.middleware.after-hook.${middlewareCounter++}`;
+    return pipeline.registerMiddleware({
+      id: middlewareId,
+      afterExecute: (execution, outcome) => {
+        hook(execution.command, outcome, execution.context);
+      },
+    });
   };
 
   return {
     execute,
     registerHandler,
+    registerMiddleware,
+    unregisterMiddleware,
     validate,
     beforeExecute,
     afterExecute,
