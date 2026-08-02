@@ -405,11 +405,12 @@ export default function Opportunity360Workspace({
   const product = toProductLabel(selectedContext.opportunityLifecycle);
   const statusLabel = passport.status.replace(/_/g, " ");
   const resolvedQuickActions = quickActions ?? [
-    { label: "Approve", href: "/atlas/approval-center" },
-    { label: "Send Back", href: "/atlas/approval-center?decision=request_changes" },
+    { label: "Approve", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Send Back", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
     { label: "Upload Documents", href: "/atlas/oracle" },
     { label: "Request Information", href: "/atlas/clients" },
-    { label: "Open Client 360", href: "/atlas/clients" },
+    { label: "Open Client 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
   ];
 
   return (

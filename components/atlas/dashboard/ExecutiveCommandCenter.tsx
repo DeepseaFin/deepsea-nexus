@@ -171,6 +171,10 @@ function createRelationshipAlertModel(contexts: readonly ContextRecord[]) {
   const followUps = defaultRelationshipPanelModel.nextActions.filter((action) => action.status !== "Queued");
   const expiringRelationships = defaultRelationshipPanelModel.timeline.filter((item) => item.status !== "completed");
   const highRiskRelationships = contexts.filter((context) => context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW).length;
+  const priorityOpportunity = contexts.find((context) => context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW) ?? contexts[0];
+  const institutionHref = priorityOpportunity
+    ? `/atlas/institution-home?opportunityId=${priorityOpportunity.opportunityId}`
+    : "/atlas/institution-home";
 
   return {
     followUps: followUps.length,
@@ -181,19 +185,19 @@ function createRelationshipAlertModel(contexts: readonly ContextRecord[]) {
         label: "Follow-ups",
         value: followUps.length,
         detail: followUps[0]?.title ?? "Relationship follow-up queue is clear.",
-        href: "/atlas/journey",
+        href: institutionHref,
       },
       {
         label: "Expiring relationships",
         value: expiringRelationships.length,
         detail: expiringRelationships[0]?.subject ?? "No expiring relationship checkpoints.",
-        href: "/atlas/relationship-intelligence",
+        href: institutionHref,
       },
       {
         label: "High-risk relationships",
         value: highRiskRelationships,
         detail: `${highRiskRelationships} institutions are still under executive review.`,
-        href: "/atlas/relationship-intelligence",
+        href: institutionHref,
       },
     ],
   };
@@ -237,8 +241,10 @@ export default function ExecutiveCommandCenter() {
       actions={[
         { label: "New Client", href: "/atlas/clients" },
         { label: "New Deal", href: "/atlas/deals/new" },
+        { label: "Institution 360", href: "/atlas/institution-home" },
+        { label: "Operations Control", href: "/atlas/operations-control" },
         { label: "Upload Documents", href: "/atlas/oracle" },
-        { label: "Business Passport", href: "/atlas/business-passport" },
+        { label: "Business Passport", href: "/atlas/institution-home" },
         { label: "Relationship Journey", href: "/atlas/journey" },
       ]}
       activity={recentActivity}
@@ -314,7 +320,11 @@ export default function ExecutiveCommandCenter() {
 
             <div className="mt-4 space-y-3">
               {passportProgress.map((item) => (
-                <div key={item.opportunityId} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <Link
+                  key={item.opportunityId}
+                  href={`/atlas/institution-home?opportunityId=${item.opportunityId}`}
+                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
@@ -328,7 +338,7 @@ export default function ExecutiveCommandCenter() {
                   <div className="mt-3 h-2 rounded-full bg-slate-900">
                     <div className="h-2 rounded-full bg-cyan-400" style={{ width: `${item.progress}%` }} />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </SectionCard>
@@ -354,7 +364,9 @@ export default function ExecutiveCommandCenter() {
               actions={[
                 { label: "New Client", href: "/atlas/clients" },
                 { label: "New Deal", href: "/atlas/deals/new" },
-                { label: "Business Passport", href: "/atlas/business-passport" },
+                { label: "Institution 360", href: "/atlas/institution-home" },
+                { label: "Operations Control", href: "/atlas/operations-control" },
+                { label: "Business Passport", href: "/atlas/institution-home" },
                 { label: "Relationship Journey", href: "/atlas/journey" },
                 { label: "Upload Documents", href: "/atlas/oracle" },
               ]}

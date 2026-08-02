@@ -7,6 +7,7 @@ import {
   FolderOpen,
   Network,
 } from "lucide-react";
+import Link from "next/link";
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import ActivityTimeline from "@/components/atlas/design-system/ActivityTimeline";
 import QuickActionBar, { type QuickAction } from "@/components/atlas/design-system/QuickActionBar";
@@ -58,6 +59,7 @@ const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
 type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
 
 export interface Institution360WorkspaceProps {
+  readonly opportunityId?: string;
   readonly institutionName?: string;
   readonly industry?: string;
   readonly country?: string;
@@ -247,6 +249,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
 }
 
 export default function Institution360Workspace({
+  opportunityId,
   institutionName,
   industry,
   country,
@@ -258,7 +261,10 @@ export default function Institution360Workspace({
   const passport = getJourneyBusinessPassportProjection();
   const relationshipModel = defaultRelationshipPanelModel;
   const contexts = dedupeLatestContexts(getOperationsCenterContexts());
-  const primaryOpportunity = contexts[0];
+  const selectedOpportunity = opportunityId
+    ? contexts.find((context) => context.opportunityId === opportunityId)
+    : undefined;
+  const primaryOpportunity = selectedOpportunity ?? contexts[0];
   const activityEvents = buildActivityEvents();
   const knowledgeExplorer = buildKnowledgeExplorer();
   const aiRecommendations = buildAiRecommendations();
@@ -273,9 +279,19 @@ export default function Institution360Workspace({
   const resolvedQuickActions = quickActions ?? [
     { label: "New Deal", href: "/atlas/deals/new" },
     { label: "Upload Documents", href: "/atlas/oracle" },
-    { label: "Open Passport", href: "/atlas/business-passport" },
+    {
+      label: "Open Passport",
+      href: primaryOpportunity
+        ? `/atlas/institution-home?opportunityId=${primaryOpportunity.opportunityId}`
+        : "/atlas/institution-home",
+    },
     { label: "Relationship Journey", href: "/atlas/journey" },
-    { label: "View Opportunities", href: "/atlas/deals" },
+    {
+      label: "View Opportunities",
+      href: primaryOpportunity
+        ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
+        : "/atlas/opportunity",
+    },
   ];
 
   return (
@@ -320,7 +336,11 @@ export default function Institution360Workspace({
 
             <div className="space-y-3">
               {contexts.slice(0, 4).map((context) => (
-                <div key={context.opportunityId} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <Link
+                  key={context.opportunityId}
+                  href={`/atlas/opportunity?opportunityId=${context.opportunityId}`}
+                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
@@ -338,7 +358,7 @@ export default function Institution360Workspace({
                       <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentOwner}</p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

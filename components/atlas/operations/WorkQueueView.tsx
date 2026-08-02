@@ -1,4 +1,5 @@
 import { ListChecks } from "lucide-react";
+import Link from "next/link";
 import type { WorkQueue } from "@/src/capabilities/operations/workqueue/WorkQueue";
 
 interface WorkQueueViewProps {
@@ -53,7 +54,11 @@ export default function WorkQueueView({ queue, className }: WorkQueueViewProps) 
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
           {queue.queueItems.map((item) => (
-            <article key={item.assignmentId} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <Link
+              key={item.assignmentId}
+              href={`/atlas/opportunity?workflowId=${item.operationId}`}
+              className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+            >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-300">{item.assignmentType}</p>
@@ -70,7 +75,7 @@ export default function WorkQueueView({ queue, className }: WorkQueueViewProps) 
                 <Field label="Status" value={item.status} />
                 <Field label="Task ID" value={item.taskId ?? "Not assigned to a task"} />
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       )}

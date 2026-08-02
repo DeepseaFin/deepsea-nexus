@@ -346,7 +346,10 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
   const resolvedQuickActions = quickActions ?? [
     { label: "Assign Case", href: "/atlas/work-queue" },
     { label: "Approve", href: "/atlas/approval-center" },
-    { label: "Open Opportunity", href: "/atlas/deals" },
+    {
+      label: "Open Opportunity",
+      href: contexts[0] ? `/atlas/opportunity?workflowId=${contexts[0].workflowId}` : "/atlas/opportunity",
+    },
     { label: "Upload Documents", href: "/atlas/oracle" },
     { label: "Escalate", href: "/atlas/notification-center" },
   ];

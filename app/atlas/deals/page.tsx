@@ -15,6 +15,8 @@ export default function DealsPage() {
       actions={[
         { label: 'New Deal', href: '/atlas/deals/new' },
         { label: 'Work Queue', href: '/atlas/work-queue' },
+        { label: 'Opportunity 360', href: '/atlas/opportunity?opportunityId=OPP-7712' },
+        { label: 'Credit Decision', href: '/atlas/credit-decision?opportunityId=OPP-7712' },
       ]}
       kpis={[
         { label: 'Pipeline', value: 'Live', note: 'Sourced from orchestration outputs' },

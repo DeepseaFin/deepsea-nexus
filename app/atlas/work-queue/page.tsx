@@ -1,6 +1,7 @@
 import RMWorkQueue from '@/components/atlas/workqueue/RMWorkQueue';
 import WorkspaceScaffold from '@/components/atlas/design-system/WorkspaceScaffold';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import Link from 'next/link';
 import { getOperationsCenterContexts } from '@/lib/workflows/DemoScenario';
 import { OpportunityLifecycle } from '@/lib/workflows/WorkflowTransition';
 
@@ -49,12 +50,16 @@ export default function WorkQueuePage() {
                   <p className="mt-2 text-2xl font-semibold text-slate-100">{group.items.length}</p>
                   <div className="mt-3 space-y-2">
                     {group.items.map((item) => (
-                      <div key={item.workflowId} className="rounded-lg border border-slate-800 bg-slate-900/70 p-2">
+                      <Link
+                        key={item.workflowId}
+                        href={`/atlas/opportunity?workflowId=${item.workflowId}`}
+                        className="block rounded-lg border border-slate-800 bg-slate-900/70 p-2 transition hover:border-cyan-700/40"
+                      >
                         <p className="text-sm font-semibold text-slate-100">{item.opportunityId}</p>
                         <p className="text-xs text-slate-400">Workflow {item.workflowId}</p>
                         <p className="text-xs text-slate-400">Owner {item.currentOwner}</p>
                         <p className="text-xs text-slate-400">Workspace {item.currentWorkspace}</p>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -65,6 +66,14 @@ function priorityClass(priority: ApprovalRecord['priority']): string {
   if (priority === 'High') return 'text-amber-300';
   if (priority === 'Medium') return 'text-cyan-300';
   return 'text-slate-400';
+}
+
+function toCreditDecisionHref(deal: string): string {
+  if (deal.startsWith('OPP-')) {
+    return `/atlas/credit-decision?opportunityId=${deal}`;
+  }
+
+  return '/atlas/credit-decision';
 }
 
 export default function ApprovalCenterPage() {
@@ -583,9 +592,17 @@ export default function ApprovalCenterPage() {
                       <tbody className="text-slate-200">
                         {filteredApprovals.map((item) => (
                           <tr key={item.approvalId} className="border-t border-slate-800">
-                            <td className="px-2 py-2 font-semibold text-cyan-300">{item.approvalId}</td>
+                            <td className="px-2 py-2 font-semibold text-cyan-300">
+                              <Link href={toCreditDecisionHref(item.deal)} className="hover:text-cyan-200">
+                                {item.approvalId}
+                              </Link>
+                            </td>
                             <td className="px-2 py-2">{item.module}</td>
-                            <td className="px-2 py-2">{item.deal}</td>
+                            <td className="px-2 py-2">
+                              <Link href={toCreditDecisionHref(item.deal)} className="hover:text-cyan-200">
+                                {item.deal}
+                              </Link>
+                            </td>
                             <td className="px-2 py-2">{item.client}</td>
                             <td className="px-2 py-2">{item.requestedBy}</td>
                             <td className="px-2 py-2">{item.approvalType}</td>
@@ -597,11 +614,11 @@ export default function ApprovalCenterPage() {
                             <td className="px-2 py-2">{item.decisionRequired}</td>
                             <td className="px-2 py-2">
                               <div className="flex flex-wrap gap-1">
-                                <button type="button" className="rounded border border-emerald-700/40 bg-emerald-950/30 px-2 py-1 text-xs text-emerald-200">Approve</button>
-                                <button type="button" className="rounded border border-rose-700/40 bg-rose-950/30 px-2 py-1 text-xs text-rose-200">Reject</button>
-                                <button type="button" className="rounded border border-amber-700/40 bg-amber-950/30 px-2 py-1 text-xs text-amber-200">Return</button>
-                                <button type="button" className="rounded border border-cyan-700/40 bg-cyan-950/30 px-2 py-1 text-xs text-cyan-200">Request Information</button>
-                                <button type="button" className="rounded border border-fuchsia-700/40 bg-fuchsia-950/30 px-2 py-1 text-xs text-fuchsia-200">Escalate</button>
+                                <Link href={toCreditDecisionHref(item.deal)} className="rounded border border-emerald-700/40 bg-emerald-950/30 px-2 py-1 text-xs text-emerald-200 hover:border-emerald-600/60">Approve</Link>
+                                <Link href={toCreditDecisionHref(item.deal)} className="rounded border border-rose-700/40 bg-rose-950/30 px-2 py-1 text-xs text-rose-200 hover:border-rose-600/60">Reject</Link>
+                                <Link href={toCreditDecisionHref(item.deal)} className="rounded border border-amber-700/40 bg-amber-950/30 px-2 py-1 text-xs text-amber-200 hover:border-amber-600/60">Return</Link>
+                                <Link href={toCreditDecisionHref(item.deal)} className="rounded border border-cyan-700/40 bg-cyan-950/30 px-2 py-1 text-xs text-cyan-200 hover:border-cyan-600/60">Request Information</Link>
+                                <Link href={toCreditDecisionHref(item.deal)} className="rounded border border-fuchsia-700/40 bg-fuchsia-950/30 px-2 py-1 text-xs text-fuchsia-200 hover:border-fuchsia-600/60">Escalate</Link>
                               </div>
                             </td>
                           </tr>

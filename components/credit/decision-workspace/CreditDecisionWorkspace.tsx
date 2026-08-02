@@ -405,6 +405,9 @@ export default function CreditDecisionWorkspace({
     { label: "Reject", href: "/atlas/approval-center?decision=reject" },
     { label: "Request Information", href: "/atlas/clients" },
     { label: "Escalate", href: "/atlas/notification-center" },
+    { label: "Back to Institution", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Back to Opportunity", href: `/atlas/opportunity?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Back to Executive", href: "/atlas/dashboard" },
   ];
 
   return (

@@ -1,10 +1,15 @@
-import { InstitutionHome } from "@/components/institution-home";
+import Institution360Workspace from "@/components/customer/client360/Institution360Workspace";
 
-export default function AtlasInstitutionHomePreviewPage() {
-  return (
-    <InstitutionHome
-      institutionName="Institution Home Preview"
-      institutionSubtitle="Temporary route for DNOS R2-M1-S3 evaluation"
-    />
-  );
+type InstitutionHomePageSearchParams = Promise<{
+  opportunityId?: string;
+}>;
+
+export default async function AtlasInstitutionHomePage({
+  searchParams,
+}: {
+  searchParams?: InstitutionHomePageSearchParams;
+}) {
+  const params = (await searchParams) ?? {};
+
+  return <Institution360Workspace opportunityId={params.opportunityId} />;
 }
