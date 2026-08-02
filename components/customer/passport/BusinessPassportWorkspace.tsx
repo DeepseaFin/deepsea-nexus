@@ -108,14 +108,14 @@ const defaultKnowledgeSignals: readonly KnowledgeSignal[] = [
 const defaultDocuments: readonly DocumentSummaryItem[] = [
   {
     id: "d-1",
-    documentGroup: "Corporate Registry and Governance",
+    documentGroup: "Corporate Registry, Ownership, and Governance",
     owner: "Passport Office",
     lastUpdated: "2 days ago",
     status: "current",
   },
   {
     id: "d-2",
-    documentGroup: "Facility and Commercial Pack",
+    documentGroup: "KYC, Compliance, and Banking Pack",
     owner: "Relationship Desk",
     lastUpdated: "Today",
     status: "review",
@@ -132,8 +132,8 @@ const defaultDocuments: readonly DocumentSummaryItem[] = [
 const defaultEvidenceItems: readonly EvidenceItem[] = [
   { id: "e-1", category: "Corporate Registry", status: "verified", updated: "2 days ago" },
   { id: "e-2", category: "KYC and UBO", status: "review", updated: "Today" },
-  { id: "e-3", category: "Financial Statements", status: "verified", updated: "6 days ago" },
-  { id: "e-4", category: "Legal Agreements", status: "missing", updated: "Pending upload" },
+  { id: "e-3", category: "Bank Account Validation", status: "verified", updated: "6 days ago" },
+  { id: "e-4", category: "Compliance Certificate", status: "missing", updated: "Pending upload" },
 ];
 
 const defaultWorkflowStages: readonly WorkflowSummaryItem[] = [

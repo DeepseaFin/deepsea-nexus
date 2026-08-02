@@ -276,6 +276,9 @@ export default function Institution360Workspace({
   const resolvedRelationshipManager = relationshipManager ?? relationshipModel.summary.relationship.ownerDisplayName;
   const resolvedStatus = currentStatus ?? passport.status.replace(/_/g, " ");
   const resolvedOverallHealth = overallHealth ?? `${relationshipModel.health.status} (${relationshipModel.health.score})`;
+  const missingInformationCount = knowledgeInsights.missingInformation.length;
+  const complianceRiskCount = knowledgeInsights.riskIndicators.length;
+  const missingDocumentCount = defaultDocumentsPanelModel.missingDocuments.length;
   const resolvedQuickActions = quickActions ?? [
     {
       label: "Open Opportunity 360",
@@ -328,6 +331,47 @@ export default function Institution360Workspace({
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Overall Health</p>
               <p className="mt-2 text-sm font-semibold text-emerald-300">{resolvedOverallHealth}</p>
             </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Institution Readiness" icon={BadgeCheck} badge={{ label: "Business Completeness", variant: "warning" }}>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Identity</p>
+              <p className="mt-2 text-sm font-semibold text-emerald-200">Verified</p>
+              <p className="mt-1 text-xs text-slate-400">{passport.profiles.identityProfile.registrationNumber ?? "Institution profile available"}</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Ownership</p>
+              <p className="mt-2 text-sm font-semibold text-cyan-200">Assigned</p>
+              <p className="mt-1 text-xs text-slate-400">Relationship owner: {resolvedRelationshipManager}</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">KYC</p>
+              <p className={`mt-2 text-sm font-semibold ${missingInformationCount > 0 ? "text-amber-200" : "text-emerald-200"}`}>
+                {missingInformationCount > 0 ? "Attention" : "Current"}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">{missingInformationCount} outstanding information item(s)</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Compliance</p>
+              <p className={`mt-2 text-sm font-semibold ${complianceRiskCount > 0 ? "text-amber-200" : "text-emerald-200"}`}>
+                {complianceRiskCount > 0 ? "Monitored" : "Current"}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">{complianceRiskCount} active compliance indicator(s)</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Banking</p>
+              <p className="mt-2 text-sm font-semibold text-cyan-200">Connected</p>
+              <p className="mt-1 text-xs text-slate-400">Banking evidence is linked through ORACLE documents.</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Documents</p>
+              <p className={`mt-2 text-sm font-semibold ${missingDocumentCount > 0 ? "text-amber-200" : "text-emerald-200"}`}>
+                {missingDocumentCount > 0 ? "Action Required" : "Current"}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">{missingDocumentCount} required document(s) missing</p>
+            </article>
           </div>
         </SectionCard>
 
