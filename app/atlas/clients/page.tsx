@@ -5,7 +5,7 @@ import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJou
 import JourneyScreen from "@/components/customer/passport/JourneyScreen";
 
 export default function ClientsPage() {
-  const primaryJourneyHref = "/atlas/institution-home?opportunityId=OPP-7712";
+  const primaryJourneyHref = "/atlas/business-passport?opportunityId=OPP-7712";
 
   return (
     <JourneyScreen>
@@ -21,7 +21,7 @@ export default function ClientsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-100">Crescent Trade Holdings Limited</p>
-                <p className="mt-1 text-xs text-slate-400">Primary relationship | Institution 360 | OPP-7712</p>
+                <p className="mt-1 text-xs text-slate-400">Primary relationship | Business Passport | OPP-7712</p>
               </div>
               <StatusChip label="Journey Ready" variant="success" />
             </div>

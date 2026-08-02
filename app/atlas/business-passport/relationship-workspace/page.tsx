@@ -30,7 +30,7 @@ export default function PassportRelationshipWorkspacePage() {
           />
         }
       />
-      <CustomerJourneyNavigator currentStep="business-passport" />
+      <CustomerJourneyNavigator currentStep="relationship-workspace" />
     </JourneyScreen>
   );
 }

@@ -11,6 +11,7 @@ export type JourneyStepId =
   | "atlas"
   | "clients"
   | "business-passport"
+  | "relationship-workspace"
   | "documents"
   | "evidence"
   | "knowledge"
@@ -28,6 +29,7 @@ const JOURNEY_STEPS: readonly JourneyStep[] = [
   { id: "atlas", label: "ATLAS", href: "/atlas" },
   { id: "clients", label: "Customer List", href: "/atlas/clients" },
   { id: "business-passport", label: "Business Passport", href: "/atlas/business-passport" },
+  { id: "relationship-workspace", label: "Relationship Workspace", href: "/atlas/business-passport/relationship-workspace" },
   { id: "documents", label: "Documents", href: "/atlas/business-passport/documents" },
   { id: "evidence", label: "Evidence", href: "/atlas/business-passport/evidence" },
   { id: "knowledge", label: "Knowledge", href: "/atlas/business-passport/knowledge" },

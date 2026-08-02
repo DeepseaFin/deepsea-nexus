@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Clock3, Download, FileText, Info } from 'lucide-react';
+import Link from 'next/link';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -218,13 +219,27 @@ export default function OracleDocumentPage({ params }: OracleDocumentPageProps) 
               </SectionCard>
 
               <SectionCard title="Actions" icon={Info}>
-                <button
-                  type="button"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Original
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Original
+                  </button>
+                  <Link
+                    href="/atlas/oracle"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-cyan-700/40 bg-cyan-950/20 px-4 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-900/30"
+                  >
+                    Back to ORACLE
+                  </Link>
+                  <Link
+                    href="/atlas/work-queue"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-600"
+                  >
+                    Open Work Queue
+                  </Link>
+                </div>
               </SectionCard>
             </div>
           </div>

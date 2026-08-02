@@ -244,7 +244,7 @@ export default function ExecutiveCommandCenter() {
         { label: "Institution 360", href: "/atlas/institution-home" },
         { label: "Operations Control", href: "/atlas/operations-control" },
         { label: "Upload Documents", href: "/atlas/oracle" },
-        { label: "Business Passport", href: "/atlas/institution-home" },
+        { label: "Business Passport", href: "/atlas/business-passport" },
         { label: "Relationship Journey", href: "/atlas/journey" },
       ]}
       activity={recentActivity}
@@ -378,7 +378,7 @@ export default function ExecutiveCommandCenter() {
                 { label: "New Deal", href: "/atlas/deals/new" },
                 { label: "Institution 360", href: "/atlas/institution-home" },
                 { label: "Operations Control", href: "/atlas/operations-control" },
-                { label: "Business Passport", href: "/atlas/institution-home" },
+                { label: "Business Passport", href: "/atlas/business-passport" },
                 { label: "Relationship Journey", href: "/atlas/journey" },
                 { label: "Upload Documents", href: "/atlas/oracle" },
               ]}

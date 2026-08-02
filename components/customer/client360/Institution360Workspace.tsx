@@ -282,8 +282,8 @@ export default function Institution360Workspace({
     {
       label: "Open Passport",
       href: primaryOpportunity
-        ? `/atlas/institution-home?opportunityId=${primaryOpportunity.opportunityId}`
-        : "/atlas/institution-home",
+        ? `/atlas/business-passport?opportunityId=${primaryOpportunity.opportunityId}`
+        : "/atlas/business-passport",
     },
     { label: "Relationship Journey", href: "/atlas/journey" },
     {
