@@ -28,39 +28,19 @@ import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/w
 import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
 import type { EvidenceCorrelationReport } from "@/lib/intelligence/EvidenceCorrelationTypes";
 import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
+import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
 import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
 import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
+import {
+  dedupeLatestOpportunityContexts,
+  formatOpportunityLifecycle,
+  getOpportunityValue,
+} from "@/lib/workflows/OpportunityWorkspaceHelpers";
 import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
 import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
 import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
 import OracleSectionCard from "@/app/atlas/oracle/OracleSectionCard";
-
-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
-  "OPP-7712": 6200000,
-  "OPP-8801": 3800000,
-  "OPP-8802": 5100000,
-  "OPP-8803": 4400000,
-  "OPP-8804": 3600000,
-  "OPP-8805": 2900000,
-  "OPP-8806": 2500000,
-  "OPP-8807": 2100000,
-};
-
-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
-  OpportunityLifecycle.DRAFT,
-  OpportunityLifecycle.SUBMITTED,
-  OpportunityLifecycle.UNDER_REVIEW,
-  OpportunityLifecycle.APPROVED,
-  OpportunityLifecycle.FUNDING_ALLOCATED,
-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
-  OpportunityLifecycle.PURCHASED,
-  OpportunityLifecycle.SETTLING,
-  OpportunityLifecycle.SETTLED,
-  OpportunityLifecycle.CLOSED,
-];
-
-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
 
 export interface Opportunity360WorkspaceProps {
   readonly opportunityId?: string;
@@ -74,31 +54,6 @@ function formatMoney(value: number): string {
     maximumFractionDigits: 1,
     notation: value >= 1_000_000 ? "compact" : "standard",
   }).format(value);
-}
-
-function formatLifecycle(value: OpportunityLifecycleType): string {
-  return value.replaceAll("_", " ");
-}
-
-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
-}
-
-function getOpportunityValue(opportunityId: string): number {
-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
-}
-
-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
-  const byOpportunity = new Map<string, ContextRecord>();
-
-  contexts.forEach((context) => {
-    const current = byOpportunity.get(context.opportunityId);
-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
-      byOpportunity.set(context.opportunityId, context);
-    }
-  });
-
-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
 }
 
 function toConfidenceBand(score: number): ConfidenceBand {
@@ -276,11 +231,11 @@ function buildActivityEvents(opportunityId: string) {
   }));
 }
 
-function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterProps {
+function buildDealCommandCenterProps(context: BusinessContext): DealCommandCenterProps {
   const opportunityValue = getOpportunityValue(context.opportunityId);
 
   return {
-    dealTitle: `${context.opportunityId} • ${formatLifecycle(context.opportunityLifecycle)}`,
+    dealTitle: `${context.opportunityId} • ${formatOpportunityLifecycle(context.opportunityLifecycle)}`,
     dealConfidenceIndex: {
       score: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? 78 : 86,
       band: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Moderate" : "High",
@@ -288,7 +243,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
     },
     executiveVerdict: {
       label: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Executive Review Required" : "Operationally Progressing",
-      summary: `Lifecycle is ${formatLifecycle(context.opportunityLifecycle)} and remains in the active operating chain.`,
+      summary: `Lifecycle is ${formatOpportunityLifecycle(context.opportunityLifecycle)} and remains in the active operating chain.`,
       issuedAt: new Date().toISOString(),
     },
     fundingReadiness: {
@@ -315,7 +270,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
       : [],
     nextRecommendedAction: {
       title: `Advance ${context.opportunityId}`,
-      description: `Open ${context.currentWorkspace} workspace and progress from ${formatLifecycle(context.opportunityLifecycle)}.`,
+      description: `Open ${context.currentWorkspace} workspace and progress from ${formatOpportunityLifecycle(context.opportunityLifecycle)}.`,
       owner: context.currentOwner,
       dueLabel: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Today" : "This week",
     },
@@ -384,7 +339,7 @@ export default function Opportunity360Workspace({
   quickActions,
 }: Opportunity360WorkspaceProps) {
   const passport = getJourneyBusinessPassportProjection();
-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
+  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
   const selectedContext = opportunityId
     ? contexts.find((context) => context.opportunityId === opportunityId) ?? contexts[0]
     : contexts[0];
@@ -413,7 +368,7 @@ export default function Opportunity360Workspace({
   const clientName = passport.profiles.identityProfile.legalName ?? defaultRelationshipPanelModel.summary.relationship.relationshipName;
   const dealValue = getOpportunityValue(selectedContext.opportunityId);
   const product = toProductLabel(selectedContext.opportunityLifecycle);
-  const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
+  const statusLabel = formatOpportunityLifecycle(selectedContext.opportunityLifecycle);
   const resolvedQuickActions = quickActions ?? [
     { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
     { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
@@ -449,7 +404,7 @@ export default function Opportunity360Workspace({
             </div>
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
-              <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-100">{formatOpportunityLifecycle(selectedContext.opportunityLifecycle)}</p>
             </div>
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Owner</p>

@@ -28,47 +28,20 @@ import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/w
 import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
 import type { EvidenceCorrelationReport } from "@/lib/intelligence/EvidenceCorrelationTypes";
 import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
+import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
 import { getOperationsCenterContexts, getOperationsNotificationEvents } from "@/lib/workflows/DemoScenario";
-import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
+import { OpportunityLifecycle } from "@/lib/workflows/WorkflowTransition";
+import {
+  dedupeLatestOpportunityContexts,
+  OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER,
+} from "@/lib/workflows/OpportunityWorkspaceHelpers";
 import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
 import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
 import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
 
-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
-  OpportunityLifecycle.DRAFT,
-  OpportunityLifecycle.SUBMITTED,
-  OpportunityLifecycle.UNDER_REVIEW,
-  OpportunityLifecycle.APPROVED,
-  OpportunityLifecycle.FUNDING_ALLOCATED,
-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
-  OpportunityLifecycle.PURCHASED,
-  OpportunityLifecycle.SETTLING,
-  OpportunityLifecycle.SETTLED,
-  OpportunityLifecycle.CLOSED,
-];
-
-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
-
 export interface OperationsControlCenterProps {
   readonly quickActions?: readonly QuickAction[];
-}
-
-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
-}
-
-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
-  const byOpportunity = new Map<string, ContextRecord>();
-
-  contexts.forEach((context) => {
-    const current = byOpportunity.get(context.opportunityId);
-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
-      byOpportunity.set(context.opportunityId, context);
-    }
-  });
-
-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
 }
 
 function toConfidenceBand(score: number): ConfidenceBand {
@@ -261,7 +234,7 @@ function summarizeDocumentBuckets() {
   };
 }
 
-function buildOperationsKpis(contexts: readonly ContextRecord[]) {
+function buildOperationsKpis(contexts: readonly BusinessContext[]) {
   const active = contexts.filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED);
   const pendingApprovals = active.filter((context) =>
     context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW
@@ -289,7 +262,7 @@ function buildOperationsKpis(contexts: readonly ContextRecord[]) {
   };
 }
 
-function buildWorkQueueAssignments(contexts: readonly ContextRecord[]) {
+function buildWorkQueueAssignments(contexts: readonly BusinessContext[]) {
   return contexts
     .filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED)
     .map((context) => ({
@@ -311,13 +284,13 @@ function buildWorkQueueAssignments(contexts: readonly ContextRecord[]) {
     }));
 }
 
-function buildWorkflowBottlenecks(contexts: readonly ContextRecord[]) {
+function buildWorkflowBottlenecks(contexts: readonly BusinessContext[]) {
   const blockedDeals = contexts.filter((context) =>
     context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW
     || context.opportunityLifecycle === OpportunityLifecycle.SETTLING,
   );
 
-  const stageDistribution = LIFECYCLE_ORDER.map((stage) => ({
+  const stageDistribution = OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER.map((stage) => ({
     stage,
     count: contexts.filter((context) => context.opportunityLifecycle === stage).length,
   })).filter((item) => item.count > 0);
@@ -332,7 +305,7 @@ function buildWorkflowBottlenecks(contexts: readonly ContextRecord[]) {
 }
 
 export default function OperationsControlCenter({ quickActions }: OperationsControlCenterProps) {
-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
+  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
   const operationsKpis = buildOperationsKpis(contexts);
   const workQueueAssignments = buildWorkQueueAssignments(contexts);
   const documentSummary = summarizeDocumentBuckets();

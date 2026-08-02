@@ -1,0 +1,698 @@
+diff --git a/R1-RA-04-review.diff b/R1-RA-04-review.diff
+new file mode 100644
+index 0000000..e69de29
+diff --git a/components/atlas/dashboard/ExecutiveCommandCenter.tsx b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+index 5f487ad..2659be7 100644
+--- a/components/atlas/dashboard/ExecutiveCommandCenter.tsx
++++ b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+@@ -13,25 +13,20 @@ import WorkspaceScaffold from "@/components/atlas/design-system/WorkspaceScaffol
+ import SectionCard from "@/components/atlas/intelligence/SectionCard";
+ import RMWorkQueue from "@/components/atlas/workqueue/RMWorkQueue";
+ import { defaultRelationshipPanelModel, relationshipPanelConfig } from "@/lib/customer/relationship/relationship-panel.config";
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
+ import { getOperationsCenterContexts, getOperationsNotificationEvents } from "@/lib/workflows/DemoScenario";
+ import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++import {
++  dedupeLatestOpportunityContexts,
++  formatOpportunityLifecycle,
++  getOpportunityValue,
++} from "@/lib/workflows/OpportunityWorkspaceHelpers";
+ import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
+ import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+ import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ import JourneyKnowledgeInsightsPanel from "@/src/capabilities/journey/components/JourneyKnowledgeInsightsPanel";
+ 
+-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
+-  "OPP-7712": 6200000,
+-  "OPP-8801": 3800000,
+-  "OPP-8802": 5100000,
+-  "OPP-8803": 4400000,
+-  "OPP-8804": 3600000,
+-  "OPP-8805": 2900000,
+-  "OPP-8806": 2500000,
+-  "OPP-8807": 2100000,
+-};
+-
+ const LIFECYCLE_PROGRESS: Readonly<Record<OpportunityLifecycleType, number>> = {
+   [OpportunityLifecycle.DRAFT]: 10,
+   [OpportunityLifecycle.SUBMITTED]: 25,
+@@ -45,21 +40,6 @@ const LIFECYCLE_PROGRESS: Readonly<Record<OpportunityLifecycleType, number>> = {
+   [OpportunityLifecycle.CLOSED]: 100,
+ };
+ 
+-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
+-  OpportunityLifecycle.DRAFT,
+-  OpportunityLifecycle.SUBMITTED,
+-  OpportunityLifecycle.UNDER_REVIEW,
+-  OpportunityLifecycle.APPROVED,
+-  OpportunityLifecycle.FUNDING_ALLOCATED,
+-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+-  OpportunityLifecycle.PURCHASED,
+-  OpportunityLifecycle.SETTLING,
+-  OpportunityLifecycle.SETTLED,
+-  OpportunityLifecycle.CLOSED,
+-];
+-
+-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
+-
+ function formatMoney(value: number): string {
+   return new Intl.NumberFormat("en-US", {
+     style: "currency",
+@@ -69,32 +49,7 @@ function formatMoney(value: number): string {
+   }).format(value);
+ }
+ 
+-function formatLifecycle(value: OpportunityLifecycleType): string {
+-  return value.replaceAll("_", " ");
+-}
+-
+-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
+-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
+-}
+-
+-function getOpportunityValue(opportunityId: string): number {
+-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
+-}
+-
+-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
+-  const byOpportunity = new Map<string, ContextRecord>();
+-
+-  contexts.forEach((context) => {
+-    const current = byOpportunity.get(context.opportunityId);
+-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
+-      byOpportunity.set(context.opportunityId, context);
+-    }
+-  });
+-
+-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
+-}
+-
+-function createPortfolioMetrics(contexts: readonly ContextRecord[]) {
++function createPortfolioMetrics(contexts: readonly BusinessContext[]) {
+   const activeContexts = contexts.filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED);
+   const activeClients = new Set(activeContexts.map((context) => context.institutionId)).size;
+   const activeDeals = activeContexts.length;
+@@ -141,7 +96,7 @@ function createPortfolioMetrics(contexts: readonly ContextRecord[]) {
+   ] as const;
+ }
+ 
+-function createPassportProgressItems(contexts: readonly ContextRecord[]) {
++function createPassportProgressItems(contexts: readonly BusinessContext[]) {
+   return contexts.slice(0, 5).map((context) => ({
+     institutionId: context.institutionId,
+     opportunityId: context.opportunityId,
+@@ -167,7 +122,7 @@ function createRecentActivity() {
+     }));
+ }
+ 
+-function createRelationshipAlertModel(contexts: readonly ContextRecord[]) {
++function createRelationshipAlertModel(contexts: readonly BusinessContext[]) {
+   const followUps = defaultRelationshipPanelModel.nextActions.filter((action) => action.status !== "Queued");
+   const expiringRelationships = defaultRelationshipPanelModel.timeline.filter((item) => item.status !== "completed");
+   const highRiskRelationships = contexts.filter((context) => context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW).length;
+@@ -213,7 +168,7 @@ function createAiRecommendations(): readonly JourneyRecommendation[] {
+ }
+ 
+ export default function ExecutiveCommandCenter() {
+-  const latestContexts = dedupeLatestContexts(getOperationsCenterContexts());
++  const latestContexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
+   const portfolioMetrics = createPortfolioMetrics(latestContexts);
+   const passport = getJourneyBusinessPassportProjection();
+   const passportProgress = createPassportProgressItems(latestContexts);
+@@ -342,7 +297,7 @@ export default function ExecutiveCommandCenter() {
+                     <div className="flex flex-wrap items-center justify-between gap-3">
+                       <div>
+                         <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
+-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
++                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatOpportunityLifecycle(item.lifecycle)}</p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
+diff --git a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+index 3a1a93e..05c12e1 100644
+--- a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
++++ b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+@@ -29,39 +29,19 @@ import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/w
+ import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
+ import type { EvidenceCorrelationReport } from "@/lib/intelligence/EvidenceCorrelationTypes";
+ import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
+ import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
+ import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++import {
++  dedupeLatestOpportunityContexts,
++  formatOpportunityLifecycle,
++  getOpportunityValue,
++} from "@/lib/workflows/OpportunityWorkspaceHelpers";
+ import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+ import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
+ import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ 
+-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
+-  "OPP-7712": 6200000,
+-  "OPP-8801": 3800000,
+-  "OPP-8802": 5100000,
+-  "OPP-8803": 4400000,
+-  "OPP-8804": 3600000,
+-  "OPP-8805": 2900000,
+-  "OPP-8806": 2500000,
+-  "OPP-8807": 2100000,
+-};
+-
+-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
+-  OpportunityLifecycle.DRAFT,
+-  OpportunityLifecycle.SUBMITTED,
+-  OpportunityLifecycle.UNDER_REVIEW,
+-  OpportunityLifecycle.APPROVED,
+-  OpportunityLifecycle.FUNDING_ALLOCATED,
+-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+-  OpportunityLifecycle.PURCHASED,
+-  OpportunityLifecycle.SETTLING,
+-  OpportunityLifecycle.SETTLED,
+-  OpportunityLifecycle.CLOSED,
+-];
+-
+-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
+-
+ export interface CreditDecisionWorkspaceProps {
+   readonly opportunityId?: string;
+   readonly quickActions?: readonly QuickAction[];
+@@ -76,31 +56,6 @@ function formatMoney(value: number): string {
+   }).format(value);
+ }
+ 
+-function formatLifecycle(value: OpportunityLifecycleType): string {
+-  return value.replaceAll("_", " ");
+-}
+-
+-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
+-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
+-}
+-
+-function getOpportunityValue(opportunityId: string): number {
+-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
+-}
+-
+-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
+-  const byOpportunity = new Map<string, ContextRecord>();
+-
+-  contexts.forEach((context) => {
+-    const current = byOpportunity.get(context.opportunityId);
+-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
+-      byOpportunity.set(context.opportunityId, context);
+-    }
+-  });
+-
+-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
+-}
+-
+ function toConfidenceBand(score: number): ConfidenceBand {
+   if (score >= 90) return ConfidenceBand.VeryHigh;
+   if (score >= 75) return ConfidenceBand.High;
+@@ -318,11 +273,11 @@ function toProductLabel(stage: OpportunityLifecycleType): string {
+   return "Forfaiting Purchase Program";
+ }
+ 
+-function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterProps {
++function buildDealCommandCenterProps(context: BusinessContext): DealCommandCenterProps {
+   const requestedAmount = getOpportunityValue(context.opportunityId);
+ 
+   return {
+-    dealTitle: `${context.opportunityId} • ${formatLifecycle(context.opportunityLifecycle)}`,
++    dealTitle: `${context.opportunityId} • ${formatOpportunityLifecycle(context.opportunityLifecycle)}`,
+     dealConfidenceIndex: {
+       score: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? 78 : 86,
+       band: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Moderate" : "High",
+@@ -330,7 +285,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+     },
+     executiveVerdict: {
+       label: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Executive Review Required" : "Operationally Progressing",
+-      summary: `Lifecycle is ${formatLifecycle(context.opportunityLifecycle)} and remains in the institutional operating chain.`,
++      summary: `Lifecycle is ${formatOpportunityLifecycle(context.opportunityLifecycle)} and remains in the institutional operating chain.`,
+       issuedAt: new Date().toISOString(),
+     },
+     fundingReadiness: {
+@@ -357,7 +312,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+       : [],
+     nextRecommendedAction: {
+       title: `Advance ${context.opportunityId}`,
+-      description: `Open ${context.currentWorkspace} workspace and progress from ${formatLifecycle(context.opportunityLifecycle)}.`,
++      description: `Open ${context.currentWorkspace} workspace and progress from ${formatOpportunityLifecycle(context.opportunityLifecycle)}.`,
+       owner: context.currentOwner,
+       dueLabel: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Today" : "This week",
+     },
+@@ -390,7 +345,7 @@ export default function CreditDecisionWorkspace({
+   opportunityId,
+   quickActions,
+ }: CreditDecisionWorkspaceProps) {
+-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
++  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
+   const selectedContext = opportunityId
+     ? contexts.find((context) => context.opportunityId === opportunityId) ?? contexts[0]
+     : contexts[0];
+@@ -464,7 +419,7 @@ export default function CreditDecisionWorkspace({
+             </article>
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
+-              <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
++              <p className="mt-2 text-sm font-semibold text-slate-100">{formatOpportunityLifecycle(selectedContext.opportunityLifecycle)}</p>
+             </article>
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Decision Status</p>
+diff --git a/components/customer/client360/Institution360Workspace.tsx b/components/customer/client360/Institution360Workspace.tsx
+index 5e36ebd..8f92da9 100644
+--- a/components/customer/client360/Institution360Workspace.tsx
++++ b/components/customer/client360/Institution360Workspace.tsx
+@@ -25,39 +25,19 @@ import type { RelationshipWorkspaceIntelligenceViewModel } from "@/lib/customer/
+ import { defaultRelationshipPanelModel, relationshipPanelConfig } from "@/lib/customer/relationship/relationship-panel.config";
+ import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
+ import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
+ import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
+-import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++import { OpportunityLifecycle } from "@/lib/workflows/WorkflowTransition";
++import {
++  dedupeLatestOpportunityContexts,
++  formatOpportunityLifecycle,
++  getOpportunityValue,
++} from "@/lib/workflows/OpportunityWorkspaceHelpers";
+ import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+ import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
+ import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ 
+-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
+-  "OPP-7712": 6200000,
+-  "OPP-8801": 3800000,
+-  "OPP-8802": 5100000,
+-  "OPP-8803": 4400000,
+-  "OPP-8804": 3600000,
+-  "OPP-8805": 2900000,
+-  "OPP-8806": 2500000,
+-  "OPP-8807": 2100000,
+-};
+-
+-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
+-  OpportunityLifecycle.DRAFT,
+-  OpportunityLifecycle.SUBMITTED,
+-  OpportunityLifecycle.UNDER_REVIEW,
+-  OpportunityLifecycle.APPROVED,
+-  OpportunityLifecycle.FUNDING_ALLOCATED,
+-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+-  OpportunityLifecycle.PURCHASED,
+-  OpportunityLifecycle.SETTLING,
+-  OpportunityLifecycle.SETTLED,
+-  OpportunityLifecycle.CLOSED,
+-];
+-
+-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
+-
+ export interface Institution360WorkspaceProps {
+   readonly opportunityId?: string;
+   readonly institutionName?: string;
+@@ -78,31 +58,6 @@ function formatMoney(value: number): string {
+   }).format(value);
+ }
+ 
+-function formatLifecycle(value: OpportunityLifecycleType): string {
+-  return value.replaceAll("_", " ");
+-}
+-
+-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
+-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
+-}
+-
+-function getOpportunityValue(opportunityId: string): number {
+-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
+-}
+-
+-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
+-  const byOpportunity = new Map<string, ContextRecord>();
+-
+-  contexts.forEach((context) => {
+-    const current = byOpportunity.get(context.opportunityId);
+-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
+-      byOpportunity.set(context.opportunityId, context);
+-    }
+-  });
+-
+-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
+-}
+-
+ function buildKnowledgeExplorer() {
+   const results = getJourneyEvidenceProjectionResults();
+   const passport = getJourneyBusinessPassportProjection();
+@@ -202,11 +157,11 @@ function buildAiRecommendations(): readonly JourneyRecommendation[] {
+   ];
+ }
+ 
+-function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterProps {
++function buildDealCommandCenterProps(context: BusinessContext): DealCommandCenterProps {
+   const opportunityValue = getOpportunityValue(context.opportunityId);
+ 
+   return {
+-    dealTitle: `${context.opportunityId} • ${formatLifecycle(context.opportunityLifecycle)}`,
++    dealTitle: `${context.opportunityId} • ${formatOpportunityLifecycle(context.opportunityLifecycle)}`,
+     dealConfidenceIndex: {
+       score: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? 78 : 86,
+       band: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Moderate" : "High",
+@@ -214,7 +169,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+     },
+     executiveVerdict: {
+       label: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Executive Review Required" : "Operationally Progressing",
+-      summary: `Current lifecycle is ${formatLifecycle(context.opportunityLifecycle)} and the opportunity remains visible in the institutional operating chain.`,
++      summary: `Current lifecycle is ${formatOpportunityLifecycle(context.opportunityLifecycle)} and the opportunity remains visible in the institutional operating chain.`,
+       issuedAt: new Date().toISOString(),
+     },
+     fundingReadiness: {
+@@ -241,7 +196,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+       : [],
+     nextRecommendedAction: {
+       title: `Advance ${context.opportunityId}`,
+-      description: `Open the ${context.currentWorkspace} workspace and progress the opportunity from ${formatLifecycle(context.opportunityLifecycle)}.`,
++      description: `Open the ${context.currentWorkspace} workspace and progress the opportunity from ${formatOpportunityLifecycle(context.opportunityLifecycle)}.`,
+       owner: context.currentOwner,
+       dueLabel: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Today" : "This week",
+     },
+@@ -260,7 +215,7 @@ export default function Institution360Workspace({
+ }: Institution360WorkspaceProps) {
+   const passport = getJourneyBusinessPassportProjection();
+   const relationshipModel = defaultRelationshipPanelModel;
+-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
++  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
+   const selectedOpportunity = opportunityId
+     ? contexts.find((context) => context.opportunityId === opportunityId)
+     : undefined;
+@@ -396,7 +351,7 @@ export default function Institution360Workspace({
+                     <div className="flex items-start justify-between gap-3">
+                       <div>
+                         <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
+-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatLifecycle(context.opportunityLifecycle)}</p>
++                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatOpportunityLifecycle(context.opportunityLifecycle)}</p>
+                       </div>
+                       <p className="text-sm font-semibold text-cyan-200">{formatMoney(getOpportunityValue(context.opportunityId))}</p>
+                     </div>
+diff --git a/components/deal/opportunity360/Opportunity360Workspace.tsx b/components/deal/opportunity360/Opportunity360Workspace.tsx
+index bcce847..7d400e3 100644
+--- a/components/deal/opportunity360/Opportunity360Workspace.tsx
++++ b/components/deal/opportunity360/Opportunity360Workspace.tsx
+@@ -28,40 +28,20 @@ import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/w
+ import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
+ import type { EvidenceCorrelationReport } from "@/lib/intelligence/EvidenceCorrelationTypes";
+ import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
+ import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
+ import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++import {
++  dedupeLatestOpportunityContexts,
++  formatOpportunityLifecycle,
++  getOpportunityValue,
++} from "@/lib/workflows/OpportunityWorkspaceHelpers";
+ import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+ import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
+ import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ import OracleSectionCard from "@/app/atlas/oracle/OracleSectionCard";
+ 
+-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
+-  "OPP-7712": 6200000,
+-  "OPP-8801": 3800000,
+-  "OPP-8802": 5100000,
+-  "OPP-8803": 4400000,
+-  "OPP-8804": 3600000,
+-  "OPP-8805": 2900000,
+-  "OPP-8806": 2500000,
+-  "OPP-8807": 2100000,
+-};
+-
+-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
+-  OpportunityLifecycle.DRAFT,
+-  OpportunityLifecycle.SUBMITTED,
+-  OpportunityLifecycle.UNDER_REVIEW,
+-  OpportunityLifecycle.APPROVED,
+-  OpportunityLifecycle.FUNDING_ALLOCATED,
+-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+-  OpportunityLifecycle.PURCHASED,
+-  OpportunityLifecycle.SETTLING,
+-  OpportunityLifecycle.SETTLED,
+-  OpportunityLifecycle.CLOSED,
+-];
+-
+-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
+-
+ export interface Opportunity360WorkspaceProps {
+   readonly opportunityId?: string;
+   readonly quickActions?: readonly QuickAction[];
+@@ -76,31 +56,6 @@ function formatMoney(value: number): string {
+   }).format(value);
+ }
+ 
+-function formatLifecycle(value: OpportunityLifecycleType): string {
+-  return value.replaceAll("_", " ");
+-}
+-
+-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
+-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
+-}
+-
+-function getOpportunityValue(opportunityId: string): number {
+-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
+-}
+-
+-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
+-  const byOpportunity = new Map<string, ContextRecord>();
+-
+-  contexts.forEach((context) => {
+-    const current = byOpportunity.get(context.opportunityId);
+-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
+-      byOpportunity.set(context.opportunityId, context);
+-    }
+-  });
+-
+-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
+-}
+-
+ function toConfidenceBand(score: number): ConfidenceBand {
+   if (score >= 90) return ConfidenceBand.VeryHigh;
+   if (score >= 75) return ConfidenceBand.High;
+@@ -276,11 +231,11 @@ function buildActivityEvents(opportunityId: string) {
+   }));
+ }
+ 
+-function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterProps {
++function buildDealCommandCenterProps(context: BusinessContext): DealCommandCenterProps {
+   const opportunityValue = getOpportunityValue(context.opportunityId);
+ 
+   return {
+-    dealTitle: `${context.opportunityId} • ${formatLifecycle(context.opportunityLifecycle)}`,
++    dealTitle: `${context.opportunityId} • ${formatOpportunityLifecycle(context.opportunityLifecycle)}`,
+     dealConfidenceIndex: {
+       score: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? 78 : 86,
+       band: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Moderate" : "High",
+@@ -288,7 +243,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+     },
+     executiveVerdict: {
+       label: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Executive Review Required" : "Operationally Progressing",
+-      summary: `Lifecycle is ${formatLifecycle(context.opportunityLifecycle)} and remains in the active operating chain.`,
++      summary: `Lifecycle is ${formatOpportunityLifecycle(context.opportunityLifecycle)} and remains in the active operating chain.`,
+       issuedAt: new Date().toISOString(),
+     },
+     fundingReadiness: {
+@@ -315,7 +270,7 @@ function buildDealCommandCenterProps(context: ContextRecord): DealCommandCenterP
+       : [],
+     nextRecommendedAction: {
+       title: `Advance ${context.opportunityId}`,
+-      description: `Open ${context.currentWorkspace} workspace and progress from ${formatLifecycle(context.opportunityLifecycle)}.`,
++      description: `Open ${context.currentWorkspace} workspace and progress from ${formatOpportunityLifecycle(context.opportunityLifecycle)}.`,
+       owner: context.currentOwner,
+       dueLabel: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Today" : "This week",
+     },
+@@ -384,7 +339,7 @@ export default function Opportunity360Workspace({
+   quickActions,
+ }: Opportunity360WorkspaceProps) {
+   const passport = getJourneyBusinessPassportProjection();
+-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
++  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
+   const selectedContext = opportunityId
+     ? contexts.find((context) => context.opportunityId === opportunityId) ?? contexts[0]
+     : contexts[0];
+@@ -413,7 +368,7 @@ export default function Opportunity360Workspace({
+   const clientName = passport.profiles.identityProfile.legalName ?? defaultRelationshipPanelModel.summary.relationship.relationshipName;
+   const dealValue = getOpportunityValue(selectedContext.opportunityId);
+   const product = toProductLabel(selectedContext.opportunityLifecycle);
+-  const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
++  const statusLabel = formatOpportunityLifecycle(selectedContext.opportunityLifecycle);
+   const resolvedQuickActions = quickActions ?? [
+     { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+@@ -449,7 +404,7 @@ export default function Opportunity360Workspace({
+             </div>
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
+-              <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
++              <p className="mt-2 text-sm font-semibold text-slate-100">{formatOpportunityLifecycle(selectedContext.opportunityLifecycle)}</p>
+             </div>
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Owner</p>
+diff --git a/components/operations/control-center/OperationsControlCenter.tsx b/components/operations/control-center/OperationsControlCenter.tsx
+index 8d3b71a..a1a3b69 100644
+--- a/components/operations/control-center/OperationsControlCenter.tsx
++++ b/components/operations/control-center/OperationsControlCenter.tsx
+@@ -28,49 +28,22 @@ import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/w
+ import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
+ import type { EvidenceCorrelationReport } from "@/lib/intelligence/EvidenceCorrelationTypes";
+ import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
+ import { getOperationsCenterContexts, getOperationsNotificationEvents } from "@/lib/workflows/DemoScenario";
+-import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++import { OpportunityLifecycle } from "@/lib/workflows/WorkflowTransition";
++import {
++  dedupeLatestOpportunityContexts,
++  OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER,
++} from "@/lib/workflows/OpportunityWorkspaceHelpers";
+ import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
+ import { getJourneyEvidenceProjectionResults } from "@/src/capabilities/journey/adapters/getJourneyEvidenceProjection";
+ import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
+ import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
+ 
+-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
+-  OpportunityLifecycle.DRAFT,
+-  OpportunityLifecycle.SUBMITTED,
+-  OpportunityLifecycle.UNDER_REVIEW,
+-  OpportunityLifecycle.APPROVED,
+-  OpportunityLifecycle.FUNDING_ALLOCATED,
+-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
+-  OpportunityLifecycle.PURCHASED,
+-  OpportunityLifecycle.SETTLING,
+-  OpportunityLifecycle.SETTLED,
+-  OpportunityLifecycle.CLOSED,
+-];
+-
+-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
+-
+ export interface OperationsControlCenterProps {
+   readonly quickActions?: readonly QuickAction[];
+ }
+ 
+-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
+-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
+-}
+-
+-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
+-  const byOpportunity = new Map<string, ContextRecord>();
+-
+-  contexts.forEach((context) => {
+-    const current = byOpportunity.get(context.opportunityId);
+-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
+-      byOpportunity.set(context.opportunityId, context);
+-    }
+-  });
+-
+-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
+-}
+-
+ function toConfidenceBand(score: number): ConfidenceBand {
+   if (score >= 90) return ConfidenceBand.VeryHigh;
+   if (score >= 75) return ConfidenceBand.High;
+@@ -261,7 +234,7 @@ function summarizeDocumentBuckets() {
+   };
+ }
+ 
+-function buildOperationsKpis(contexts: readonly ContextRecord[]) {
++function buildOperationsKpis(contexts: readonly BusinessContext[]) {
+   const active = contexts.filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED);
+   const pendingApprovals = active.filter((context) =>
+     context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW
+@@ -289,7 +262,7 @@ function buildOperationsKpis(contexts: readonly ContextRecord[]) {
+   };
+ }
+ 
+-function buildWorkQueueAssignments(contexts: readonly ContextRecord[]) {
++function buildWorkQueueAssignments(contexts: readonly BusinessContext[]) {
+   return contexts
+     .filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED)
+     .map((context) => ({
+@@ -311,13 +284,13 @@ function buildWorkQueueAssignments(contexts: readonly ContextRecord[]) {
+     }));
+ }
+ 
+-function buildWorkflowBottlenecks(contexts: readonly ContextRecord[]) {
++function buildWorkflowBottlenecks(contexts: readonly BusinessContext[]) {
+   const blockedDeals = contexts.filter((context) =>
+     context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW
+     || context.opportunityLifecycle === OpportunityLifecycle.SETTLING,
+   );
+ 
+-  const stageDistribution = LIFECYCLE_ORDER.map((stage) => ({
++  const stageDistribution = OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER.map((stage) => ({
+     stage,
+     count: contexts.filter((context) => context.opportunityLifecycle === stage).length,
+   })).filter((item) => item.count > 0);
+@@ -332,7 +305,7 @@ function buildWorkflowBottlenecks(contexts: readonly ContextRecord[]) {
+ }
+ 
+ export default function OperationsControlCenter({ quickActions }: OperationsControlCenterProps) {
+-  const contexts = dedupeLatestContexts(getOperationsCenterContexts());
++  const contexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
+   const operationsKpis = buildOperationsKpis(contexts);
+   const workQueueAssignments = buildWorkQueueAssignments(contexts);
+   const documentSummary = summarizeDocumentBuckets();
+diff --git a/lib/workflows/OpportunityWorkspaceHelpers.ts b/lib/workflows/OpportunityWorkspaceHelpers.ts
+new file mode 100644
+index 0000000..b4df1c2
+--- /dev/null
++++ b/lib/workflows/OpportunityWorkspaceHelpers.ts
+@@ -0,0 +1,51 @@
++import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
++import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
++
++const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
++  "OPP-7712": 6200000,
++  "OPP-8801": 3800000,
++  "OPP-8802": 5100000,
++  "OPP-8803": 4400000,
++  "OPP-8804": 3600000,
++  "OPP-8805": 2900000,
++  "OPP-8806": 2500000,
++  "OPP-8807": 2100000,
++};
++
++export const OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
++  OpportunityLifecycle.DRAFT,
++  OpportunityLifecycle.SUBMITTED,
++  OpportunityLifecycle.UNDER_REVIEW,
++  OpportunityLifecycle.APPROVED,
++  OpportunityLifecycle.FUNDING_ALLOCATED,
++  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
++  OpportunityLifecycle.PURCHASED,
++  OpportunityLifecycle.SETTLING,
++  OpportunityLifecycle.SETTLED,
++  OpportunityLifecycle.CLOSED,
++];
++
++export function formatOpportunityLifecycle(value: OpportunityLifecycleType): string {
++  return value.replaceAll("_", " ");
++}
++
++export function compareOpportunityLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
++  return OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER.indexOf(left) - OPPORTUNITY_WORKSPACE_LIFECYCLE_ORDER.indexOf(right);
++}
++
++export function getOpportunityValue(opportunityId: string): number {
++  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
++}
++
++export function dedupeLatestOpportunityContexts(contexts: readonly BusinessContext[]): readonly BusinessContext[] {
++  const byOpportunity = new Map<string, BusinessContext>();
++
++  contexts.forEach((context) => {
++    const current = byOpportunity.get(context.opportunityId);
++    if (!current || compareOpportunityLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
++      byOpportunity.set(context.opportunityId, context);
++    }
++  });
++
++  return Array.from(byOpportunity.values()).sort((left, right) => compareOpportunityLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
++}

@@ -13,24 +13,19 @@ import WorkspaceScaffold from "@/components/atlas/design-system/WorkspaceScaffol
 import SectionCard from "@/components/atlas/intelligence/SectionCard";
 import RMWorkQueue from "@/components/atlas/workqueue/RMWorkQueue";
 import { defaultRelationshipPanelModel, relationshipPanelConfig } from "@/lib/customer/relationship/relationship-panel.config";
+import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
 import { getOperationsCenterContexts, getOperationsNotificationEvents } from "@/lib/workflows/DemoScenario";
 import { OpportunityLifecycle, type OpportunityLifecycle as OpportunityLifecycleType } from "@/lib/workflows/WorkflowTransition";
+import {
+  dedupeLatestOpportunityContexts,
+  formatOpportunityLifecycle,
+  getOpportunityValue,
+} from "@/lib/workflows/OpportunityWorkspaceHelpers";
 import { JourneyStatus, type JourneyRecommendation } from "@/lib/journey";
 import { getJourneyBusinessPassportProjection } from "@/src/capabilities/journey/adapters/getJourneyBusinessPassportProjection";
 import { getJourneyKnowledgeInsightsProjection } from "@/src/capabilities/journey/adapters/getJourneyKnowledgeInsightsProjection";
 import JourneyAiPanel from "@/src/capabilities/journey/components/JourneyAiPanel";
 import JourneyKnowledgeInsightsPanel from "@/src/capabilities/journey/components/JourneyKnowledgeInsightsPanel";
-
-const OPPORTUNITY_VALUES: Readonly<Record<string, number>> = {
-  "OPP-7712": 6200000,
-  "OPP-8801": 3800000,
-  "OPP-8802": 5100000,
-  "OPP-8803": 4400000,
-  "OPP-8804": 3600000,
-  "OPP-8805": 2900000,
-  "OPP-8806": 2500000,
-  "OPP-8807": 2100000,
-};
 
 const LIFECYCLE_PROGRESS: Readonly<Record<OpportunityLifecycleType, number>> = {
   [OpportunityLifecycle.DRAFT]: 10,
@@ -45,21 +40,6 @@ const LIFECYCLE_PROGRESS: Readonly<Record<OpportunityLifecycleType, number>> = {
   [OpportunityLifecycle.CLOSED]: 100,
 };
 
-const LIFECYCLE_ORDER: readonly OpportunityLifecycleType[] = [
-  OpportunityLifecycle.DRAFT,
-  OpportunityLifecycle.SUBMITTED,
-  OpportunityLifecycle.UNDER_REVIEW,
-  OpportunityLifecycle.APPROVED,
-  OpportunityLifecycle.FUNDING_ALLOCATED,
-  OpportunityLifecycle.RELEASED_FOR_PURCHASE,
-  OpportunityLifecycle.PURCHASED,
-  OpportunityLifecycle.SETTLING,
-  OpportunityLifecycle.SETTLED,
-  OpportunityLifecycle.CLOSED,
-];
-
-type ContextRecord = ReturnType<typeof getOperationsCenterContexts>[number];
-
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -69,32 +49,7 @@ function formatMoney(value: number): string {
   }).format(value);
 }
 
-function formatLifecycle(value: OpportunityLifecycleType): string {
-  return value.replaceAll("_", " ");
-}
-
-function compareLifecycle(left: OpportunityLifecycleType, right: OpportunityLifecycleType): number {
-  return LIFECYCLE_ORDER.indexOf(left) - LIFECYCLE_ORDER.indexOf(right);
-}
-
-function getOpportunityValue(opportunityId: string): number {
-  return OPPORTUNITY_VALUES[opportunityId] ?? 3000000;
-}
-
-function dedupeLatestContexts(contexts: readonly ContextRecord[]): readonly ContextRecord[] {
-  const byOpportunity = new Map<string, ContextRecord>();
-
-  contexts.forEach((context) => {
-    const current = byOpportunity.get(context.opportunityId);
-    if (!current || compareLifecycle(current.opportunityLifecycle, context.opportunityLifecycle) < 0) {
-      byOpportunity.set(context.opportunityId, context);
-    }
-  });
-
-  return Array.from(byOpportunity.values()).sort((left, right) => compareLifecycle(right.opportunityLifecycle, left.opportunityLifecycle));
-}
-
-function createPortfolioMetrics(contexts: readonly ContextRecord[]) {
+function createPortfolioMetrics(contexts: readonly BusinessContext[]) {
   const activeContexts = contexts.filter((context) => context.opportunityLifecycle !== OpportunityLifecycle.CLOSED);
   const activeClients = new Set(activeContexts.map((context) => context.institutionId)).size;
   const activeDeals = activeContexts.length;
@@ -141,7 +96,7 @@ function createPortfolioMetrics(contexts: readonly ContextRecord[]) {
   ] as const;
 }
 
-function createPassportProgressItems(contexts: readonly ContextRecord[]) {
+function createPassportProgressItems(contexts: readonly BusinessContext[]) {
   return contexts.slice(0, 5).map((context) => ({
     institutionId: context.institutionId,
     opportunityId: context.opportunityId,
@@ -167,7 +122,7 @@ function createRecentActivity() {
     }));
 }
 
-function createRelationshipAlertModel(contexts: readonly ContextRecord[]) {
+function createRelationshipAlertModel(contexts: readonly BusinessContext[]) {
   const followUps = defaultRelationshipPanelModel.nextActions.filter((action) => action.status !== "Queued");
   const expiringRelationships = defaultRelationshipPanelModel.timeline.filter((item) => item.status !== "completed");
   const highRiskRelationships = contexts.filter((context) => context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW).length;
@@ -213,7 +168,7 @@ function createAiRecommendations(): readonly JourneyRecommendation[] {
 }
 
 export default function ExecutiveCommandCenter() {
-  const latestContexts = dedupeLatestContexts(getOperationsCenterContexts());
+  const latestContexts = dedupeLatestOpportunityContexts(getOperationsCenterContexts());
   const portfolioMetrics = createPortfolioMetrics(latestContexts);
   const passport = getJourneyBusinessPassportProjection();
   const passportProgress = createPassportProgressItems(latestContexts);
@@ -342,7 +297,7 @@ export default function ExecutiveCommandCenter() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatOpportunityLifecycle(item.lifecycle)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
