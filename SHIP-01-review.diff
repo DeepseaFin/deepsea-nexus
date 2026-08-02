@@ -1,0 +1,44 @@
+diff --git a/app/atlas/dashboard/page.tsx b/app/atlas/dashboard/page.tsx
+index 00f90aa..093edcc 100644
+--- a/app/atlas/dashboard/page.tsx
++++ b/app/atlas/dashboard/page.tsx
+@@ -1,22 +1,5 @@
+-import ProductHome from "@/components/product/home/ProductHome";
+-import CustomerJourneyNavigator from "@/components/customer/passport/CustomerJourneyNavigator";
+-import JourneyScreen from "@/components/customer/passport/JourneyScreen";
++import ExecutiveCommandCenter from "@/components/atlas/dashboard/ExecutiveCommandCenter";
+ 
+ export default function DashboardPage() {
+-  return (
+-    <JourneyScreen>
+-      <ProductHome
+-        welcome={{
+-          greeting: "Operational View",
+-          headline: "ATLAS Dashboard",
+-          summary: "Portfolio and execution overview in the connected customer journey.",
+-          context: "Journey context: ATLAS / Dashboard",
+-          chips: ["Institutional", "Portfolio", "Execution"],
+-          primaryActionLabel: "",
+-          secondaryActionLabel: "",
+-        }}
+-      />
+-      <CustomerJourneyNavigator currentStep="atlas" />
+-    </JourneyScreen>
+-  );
++  return <ExecutiveCommandCenter />;
+ }
+diff --git a/components/atlas/business-passport/BusinessPassportSummary.tsx b/components/atlas/business-passport/BusinessPassportSummary.tsx
+index d068218..59b137d 100644
+--- a/components/atlas/business-passport/BusinessPassportSummary.tsx
++++ b/components/atlas/business-passport/BusinessPassportSummary.tsx
+@@ -22,10 +22,6 @@ export default function BusinessPassportSummary({ passport, className }: Busines
+         label: 'Primary',
+         variant: 'info',
+       }}
+-      action={{
+-        label: 'Action Placeholder',
+-        onClick: () => {},
+-      }}
+       className={className}
+     >
+       <p className="mb-4 text-sm text-slate-400">

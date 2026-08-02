@@ -22,10 +22,6 @@ export default function BusinessPassportSummary({ passport, className }: Busines
         label: 'Primary',
         variant: 'info',
       }}
-      action={{
-        label: 'Action Placeholder',
-        onClick: () => {},
-      }}
       className={className}
     >
       <p className="mb-4 text-sm text-slate-400">
