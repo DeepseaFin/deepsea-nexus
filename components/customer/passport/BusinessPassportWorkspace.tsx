@@ -196,9 +196,9 @@ const defaultTimelineEntries: readonly PassportTimelineEntry[] = [
 ];
 
 const defaultQuickActions: readonly PassportQuickAction[] = [
-  { id: "q-1", label: "Open Relationship Brief", variant: "primary" },
-  { id: "q-2", label: "Request Evidence Refresh", variant: "secondary" },
-  { id: "q-3", label: "Start Workflow Review", variant: "ghost" },
+  { id: "q-1", label: "Open Relationship Workspace", variant: "primary" },
+  { id: "q-3", label: "Start Workflow Review", variant: "secondary" },
+  { id: "q-2", label: "Request Evidence Refresh", variant: "ghost" },
   { id: "q-4", label: "Prepare AI Readiness Pack", variant: "ghost" },
 ];
 

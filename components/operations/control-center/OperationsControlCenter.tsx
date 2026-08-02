@@ -344,12 +344,12 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
   const activityEvents = buildActivityEvents();
 
   const resolvedQuickActions = quickActions ?? [
-    { label: "Assign Case", href: "/atlas/work-queue" },
-    { label: "Approve", href: "/atlas/approval-center" },
     {
       label: "Open Opportunity 360",
       href: contexts[0] ? `/atlas/opportunity?workflowId=${contexts[0].workflowId}` : "/atlas/opportunity",
     },
+    { label: "Approve", href: "/atlas/approval-center" },
+    { label: "Assign Case", href: "/atlas/work-queue" },
     { label: "Upload Documents", href: "/atlas/oracle" },
     { label: "Escalate", href: "/atlas/notification-center" },
   ];
@@ -358,13 +358,16 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Operations KPIs" icon={BriefcaseBusiness} badge={{ label: "Live", variant: "info" }}>
+          <p className="mb-4 text-sm text-slate-400">
+            You are in Operations Control. Active operations, approval pressure, and workflow bottlenecks are shown below, and the next step is to open Opportunity 360 or Work Queue assignment.
+          </p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Clients</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Institutions</p>
               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.activeClients}</p>
             </article>
             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deals Processing</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunities in Progress</p>
               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.dealsProcessing}</p>
             </article>
             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">

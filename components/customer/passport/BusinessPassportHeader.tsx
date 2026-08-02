@@ -24,6 +24,9 @@ export default function BusinessPassportHeader({
           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Business Passport</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">{legalName}</h2>
           <p className="mt-1 text-sm text-slate-400">{passportId}</p>
+          <p className="mt-2 text-sm text-slate-400">
+            You are in Business Passport. Institutional identity and readiness are in view, attention items are highlighted in workflow and evidence sections, and the next step is to progress the recommended journey action.
+          </p>
         </div>
         <StatusChip label={lifecycleStage} variant="info" />
       </div>

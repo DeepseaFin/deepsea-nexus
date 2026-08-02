@@ -277,8 +277,12 @@ export default function Institution360Workspace({
   const resolvedStatus = currentStatus ?? passport.status.replace(/_/g, " ");
   const resolvedOverallHealth = overallHealth ?? `${relationshipModel.health.status} (${relationshipModel.health.score})`;
   const resolvedQuickActions = quickActions ?? [
-    { label: "New Deal", href: "/atlas/deals/new" },
-    { label: "Upload Documents", href: "/atlas/oracle" },
+    {
+      label: "Open Opportunity 360",
+      href: primaryOpportunity
+        ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
+        : "/atlas/opportunity",
+    },
     {
       label: "Open Passport",
       href: primaryOpportunity
@@ -286,18 +290,17 @@ export default function Institution360Workspace({
         : "/atlas/business-passport",
     },
     { label: "Relationship Journey", href: "/atlas/journey" },
-    {
-      label: "Open Opportunity 360",
-      href: primaryOpportunity
-        ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
-        : "/atlas/opportunity",
-    },
+    { label: "Upload Documents", href: "/atlas/oracle" },
+    { label: "New Deal", href: "/atlas/deals/new" },
   ];
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-        <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Client 360", variant: "info" }}>
+        <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Institution 360", variant: "info" }}>
+          <p className="mb-4 text-sm text-slate-400">
+            You are in Institution 360. Relationship health and active opportunities are shown below, and the next step is to open Opportunity 360 or Business Passport for action.
+          </p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution Name</p>
@@ -382,7 +385,7 @@ export default function Institution360Workspace({
           <DocumentsPanel model={defaultDocumentsPanelModel} />
         </SectionCard>
 
-        <SectionCard title="Knowledge & AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
+        <SectionCard title="Knowledge and AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_320px]">
             <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
             <JourneyAiPanel

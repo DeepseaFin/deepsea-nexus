@@ -229,7 +229,7 @@ export default function ExecutiveCommandCenter() {
   return (
     <WorkspaceScaffold
       title="Executive Command Center"
-      subtitle="Executive home page for portfolio oversight, work queue prioritization, relationship posture, and institutional intelligence."
+      subtitle="Executive workspace for institutional oversight, current risk posture, and the next operational decisions."
       status={{ label: "Live", tone: "success" }}
       headerFields={[
         { label: "Operating Surface", value: "ATLAS Executive Home" },
@@ -239,18 +239,21 @@ export default function ExecutiveCommandCenter() {
         { label: "Collections Due", value: portfolioMetrics[4].value },
       ]}
       actions={[
-        { label: "New Client", href: "/atlas/clients" },
-        { label: "New Deal", href: "/atlas/deals/new" },
         { label: "Institution 360", href: "/atlas/institution-home" },
-        { label: "Operations Control", href: "/atlas/operations-control" },
-        { label: "Upload Documents", href: "/atlas/oracle" },
         { label: "Business Passport", href: "/atlas/business-passport" },
         { label: "Relationship Journey", href: "/atlas/journey" },
+        { label: "Operations Control", href: "/atlas/operations-control" },
+        { label: "Upload Documents", href: "/atlas/oracle" },
+        { label: "New Deal", href: "/atlas/deals/new" },
+        { label: "New Client", href: "/atlas/clients" },
       ]}
       activity={recentActivity}
       main={(
         <div className="space-y-4">
           <SectionCard title="Portfolio Overview" icon={BriefcaseBusiness} badge={{ label: "Executive", variant: "info" }}>
+            <p className="mb-4 text-sm text-slate-400">
+              You are in Executive Command Center. Portfolio activity is live, relationship risk is monitored below, and the next step is to route priority institutions into Institution 360 or Operations Control.
+            </p>
             <KPIGrid items={[...portfolioMetrics]} />
           </SectionCard>
 
@@ -377,9 +380,9 @@ export default function ExecutiveCommandCenter() {
                 { label: "New Client", href: "/atlas/clients" },
                 { label: "New Deal", href: "/atlas/deals/new" },
                 { label: "Institution 360", href: "/atlas/institution-home" },
-                { label: "Operations Control", href: "/atlas/operations-control" },
                 { label: "Business Passport", href: "/atlas/business-passport" },
                 { label: "Relationship Journey", href: "/atlas/journey" },
+                { label: "Operations Control", href: "/atlas/operations-control" },
                 { label: "Upload Documents", href: "/atlas/oracle" },
               ]}
             />

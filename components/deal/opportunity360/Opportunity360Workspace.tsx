@@ -415,25 +415,28 @@ export default function Opportunity360Workspace({
   const product = toProductLabel(selectedContext.opportunityLifecycle);
   const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
   const resolvedQuickActions = quickActions ?? [
+    { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
     { label: "Approve", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
     { label: "Send Back", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
-    { label: "Upload Documents", href: "/atlas/oracle" },
     { label: "Request Information", href: "/atlas/clients" },
-    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
-    { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Upload Documents", href: "/atlas/oracle" },
   ];
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
+          <p className="mb-4 text-sm text-slate-400">
+            You are in Opportunity 360. Workflow progress, risk signals, and documents are live, and the next step is to open Credit Decision for approval action.
+          </p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-8">
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity Number</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.opportunityId}</p>
             </div>
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{clientName}</p>
             </div>
             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -493,7 +496,7 @@ export default function Opportunity360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Risk & Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
+        <SectionCard title="Risk and Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
