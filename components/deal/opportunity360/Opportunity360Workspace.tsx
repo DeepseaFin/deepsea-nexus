@@ -390,7 +390,17 @@ export default function Opportunity360Workspace({
     : contexts[0];
 
   if (!selectedContext) {
-    return null;
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+          <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
+              No active opportunity context is currently available.
+            </div>
+          </SectionCard>
+        </div>
+      </div>
+    );
   }
 
   const knowledgeInsights = getJourneyKnowledgeInsightsProjection();
@@ -403,13 +413,13 @@ export default function Opportunity360Workspace({
   const clientName = passport.profiles.identityProfile.legalName ?? defaultRelationshipPanelModel.summary.relationship.relationshipName;
   const dealValue = getOpportunityValue(selectedContext.opportunityId);
   const product = toProductLabel(selectedContext.opportunityLifecycle);
-  const statusLabel = passport.status.replace(/_/g, " ");
+  const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
   const resolvedQuickActions = quickActions ?? [
     { label: "Approve", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
     { label: "Send Back", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
     { label: "Upload Documents", href: "/atlas/oracle" },
     { label: "Request Information", href: "/atlas/clients" },
-    { label: "Open Client 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
     { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
   ];
 
@@ -418,31 +428,31 @@ export default function Opportunity360Workspace({
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-8">
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity Number</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.opportunityId}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{clientName}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deal Value</p>
               <p className="mt-2 text-sm font-semibold text-cyan-200">{formatMoney(dealValue)}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Product</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{product}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Owner</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.currentOwner}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 xl:col-span-2">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 xl:col-span-2">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Overall Status</p>
               <div className="mt-2">
                 <StatusBadge label={statusLabel} tone={statusToneByLifecycle(selectedContext.opportunityLifecycle)} />
@@ -486,16 +496,22 @@ export default function Opportunity360Workspace({
         <SectionCard title="Risk & Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
-                <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-amber-300">Risk Indicator</p>
-                  <p className="mt-1 text-sm font-semibold text-amber-100">{risk.label}</p>
-                  <p className="mt-1 text-xs text-amber-200/85">{risk.detail}</p>
+              {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
+                <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 md:col-span-2 xl:col-span-4">
+                  <p className="text-sm text-slate-400">No risk indicators are currently flagged for this opportunity.</p>
                 </article>
-              ))}
+              ) : (
+                knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
+                  <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-amber-300">Risk Indicator</p>
+                    <p className="mt-1 text-sm font-semibold text-amber-100">{risk.label}</p>
+                    <p className="mt-1 text-xs text-amber-200/85">{risk.detail}</p>
+                  </article>
+                ))
+              )}
             </div>
 
-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
               <div className="space-y-4">
                 <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
                 <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
@@ -540,7 +556,7 @@ export default function Opportunity360Workspace({
           <ActivityTimeline title="Opportunity Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "default" }}>
+        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>

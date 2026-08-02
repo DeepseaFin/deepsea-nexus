@@ -1,5 +1,11 @@
 import Opportunity360Workspace from "@/components/deal/opportunity360/Opportunity360Workspace";
 import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Opportunity 360 | Deepsea Nexus",
+  description: "Opportunity-level workspace for workflow, intelligence, and operational execution.",
+};
 
 type OpportunityPageSearchParams = Promise<{
   opportunityId?: string;

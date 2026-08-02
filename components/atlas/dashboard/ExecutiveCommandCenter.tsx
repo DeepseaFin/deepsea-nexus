@@ -254,45 +254,51 @@ export default function ExecutiveCommandCenter() {
             <KPIGrid items={[...portfolioMetrics]} />
           </SectionCard>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
             <BusinessPassportSummary passport={passport} />
 
             <SectionCard title="Relationship Alerts" icon={BellRing} badge={{ label: "Journey", variant: "warning" }}>
               <p className="text-sm text-slate-400">{relationshipPanelConfig.subtitle}</p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Follow-ups</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.followUps}</p>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Expiring</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.expiringRelationships}</p>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">High Risk</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.highRiskRelationships}</p>
                 </div>
               </div>
 
               <div className="mt-4 space-y-3">
-                {relationshipAlerts.rows.map((row) => (
-                  <Link
-                    key={row.label}
-                    href={row.href}
-                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40 hover:bg-slate-950"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-100">{row.label}</p>
-                        <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
+                {relationshipAlerts.rows.length === 0 ? (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                    Relationship alerts are clear for the current operating snapshot.
+                  </div>
+                ) : (
+                  relationshipAlerts.rows.map((row) => (
+                    <Link
+                      key={row.label}
+                      href={row.href}
+                      className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40 hover:bg-slate-950"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-100">{row.label}</p>
+                          <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
+                        </div>
+                        <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200">
+                          {row.value}
+                        </div>
                       </div>
-                      <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200">
-                        {row.value}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))
+                )}
               </div>
             </SectionCard>
           </div>
@@ -319,27 +325,33 @@ export default function ExecutiveCommandCenter() {
             />
 
             <div className="mt-4 space-y-3">
-              {passportProgress.map((item) => (
-                <Link
-                  key={item.opportunityId}
-                  href={`/atlas/institution-home?opportunityId=${item.opportunityId}`}
-                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
+              {passportProgress.length === 0 ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                  Business passport progress will appear once active opportunities are available.
+                </div>
+              ) : (
+                passportProgress.map((item) => (
+                  <Link
+                    key={item.opportunityId}
+                    href={`/atlas/institution-home?opportunityId=${item.opportunityId}`}
+                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
+                        <p className="mt-1 text-xs text-slate-400">Owner {item.owner}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
-                      <p className="mt-1 text-xs text-slate-400">Owner {item.owner}</p>
+                    <div className="mt-3 h-2 rounded-full bg-slate-900">
+                      <div className="h-2 rounded-full bg-cyan-400" style={{ width: `${item.progress}%` }} />
                     </div>
-                  </div>
-                  <div className="mt-3 h-2 rounded-full bg-slate-900">
-                    <div className="h-2 rounded-full bg-cyan-400" style={{ width: `${item.progress}%` }} />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))
+              )}
             </div>
           </SectionCard>
 
@@ -359,7 +371,7 @@ export default function ExecutiveCommandCenter() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Quick Actions" icon={FolderKanban} badge={{ label: "Operational", variant: "default" }}>
+          <SectionCard title="Quick Actions" icon={FolderKanban} badge={{ label: "Operational", variant: "info" }}>
             <QuickActionBar
               actions={[
                 { label: "New Client", href: "/atlas/clients" },

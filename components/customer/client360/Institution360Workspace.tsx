@@ -287,7 +287,7 @@ export default function Institution360Workspace({
     },
     { label: "Relationship Journey", href: "/atlas/journey" },
     {
-      label: "View Opportunities",
+      label: "Open Opportunity 360",
       href: primaryOpportunity
         ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
         : "/atlas/opportunity",
@@ -299,29 +299,29 @@ export default function Institution360Workspace({
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Client 360", variant: "info" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution Name</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedInstitutionName}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Industry</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedIndustry}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Country</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedCountry}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Relationship Manager</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedRelationshipManager}</p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Status</p>
               <div className="mt-2">
                 <StatusBadge label={resolvedStatus} tone="info" />
               </div>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Overall Health</p>
               <p className="mt-2 text-sm font-semibold text-emerald-300">{resolvedOverallHealth}</p>
             </div>
@@ -331,35 +331,41 @@ export default function Institution360Workspace({
         <BusinessPassportSummary passport={passport} />
 
         <SectionCard title="Active Opportunities" icon={ArrowUpRight} badge={{ label: `${contexts.length} live`, variant: "warning" }}>
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
             {primaryOpportunity ? <DealCommandCenter {...buildDealCommandCenterProps(primaryOpportunity)} /> : null}
 
             <div className="space-y-3">
-              {contexts.slice(0, 4).map((context) => (
-                <Link
-                  key={context.opportunityId}
-                  href={`/atlas/opportunity?opportunityId=${context.opportunityId}`}
-                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatLifecycle(context.opportunityLifecycle)}</p>
+              {contexts.length === 0 ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                  No active opportunities are available for this institution yet.
+                </div>
+              ) : (
+                contexts.slice(0, 4).map((context) => (
+                  <Link
+                    key={context.opportunityId}
+                    href={`/atlas/opportunity?opportunityId=${context.opportunityId}`}
+                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatLifecycle(context.opportunityLifecycle)}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-cyan-200">{formatMoney(getOpportunityValue(context.opportunityId))}</p>
                     </div>
-                    <p className="text-sm font-semibold text-cyan-200">{formatMoney(getOpportunityValue(context.opportunityId))}</p>
-                  </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Workspace</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentWorkspace}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Workspace</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentWorkspace}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Owner</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentOwner}</p>
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Owner</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentOwner}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </SectionCard>
@@ -377,7 +383,7 @@ export default function Institution360Workspace({
         </SectionCard>
 
         <SectionCard title="Knowledge & AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.35fr)_360px]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_320px]">
             <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
             <JourneyAiPanel
               recommendations={aiRecommendations}
@@ -392,7 +398,7 @@ export default function Institution360Workspace({
           <ActivityTimeline title="Institutional Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "default" }}>
+        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>

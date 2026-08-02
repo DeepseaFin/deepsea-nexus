@@ -288,6 +288,20 @@ function summarizeDocumentBuckets() {
   };
 }
 
+function decisionStatusClass(decisionStatus: string): string {
+  const normalized = decisionStatus.toLowerCase();
+
+  if (normalized.includes("reject")) {
+    return "text-rose-300";
+  }
+
+  if (normalized.includes("approve")) {
+    return "text-emerald-300";
+  }
+
+  return "text-amber-200";
+}
+
 function toProductLabel(stage: OpportunityLifecycleType): string {
   if (stage === OpportunityLifecycle.DRAFT || stage === OpportunityLifecycle.SUBMITTED) {
     return "Origination Facility";
@@ -382,7 +396,17 @@ export default function CreditDecisionWorkspace({
     : contexts[0];
 
   if (!selectedContext) {
-    return null;
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+          <SectionCard title="Credit Decision" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
+              No active opportunity context is currently available for credit decisioning.
+            </div>
+          </SectionCard>
+        </div>
+      </div>
+    );
   }
 
   const passport = getJourneyBusinessPassportProjection();
@@ -415,33 +439,33 @@ export default function CreditDecisionWorkspace({
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Credit Summary" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{client}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Facility</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{facility}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Exposure</p>
               <p className="mt-2 text-sm font-semibold text-amber-200">{formatMoney(exposure)}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Product</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{product}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Requested Amount</p>
               <p className="mt-2 text-sm font-semibold text-cyan-200">{formatMoney(requestedAmount)}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
               <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Decision Status</p>
-              <p className="mt-2 text-sm font-semibold text-emerald-300">{decisionStatus}</p>
+              <p className={`mt-2 text-sm font-semibold ${decisionStatusClass(decisionStatus)}`}>{decisionStatus}</p>
             </article>
           </div>
         </SectionCard>
@@ -482,7 +506,7 @@ export default function CreditDecisionWorkspace({
         </SectionCard>
 
         <SectionCard title="Evidence & Knowledge" icon={BadgeCheck} badge={{ label: "Intelligence", variant: "info" }}>
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
             <div className="space-y-4">
               <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
               <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
@@ -529,7 +553,7 @@ export default function CreditDecisionWorkspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Decision Panel" icon={FileText} badge={{ label: "Action", variant: "default" }}>
+        <SectionCard title="Decision Panel" icon={FileText} badge={{ label: "Action", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
 

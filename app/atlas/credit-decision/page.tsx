@@ -1,4 +1,10 @@
 import CreditDecisionWorkspace from "@/components/credit/decision-workspace/CreditDecisionWorkspace";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Credit Decision Workspace | Deepsea Nexus",
+  description: "Credit decisioning workspace for underwriting, governance, and final actioning.",
+};
 
 type CreditDecisionPageSearchParams = Promise<{
   opportunityId?: string;

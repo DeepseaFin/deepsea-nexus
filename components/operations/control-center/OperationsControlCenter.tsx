@@ -347,7 +347,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
     { label: "Assign Case", href: "/atlas/work-queue" },
     { label: "Approve", href: "/atlas/approval-center" },
     {
-      label: "Open Opportunity",
+      label: "Open Opportunity 360",
       href: contexts[0] ? `/atlas/opportunity?workflowId=${contexts[0].workflowId}` : "/atlas/opportunity",
     },
     { label: "Upload Documents", href: "/atlas/oracle" },
@@ -359,27 +359,27 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
         <SectionCard title="Operations KPIs" icon={BriefcaseBusiness} badge={{ label: "Live", variant: "info" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Clients</p>
               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.activeClients}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deals Processing</p>
               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.dealsProcessing}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Pending Approvals</p>
               <p className="mt-2 text-2xl font-semibold text-amber-200">{operationsKpis.pendingApprovals}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Documents Awaiting Review</p>
               <p className="mt-2 text-2xl font-semibold text-cyan-200">{operationsKpis.documentsAwaitingReview}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Funding Ready</p>
               <p className="mt-2 text-2xl font-semibold text-emerald-200">{operationsKpis.fundingReady}</p>
             </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">SLA Breaches</p>
               <p className="mt-2 text-2xl font-semibold text-rose-200">{operationsKpis.slaBreaches}</p>
             </article>
@@ -387,7 +387,13 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
         </SectionCard>
 
         <SectionCard title="Operations Work Queue" icon={Workflow} badge={{ label: "Assignment Driven", variant: "warning" }}>
-          <WorkQueue assignments={workQueueAssignments} />
+          {workQueueAssignments.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+              Work queue assignments will appear once opportunities enter active operations.
+            </div>
+          ) : (
+            <WorkQueue assignments={workQueueAssignments} />
+          )}
         </SectionCard>
 
         <SectionCard title="Pending Approvals" icon={BadgeCheck} badge={{ label: "Governance", variant: "warning" }}>
@@ -478,16 +484,22 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
             <BusinessPassportSummary passport={passport} />
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {getJourneyKnowledgeInsightsProjection().riskIndicators.slice(0, 4).map((risk) => (
-                <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-rose-700/50 bg-rose-950/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-rose-300">Priority Alert</p>
-                  <p className="mt-1 text-sm font-semibold text-rose-100">{risk.label}</p>
-                  <p className="mt-1 text-xs text-rose-200/85">{risk.detail}</p>
+              {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
+                <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 md:col-span-2 xl:col-span-4">
+                  <p className="text-sm text-slate-400">No priority alerts are currently open across active operations.</p>
                 </article>
-              ))}
+              ) : (
+                knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
+                  <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-rose-700/50 bg-rose-950/20 p-3">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-rose-300">Priority Alert</p>
+                    <p className="mt-1 text-sm font-semibold text-rose-100">{risk.label}</p>
+                    <p className="mt-1 text-xs text-rose-200/85">{risk.detail}</p>
+                  </article>
+                ))
+              )}
             </div>
 
-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
               <div className="space-y-4">
                 <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
                 <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
@@ -507,7 +519,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           <ActivityTimeline title="Operations Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={FileText} badge={{ label: "Operational", variant: "default" }}>
+        <SectionCard title="Quick Actions" icon={FileText} badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>

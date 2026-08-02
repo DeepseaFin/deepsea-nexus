@@ -1,0 +1,669 @@
+diff --git a/app/atlas/credit-decision/page.tsx b/app/atlas/credit-decision/page.tsx
+index 90e43ab..b7904d6 100644
+--- a/app/atlas/credit-decision/page.tsx
++++ b/app/atlas/credit-decision/page.tsx
+@@ -1,4 +1,10 @@
+ import CreditDecisionWorkspace from "@/components/credit/decision-workspace/CreditDecisionWorkspace";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Credit Decision Workspace | Deepsea Nexus",
++  description: "Credit decisioning workspace for underwriting, governance, and final actioning.",
++};
+ 
+ type CreditDecisionPageSearchParams = Promise<{
+   opportunityId?: string;
+diff --git a/app/atlas/dashboard/page.tsx b/app/atlas/dashboard/page.tsx
+index 093edcc..bca5bf0 100644
+--- a/app/atlas/dashboard/page.tsx
++++ b/app/atlas/dashboard/page.tsx
+@@ -1,4 +1,10 @@
+ import ExecutiveCommandCenter from "@/components/atlas/dashboard/ExecutiveCommandCenter";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Executive Command Center | Deepsea Nexus",
++  description: "Portfolio oversight workspace for institutional operations, approvals, and intelligence.",
++};
+ 
+ export default function DashboardPage() {
+   return <ExecutiveCommandCenter />;
+diff --git a/app/atlas/institution-home/page.tsx b/app/atlas/institution-home/page.tsx
+index f0936c4..9b5aa46 100644
+--- a/app/atlas/institution-home/page.tsx
++++ b/app/atlas/institution-home/page.tsx
+@@ -1,4 +1,10 @@
+ import Institution360Workspace from "@/components/customer/client360/Institution360Workspace";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Institution 360 | Deepsea Nexus",
++  description: "Institution-level workspace for passport, opportunities, and relationship execution.",
++};
+ 
+ type InstitutionHomePageSearchParams = Promise<{
+   opportunityId?: string;
+diff --git a/app/atlas/operations-control/page.tsx b/app/atlas/operations-control/page.tsx
+index 31ae436..fec9fb3 100644
+--- a/app/atlas/operations-control/page.tsx
++++ b/app/atlas/operations-control/page.tsx
+@@ -1,4 +1,10 @@
+ import OperationsControlCenter from "@/components/operations/control-center/OperationsControlCenter";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Operations Control Center | Deepsea Nexus",
++  description: "Operational control workspace for queue management, approvals, and execution bottlenecks.",
++};
+ 
+ export default function OperationsControlPage() {
+   return <OperationsControlCenter />;
+diff --git a/app/atlas/opportunity/page.tsx b/app/atlas/opportunity/page.tsx
+index d4af34f..dcf56c8 100644
+--- a/app/atlas/opportunity/page.tsx
++++ b/app/atlas/opportunity/page.tsx
+@@ -1,5 +1,11 @@
+ import Opportunity360Workspace from "@/components/deal/opportunity360/Opportunity360Workspace";
+ import { getOperationsCenterContexts } from "@/lib/workflows/DemoScenario";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Opportunity 360 | Deepsea Nexus",
++  description: "Opportunity-level workspace for workflow, intelligence, and operational execution.",
++};
+ 
+ type OpportunityPageSearchParams = Promise<{
+   opportunityId?: string;
+diff --git a/components/atlas/dashboard/ExecutiveCommandCenter.tsx b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+index 3e83d7a..9721b8a 100644
+--- a/components/atlas/dashboard/ExecutiveCommandCenter.tsx
++++ b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+@@ -254,45 +254,51 @@ export default function ExecutiveCommandCenter() {
+             <KPIGrid items={[...portfolioMetrics]} />
+           </SectionCard>
+ 
+-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
++          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
+             <BusinessPassportSummary passport={passport} />
+ 
+             <SectionCard title="Relationship Alerts" icon={BellRing} badge={{ label: "Journey", variant: "warning" }}>
+               <p className="text-sm text-slate-400">{relationshipPanelConfig.subtitle}</p>
+ 
+               <div className="mt-4 grid gap-3 sm:grid-cols-3">
+-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Follow-ups</p>
+                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.followUps}</p>
+                 </div>
+-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Expiring</p>
+                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.expiringRelationships}</p>
+                 </div>
+-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++                <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                   <p className="text-xs uppercase tracking-[0.16em] text-slate-500">High Risk</p>
+                   <p className="mt-2 text-2xl font-semibold text-slate-100">{relationshipAlerts.highRiskRelationships}</p>
+                 </div>
+               </div>
+ 
+               <div className="mt-4 space-y-3">
+-                {relationshipAlerts.rows.map((row) => (
+-                  <Link
+-                    key={row.label}
+-                    href={row.href}
+-                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40 hover:bg-slate-950"
+-                  >
+-                    <div className="flex items-start justify-between gap-3">
+-                      <div>
+-                        <p className="text-sm font-semibold text-slate-100">{row.label}</p>
+-                        <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
+-                      </div>
+-                      <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200">
+-                        {row.value}
++                {relationshipAlerts.rows.length === 0 ? (
++                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
++                    Relationship alerts are clear for the current operating snapshot.
++                  </div>
++                ) : (
++                  relationshipAlerts.rows.map((row) => (
++                    <Link
++                      key={row.label}
++                      href={row.href}
++                      className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40 hover:bg-slate-950"
++                    >
++                      <div className="flex items-start justify-between gap-3">
++                        <div>
++                          <p className="text-sm font-semibold text-slate-100">{row.label}</p>
++                          <p className="mt-1 text-xs text-slate-400">{row.detail}</p>
++                        </div>
++                        <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-200">
++                          {row.value}
++                        </div>
+                       </div>
+-                    </div>
+-                  </Link>
+-                ))}
++                    </Link>
++                  ))
++                )}
+               </div>
+             </SectionCard>
+           </div>
+@@ -319,27 +325,33 @@ export default function ExecutiveCommandCenter() {
+             />
+ 
+             <div className="mt-4 space-y-3">
+-              {passportProgress.map((item) => (
+-                <Link
+-                  key={item.opportunityId}
+-                  href={`/atlas/institution-home?opportunityId=${item.opportunityId}`}
+-                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+-                >
+-                  <div className="flex flex-wrap items-center justify-between gap-3">
+-                    <div>
+-                      <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
+-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
++              {passportProgress.length === 0 ? (
++                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
++                  Business passport progress will appear once active opportunities are available.
++                </div>
++              ) : (
++                passportProgress.map((item) => (
++                  <Link
++                    key={item.opportunityId}
++                    href={`/atlas/institution-home?opportunityId=${item.opportunityId}`}
++                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
++                  >
++                    <div className="flex flex-wrap items-center justify-between gap-3">
++                      <div>
++                        <p className="text-sm font-semibold text-slate-100">{item.institutionId}</p>
++                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{item.opportunityId} • {formatLifecycle(item.lifecycle)}</p>
++                      </div>
++                      <div className="text-right">
++                        <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
++                        <p className="mt-1 text-xs text-slate-400">Owner {item.owner}</p>
++                      </div>
+                     </div>
+-                    <div className="text-right">
+-                      <p className="text-sm font-semibold text-slate-100">{item.progress}%</p>
+-                      <p className="mt-1 text-xs text-slate-400">Owner {item.owner}</p>
++                    <div className="mt-3 h-2 rounded-full bg-slate-900">
++                      <div className="h-2 rounded-full bg-cyan-400" style={{ width: `${item.progress}%` }} />
+                     </div>
+-                  </div>
+-                  <div className="mt-3 h-2 rounded-full bg-slate-900">
+-                    <div className="h-2 rounded-full bg-cyan-400" style={{ width: `${item.progress}%` }} />
+-                  </div>
+-                </Link>
+-              ))}
++                  </Link>
++                ))
++              )}
+             </div>
+           </SectionCard>
+ 
+@@ -359,7 +371,7 @@ export default function ExecutiveCommandCenter() {
+             </div>
+           </SectionCard>
+ 
+-          <SectionCard title="Quick Actions" icon={FolderKanban} badge={{ label: "Operational", variant: "default" }}>
++          <SectionCard title="Quick Actions" icon={FolderKanban} badge={{ label: "Operational", variant: "info" }}>
+             <QuickActionBar
+               actions={[
+                 { label: "New Client", href: "/atlas/clients" },
+diff --git a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+index 354a088..f9668cf 100644
+--- a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
++++ b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+@@ -288,6 +288,20 @@ function summarizeDocumentBuckets() {
+   };
+ }
+ 
++function decisionStatusClass(decisionStatus: string): string {
++  const normalized = decisionStatus.toLowerCase();
++
++  if (normalized.includes("reject")) {
++    return "text-rose-300";
++  }
++
++  if (normalized.includes("approve")) {
++    return "text-emerald-300";
++  }
++
++  return "text-amber-200";
++}
++
+ function toProductLabel(stage: OpportunityLifecycleType): string {
+   if (stage === OpportunityLifecycle.DRAFT || stage === OpportunityLifecycle.SUBMITTED) {
+     return "Origination Facility";
+@@ -382,7 +396,17 @@ export default function CreditDecisionWorkspace({
+     : contexts[0];
+ 
+   if (!selectedContext) {
+-    return null;
++    return (
++      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
++        <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
++          <SectionCard title="Credit Decision" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
++            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
++              No active opportunity context is currently available for credit decisioning.
++            </div>
++          </SectionCard>
++        </div>
++      </div>
++    );
+   }
+ 
+   const passport = getJourneyBusinessPassportProjection();
+@@ -415,33 +439,33 @@ export default function CreditDecisionWorkspace({
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Credit Summary" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{client}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Facility</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{facility}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Exposure</p>
+               <p className="mt-2 text-sm font-semibold text-amber-200">{formatMoney(exposure)}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Product</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{product}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Requested Amount</p>
+               <p className="mt-2 text-sm font-semibold text-cyan-200">{formatMoney(requestedAmount)}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Decision Status</p>
+-              <p className="mt-2 text-sm font-semibold text-emerald-300">{decisionStatus}</p>
++              <p className={`mt-2 text-sm font-semibold ${decisionStatusClass(decisionStatus)}`}>{decisionStatus}</p>
+             </article>
+           </div>
+         </SectionCard>
+@@ -482,7 +506,7 @@ export default function CreditDecisionWorkspace({
+         </SectionCard>
+ 
+         <SectionCard title="Evidence & Knowledge" icon={BadgeCheck} badge={{ label: "Intelligence", variant: "info" }}>
+-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
++          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
+             <div className="space-y-4">
+               <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+               <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
+@@ -529,7 +553,7 @@ export default function CreditDecisionWorkspace({
+           </div>
+         </SectionCard>
+ 
+-        <SectionCard title="Decision Panel" icon={FileText} badge={{ label: "Action", variant: "default" }}>
++        <SectionCard title="Decision Panel" icon={FileText} badge={{ label: "Action", variant: "info" }}>
+           <QuickActionBar actions={[...resolvedQuickActions]} />
+         </SectionCard>
+ 
+diff --git a/components/customer/client360/Institution360Workspace.tsx b/components/customer/client360/Institution360Workspace.tsx
+index 41d4ce9..da4d04e 100644
+--- a/components/customer/client360/Institution360Workspace.tsx
++++ b/components/customer/client360/Institution360Workspace.tsx
+@@ -287,7 +287,7 @@ export default function Institution360Workspace({
+     },
+     { label: "Relationship Journey", href: "/atlas/journey" },
+     {
+-      label: "View Opportunities",
++      label: "Open Opportunity 360",
+       href: primaryOpportunity
+         ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
+         : "/atlas/opportunity",
+@@ -299,29 +299,29 @@ export default function Institution360Workspace({
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Client 360", variant: "info" }}>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution Name</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedInstitutionName}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Industry</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedIndustry}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Country</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedCountry}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Relationship Manager</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{resolvedRelationshipManager}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Status</p>
+               <div className="mt-2">
+                 <StatusBadge label={resolvedStatus} tone="info" />
+               </div>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Overall Health</p>
+               <p className="mt-2 text-sm font-semibold text-emerald-300">{resolvedOverallHealth}</p>
+             </div>
+@@ -331,35 +331,41 @@ export default function Institution360Workspace({
+         <BusinessPassportSummary passport={passport} />
+ 
+         <SectionCard title="Active Opportunities" icon={ArrowUpRight} badge={{ label: `${contexts.length} live`, variant: "warning" }}>
+-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
++          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+             {primaryOpportunity ? <DealCommandCenter {...buildDealCommandCenterProps(primaryOpportunity)} /> : null}
+ 
+             <div className="space-y-3">
+-              {contexts.slice(0, 4).map((context) => (
+-                <Link
+-                  key={context.opportunityId}
+-                  href={`/atlas/opportunity?opportunityId=${context.opportunityId}`}
+-                  className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
+-                >
+-                  <div className="flex items-start justify-between gap-3">
+-                    <div>
+-                      <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
+-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatLifecycle(context.opportunityLifecycle)}</p>
++              {contexts.length === 0 ? (
++                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
++                  No active opportunities are available for this institution yet.
++                </div>
++              ) : (
++                contexts.slice(0, 4).map((context) => (
++                  <Link
++                    key={context.opportunityId}
++                    href={`/atlas/opportunity?opportunityId=${context.opportunityId}`}
++                    className="block rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-700/40"
++                  >
++                    <div className="flex items-start justify-between gap-3">
++                      <div>
++                        <p className="text-sm font-semibold text-slate-100">{context.opportunityId}</p>
++                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">{formatLifecycle(context.opportunityLifecycle)}</p>
++                      </div>
++                      <p className="text-sm font-semibold text-cyan-200">{formatMoney(getOpportunityValue(context.opportunityId))}</p>
+                     </div>
+-                    <p className="text-sm font-semibold text-cyan-200">{formatMoney(getOpportunityValue(context.opportunityId))}</p>
+-                  </div>
+-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+-                    <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Workspace</p>
+-                      <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentWorkspace}</p>
++                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
++                      <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
++                        <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Workspace</p>
++                        <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentWorkspace}</p>
++                      </div>
++                      <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
++                        <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Owner</p>
++                        <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentOwner}</p>
++                      </div>
+                     </div>
+-                    <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Owner</p>
+-                      <p className="mt-1 text-sm font-semibold text-slate-100">{context.currentOwner}</p>
+-                    </div>
+-                  </div>
+-                </Link>
+-              ))}
++                  </Link>
++                ))
++              )}
+             </div>
+           </div>
+         </SectionCard>
+@@ -377,7 +383,7 @@ export default function Institution360Workspace({
+         </SectionCard>
+ 
+         <SectionCard title="Knowledge & AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
+-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.35fr)_360px]">
++          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_320px]">
+             <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+             <JourneyAiPanel
+               recommendations={aiRecommendations}
+@@ -392,7 +398,7 @@ export default function Institution360Workspace({
+           <ActivityTimeline title="Institutional Activity Timeline" events={activityEvents} />
+         </SectionCard>
+ 
+-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "default" }}>
++        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
+           <QuickActionBar actions={[...resolvedQuickActions]} />
+         </SectionCard>
+       </div>
+diff --git a/components/deal/opportunity360/Opportunity360Workspace.tsx b/components/deal/opportunity360/Opportunity360Workspace.tsx
+index 31d76cb..dbbb71a 100644
+--- a/components/deal/opportunity360/Opportunity360Workspace.tsx
++++ b/components/deal/opportunity360/Opportunity360Workspace.tsx
+@@ -390,7 +390,17 @@ export default function Opportunity360Workspace({
+     : contexts[0];
+ 
+   if (!selectedContext) {
+-    return null;
++    return (
++      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
++        <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
++          <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
++            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
++              No active opportunity context is currently available.
++            </div>
++          </SectionCard>
++        </div>
++      </div>
++    );
+   }
+ 
+   const knowledgeInsights = getJourneyKnowledgeInsightsProjection();
+@@ -403,13 +413,13 @@ export default function Opportunity360Workspace({
+   const clientName = passport.profiles.identityProfile.legalName ?? defaultRelationshipPanelModel.summary.relationship.relationshipName;
+   const dealValue = getOpportunityValue(selectedContext.opportunityId);
+   const product = toProductLabel(selectedContext.opportunityLifecycle);
+-  const statusLabel = passport.status.replace(/_/g, " ");
++  const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
+   const resolvedQuickActions = quickActions ?? [
+     { label: "Approve", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Send Back", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Upload Documents", href: "/atlas/oracle" },
+     { label: "Request Information", href: "/atlas/clients" },
+-    { label: "Open Client 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
++    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+   ];
+ 
+@@ -418,31 +428,31 @@ export default function Opportunity360Workspace({
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-8">
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity Number</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.opportunityId}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{clientName}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deal Value</p>
+               <p className="mt-2 text-sm font-semibold text-cyan-200">{formatMoney(dealValue)}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Product</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{product}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Stage</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{formatLifecycle(selectedContext.opportunityLifecycle)}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current Owner</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.currentOwner}</p>
+             </div>
+-            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 xl:col-span-2">
++            <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 xl:col-span-2">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Overall Status</p>
+               <div className="mt-2">
+                 <StatusBadge label={statusLabel} tone={statusToneByLifecycle(selectedContext.opportunityLifecycle)} />
+@@ -486,16 +496,22 @@ export default function Opportunity360Workspace({
+         <SectionCard title="Risk & Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
+           <div className="space-y-4">
+             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+-              {knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
+-                <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3">
+-                  <p className="text-[11px] uppercase tracking-[0.12em] text-amber-300">Risk Indicator</p>
+-                  <p className="mt-1 text-sm font-semibold text-amber-100">{risk.label}</p>
+-                  <p className="mt-1 text-xs text-amber-200/85">{risk.detail}</p>
++              {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
++                <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 md:col-span-2 xl:col-span-4">
++                  <p className="text-sm text-slate-400">No risk indicators are currently flagged for this opportunity.</p>
+                 </article>
+-              ))}
++              ) : (
++                knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
++                  <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3">
++                    <p className="text-[11px] uppercase tracking-[0.12em] text-amber-300">Risk Indicator</p>
++                    <p className="mt-1 text-sm font-semibold text-amber-100">{risk.label}</p>
++                    <p className="mt-1 text-xs text-amber-200/85">{risk.detail}</p>
++                  </article>
++                ))
++              )}
+             </div>
+ 
+-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
++            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
+               <div className="space-y-4">
+                 <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+                 <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
+@@ -540,7 +556,7 @@ export default function Opportunity360Workspace({
+           <ActivityTimeline title="Opportunity Activity Timeline" events={activityEvents} />
+         </SectionCard>
+ 
+-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "default" }}>
++        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
+           <QuickActionBar actions={[...resolvedQuickActions]} />
+         </SectionCard>
+       </div>
+diff --git a/components/operations/control-center/OperationsControlCenter.tsx b/components/operations/control-center/OperationsControlCenter.tsx
+index 14452d3..a48ba53 100644
+--- a/components/operations/control-center/OperationsControlCenter.tsx
++++ b/components/operations/control-center/OperationsControlCenter.tsx
+@@ -347,7 +347,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+     { label: "Assign Case", href: "/atlas/work-queue" },
+     { label: "Approve", href: "/atlas/approval-center" },
+     {
+-      label: "Open Opportunity",
++      label: "Open Opportunity 360",
+       href: contexts[0] ? `/atlas/opportunity?workflowId=${contexts[0].workflowId}` : "/atlas/opportunity",
+     },
+     { label: "Upload Documents", href: "/atlas/oracle" },
+@@ -359,27 +359,27 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Operations KPIs" icon={BriefcaseBusiness} badge={{ label: "Live", variant: "info" }}>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Clients</p>
+               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.activeClients}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deals Processing</p>
+               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.dealsProcessing}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Pending Approvals</p>
+               <p className="mt-2 text-2xl font-semibold text-amber-200">{operationsKpis.pendingApprovals}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Documents Awaiting Review</p>
+               <p className="mt-2 text-2xl font-semibold text-cyan-200">{operationsKpis.documentsAwaitingReview}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Funding Ready</p>
+               <p className="mt-2 text-2xl font-semibold text-emerald-200">{operationsKpis.fundingReady}</p>
+             </article>
+-            <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
++            <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">SLA Breaches</p>
+               <p className="mt-2 text-2xl font-semibold text-rose-200">{operationsKpis.slaBreaches}</p>
+             </article>
+@@ -387,7 +387,13 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+         </SectionCard>
+ 
+         <SectionCard title="Operations Work Queue" icon={Workflow} badge={{ label: "Assignment Driven", variant: "warning" }}>
+-          <WorkQueue assignments={workQueueAssignments} />
++          {workQueueAssignments.length === 0 ? (
++            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
++              Work queue assignments will appear once opportunities enter active operations.
++            </div>
++          ) : (
++            <WorkQueue assignments={workQueueAssignments} />
++          )}
+         </SectionCard>
+ 
+         <SectionCard title="Pending Approvals" icon={BadgeCheck} badge={{ label: "Governance", variant: "warning" }}>
+@@ -478,16 +484,22 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+             <BusinessPassportSummary passport={passport} />
+ 
+             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+-              {getJourneyKnowledgeInsightsProjection().riskIndicators.slice(0, 4).map((risk) => (
+-                <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-rose-700/50 bg-rose-950/20 p-3">
+-                  <p className="text-[11px] uppercase tracking-[0.12em] text-rose-300">Priority Alert</p>
+-                  <p className="mt-1 text-sm font-semibold text-rose-100">{risk.label}</p>
+-                  <p className="mt-1 text-xs text-rose-200/85">{risk.detail}</p>
++              {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
++                <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 md:col-span-2 xl:col-span-4">
++                  <p className="text-sm text-slate-400">No priority alerts are currently open across active operations.</p>
+                 </article>
+-              ))}
++              ) : (
++                knowledgeInsights.riskIndicators.slice(0, 4).map((risk) => (
++                  <article key={`${risk.label}-${risk.detail}`} className="rounded-lg border border-rose-700/50 bg-rose-950/20 p-3">
++                    <p className="text-[11px] uppercase tracking-[0.12em] text-rose-300">Priority Alert</p>
++                    <p className="mt-1 text-sm font-semibold text-rose-100">{risk.label}</p>
++                    <p className="mt-1 text-xs text-rose-200/85">{risk.detail}</p>
++                  </article>
++                ))
++              )}
+             </div>
+ 
+-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_360px]">
++            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
+               <div className="space-y-4">
+                 <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+                 <RelationshipEvidenceExplorer explorer={evidenceExplorer} />
+@@ -507,7 +519,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+           <ActivityTimeline title="Operations Activity Timeline" events={activityEvents} />
+         </SectionCard>
+ 
+-        <SectionCard title="Quick Actions" icon={FileText} badge={{ label: "Operational", variant: "default" }}>
++        <SectionCard title="Quick Actions" icon={FileText} badge={{ label: "Operational", variant: "info" }}>
+           <QuickActionBar actions={[...resolvedQuickActions]} />
+         </SectionCard>
+       </div>
