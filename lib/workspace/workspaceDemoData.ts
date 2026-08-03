@@ -61,6 +61,21 @@ export const relationshipManagerDemo: WorkspaceContext = {
       },
     ],
   },
+  commandCenter: {
+    subtitle: 'Everything requiring your attention right now.',
+    items: [
+      { title: 'Review Customers', count: '3', status: 'Need Attention', ctaLabel: 'Open Queue ->' },
+      { title: 'Credit Decisions', count: '2', status: 'Awaiting Approval', ctaLabel: 'Review ->' },
+      { title: 'Funding Releases', count: '1', status: 'Ready Today', ctaLabel: 'Execute ->' },
+      { title: 'Compliance Review', count: '4', status: 'Documents Pending', ctaLabel: 'Open ->' },
+    ],
+    priorityFocus: {
+      customer: 'Crescent Trade Holdings',
+      stage: 'Trade Finance Renewal',
+      nextTask: 'Approve revised facility.',
+      actionLabel: 'Continue Working ->',
+    },
+  },
   quickActions: [
     { title: 'New Relationship', description: 'Start onboarding a new institutional client.', iconName: 'userPlus' },
     { title: 'New Financing', description: 'Create a new financing opportunity.', iconName: 'handCoins' },
@@ -146,6 +161,21 @@ export const creditManagerDemo: WorkspaceContext = {
       },
     ],
   },
+  commandCenter: {
+    subtitle: 'Everything requiring your attention right now.',
+    items: [
+      { title: 'Review Customers', count: '3', status: 'Need Attention', ctaLabel: 'Open Queue ->' },
+      { title: 'Credit Decisions', count: '2', status: 'Awaiting Approval', ctaLabel: 'Review ->' },
+      { title: 'Funding Releases', count: '1', status: 'Ready Today', ctaLabel: 'Execute ->' },
+      { title: 'Compliance Review', count: '4', status: 'Documents Pending', ctaLabel: 'Open ->' },
+    ],
+    priorityFocus: {
+      customer: 'Northwind Maritime',
+      stage: 'Committee Credit Approval',
+      nextTask: 'Approve revised risk recommendation.',
+      actionLabel: 'Continue Working ->',
+    },
+  },
   quickActions: [
     { title: 'New Relationship', description: 'Open a relationship profile for underwriting.', iconName: 'userPlus' },
     { title: 'New Financing', description: 'Start credit assessment for a new facility.', iconName: 'handCoins' },
@@ -230,6 +260,21 @@ export const operationsManagerDemo: WorkspaceContext = {
         ctaLabel: 'Execute ->',
       },
     ],
+  },
+  commandCenter: {
+    subtitle: 'Everything requiring your attention right now.',
+    items: [
+      { title: 'Review Customers', count: '3', status: 'Need Attention', ctaLabel: 'Open Queue ->' },
+      { title: 'Credit Decisions', count: '2', status: 'Awaiting Approval', ctaLabel: 'Review ->' },
+      { title: 'Funding Releases', count: '1', status: 'Ready Today', ctaLabel: 'Execute ->' },
+      { title: 'Compliance Review', count: '4', status: 'Documents Pending', ctaLabel: 'Open ->' },
+    ],
+    priorityFocus: {
+      customer: 'Crescent Trade Holdings',
+      stage: 'Funding Release Execution',
+      nextTask: 'Approve revised facility.',
+      actionLabel: 'Continue Working ->',
+    },
   },
   quickActions: [
     { title: 'New Relationship', description: 'Create a new operations-facing client thread.', iconName: 'userPlus' },

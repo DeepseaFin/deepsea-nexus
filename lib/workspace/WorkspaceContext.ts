@@ -31,6 +31,20 @@ export type WorkspaceMyWorkItem = {
   ctaLabel: string;
 };
 
+export type WorkspaceCommandCenterItem = {
+  title: string;
+  count: string;
+  status: string;
+  ctaLabel: string;
+};
+
+export type WorkspacePriorityFocus = {
+  customer: string;
+  stage: string;
+  nextTask: string;
+  actionLabel: string;
+};
+
 export type WorkspaceResumeItem = {
   customer: string;
   workstream: string;
@@ -65,6 +79,11 @@ export type WorkspaceContext = {
   myWork: {
     subtitle: string;
     items: readonly WorkspaceMyWorkItem[];
+  };
+  commandCenter: {
+    subtitle: string;
+    items: readonly WorkspaceCommandCenterItem[];
+    priorityFocus: WorkspacePriorityFocus;
   };
   quickActions: readonly WorkspaceQuickActionItem[];
   resumeItems: readonly WorkspaceResumeItem[];
