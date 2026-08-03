@@ -23,6 +23,14 @@ export type WorkspaceQuickActionItem = {
   iconName: WorkspaceQuickActionIconName;
 };
 
+export type WorkspaceMyWorkItem = {
+  title: string;
+  description: string;
+  secondaryText: string;
+  priority: string;
+  ctaLabel: string;
+};
+
 export type WorkspaceResumeItem = {
   customer: string;
   workstream: string;
@@ -53,6 +61,10 @@ export type WorkspaceContext = {
   activityFeed: {
     subtitle: string;
     items: readonly WorkspaceActivityItem[];
+  };
+  myWork: {
+    subtitle: string;
+    items: readonly WorkspaceMyWorkItem[];
   };
   quickActions: readonly WorkspaceQuickActionItem[];
   resumeItems: readonly WorkspaceResumeItem[];

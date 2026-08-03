@@ -28,6 +28,39 @@ export const relationshipManagerDemo: WorkspaceContext = {
       { iconName: 'fileText', title: 'Legal review completed', detail: 'Trade Finance Agreement ready for signature.', time: 'Today' },
     ],
   },
+  myWork: {
+    subtitle: 'Everything that needs your attention today.',
+    items: [
+      {
+        title: 'Customer Needs Attention',
+        description: 'Crescent Trade Holdings',
+        secondaryText: 'KYC expires in 5 days',
+        priority: 'HIGH',
+        ctaLabel: 'Continue ->',
+      },
+      {
+        title: 'Credit Decision',
+        description: 'Blue Ocean Ltd',
+        secondaryText: 'Awaiting approval',
+        priority: 'MEDIUM',
+        ctaLabel: 'Review ->',
+      },
+      {
+        title: 'Document Review',
+        description: '4 Documents Pending',
+        secondaryText: 'Compliance review required',
+        priority: 'LOW',
+        ctaLabel: 'Open ->',
+      },
+      {
+        title: 'Funding Release',
+        description: 'USD 2.4 Million',
+        secondaryText: 'Scheduled today',
+        priority: 'TODAY',
+        ctaLabel: 'Execute ->',
+      },
+    ],
+  },
   quickActions: [
     { title: 'New Relationship', description: 'Start onboarding a new institutional client.', iconName: 'userPlus' },
     { title: 'New Financing', description: 'Create a new financing opportunity.', iconName: 'handCoins' },
@@ -80,6 +113,39 @@ export const creditManagerDemo: WorkspaceContext = {
       { iconName: 'handCoins', title: 'Funding waiting on approval', detail: 'One release is paused pending your sign-off.', time: 'Today' },
     ],
   },
+  myWork: {
+    subtitle: 'Everything that needs your attention today.',
+    items: [
+      {
+        title: 'Customer Needs Attention',
+        description: 'Northwind Maritime',
+        secondaryText: 'Exception memo added for review',
+        priority: 'HIGH',
+        ctaLabel: 'Continue ->',
+      },
+      {
+        title: 'Credit Decision',
+        description: 'Blue Ocean Ltd',
+        secondaryText: 'Awaiting committee approval',
+        priority: 'MEDIUM',
+        ctaLabel: 'Review ->',
+      },
+      {
+        title: 'Document Review',
+        description: '7 Documents Pending',
+        secondaryText: 'Financial statements need validation',
+        priority: 'LOW',
+        ctaLabel: 'Open ->',
+      },
+      {
+        title: 'Funding Release',
+        description: 'USD 1.8 Million',
+        secondaryText: 'Pending final credit sign-off',
+        priority: 'TODAY',
+        ctaLabel: 'Execute ->',
+      },
+    ],
+  },
   quickActions: [
     { title: 'New Relationship', description: 'Open a relationship profile for underwriting.', iconName: 'userPlus' },
     { title: 'New Financing', description: 'Start credit assessment for a new facility.', iconName: 'handCoins' },
@@ -130,6 +196,39 @@ export const operationsManagerDemo: WorkspaceContext = {
       { iconName: 'messageCircle', title: 'Client confirmation received', detail: 'ABC Manufacturing confirmed release terms.', time: '55 minutes ago' },
       { iconName: 'fileUp', title: 'Supporting documents uploaded', detail: 'Northwind Maritime posted revised invoice set.', time: 'Today 8:40 AM' },
       { iconName: 'check', title: 'Compliance sign-off recorded', detail: 'Crescent Trade Holdings file is fully validated.', time: 'Today' },
+    ],
+  },
+  myWork: {
+    subtitle: 'Everything that needs your attention today.',
+    items: [
+      {
+        title: 'Customer Needs Attention',
+        description: 'Crescent Trade Holdings',
+        secondaryText: 'Funding confirmation needed',
+        priority: 'HIGH',
+        ctaLabel: 'Continue ->',
+      },
+      {
+        title: 'Credit Decision',
+        description: 'Blue Ocean Ltd',
+        secondaryText: 'Awaiting release dependency approval',
+        priority: 'MEDIUM',
+        ctaLabel: 'Review ->',
+      },
+      {
+        title: 'Document Review',
+        description: '6 Documents Pending',
+        secondaryText: 'Settlement packet verification required',
+        priority: 'LOW',
+        ctaLabel: 'Open ->',
+      },
+      {
+        title: 'Funding Release',
+        description: 'USD 2.4 Million',
+        secondaryText: 'Scheduled today',
+        priority: 'TODAY',
+        ctaLabel: 'Execute ->',
+      },
     ],
   },
   quickActions: [

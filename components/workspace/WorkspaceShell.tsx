@@ -1,6 +1,7 @@
 import WorkspaceActivityFeed from '@/components/workspace/WorkspaceActivityFeed';
 import WorkspaceGreeting from '@/components/workspace/WorkspaceGreeting';
 import WorkspaceHero from '@/components/workspace/WorkspaceHero';
+import WorkspaceMyWork from '@/components/workspace/WorkspaceMyWork';
 import WorkspaceQuickActions from '@/components/workspace/WorkspaceQuickActions';
 import WorkspaceResume from '@/components/workspace/WorkspaceResume';
 import WorkspaceSection from '@/components/workspace/WorkspaceSection';
@@ -14,6 +15,10 @@ export default function WorkspaceShell({ context }: { context: WorkspaceContext 
       <WorkspaceProvider context={context}>
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-6 py-10 sm:px-8 lg:gap-12 lg:px-10">
           <WorkspaceGreeting />
+
+          <WorkspaceSection title="My Work" iconName="handCoins">
+            <WorkspaceMyWork />
+          </WorkspaceSection>
 
           <WorkspaceSection title="Recommended Next Action" iconName="sparkles">
             <WorkspaceHero />
