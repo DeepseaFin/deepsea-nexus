@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import WorkspaceActivityFeed from '@/components/workspace/WorkspaceActivityFeed';
 import WorkspaceCommandCenter from '@/components/workspace/WorkspaceCommandCenter';
 import WorkspaceGreeting from '@/components/workspace/WorkspaceGreeting';
@@ -10,7 +11,21 @@ import WorkspaceSummary from '@/components/workspace/WorkspaceSummary';
 import type { WorkspaceContext } from '@/lib/workspace/WorkspaceContext';
 import { WorkspaceProvider } from '@/lib/workspace/WorkspaceProvider';
 
-export default function WorkspaceShell({ context }: { context: WorkspaceContext }) {
+export default function WorkspaceShell({ context, children }: { context?: WorkspaceContext; children?: ReactNode }) {
+  if (children) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-6 py-10 sm:px-8 lg:gap-12 lg:px-10">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  if (!context) {
+    throw new Error('WorkspaceShell requires either context or children.');
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <WorkspaceProvider context={context}>
