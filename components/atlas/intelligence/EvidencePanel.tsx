@@ -25,7 +25,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
   return (
     <SectionCard
       title={title}
-      icon={FileText}
+      iconKey="file-text"
       badge={{
         label: `${evidence.length} Items`,
         variant: 'default',

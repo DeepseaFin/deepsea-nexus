@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ClipboardCheck } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { RecommendationPanel } from '@/src/capabilities/intelligence/recommendation/RecommendationPanel';
 
@@ -28,7 +28,7 @@ const RecommendationPanelView: React.FC<RecommendationPanelViewProps> = ({ panel
   return (
     <SectionCard
       title="Recommendation Panel"
-      icon={ClipboardCheck}
+      iconKey="clipboard-check"
       badge={{
         label: `${panel.totalRecommendations} Recommendations`,
         variant: 'info',

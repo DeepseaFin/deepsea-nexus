@@ -1,17 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import {
+  useState } from 'react';
 import {
   Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  FileCheck2,
-  FileText,
-  Handshake,
   Search,
-  UserPlus,
 } from 'lucide-react';
 import { useDeal } from '@/components/atlas/common/DealContext';
 import { DEAL_WORKFLOW_STEPS, type DealModel, type DealWorkflowStep } from '@/atlas-core/deals/DealModel';
@@ -209,7 +204,7 @@ export default function DealStudio() {
       case 'Client':
         return (
           <div className="space-y-6">
-            <SectionCard title="Client Search" icon={Search}>
+            <SectionCard title="Client Search" iconKey="search">
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
                   <Search className="h-4 w-4 text-cyan-300" />
@@ -230,7 +225,7 @@ export default function DealStudio() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Client Details" icon={UserPlus}>
+            <SectionCard title="Client Details" iconKey="user-plus">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <InputField label="Legal Name" value={deal.client.legalName} onChange={handleClientField('legalName')} placeholder="ABC Limited" error={clientErrors.legalName} required />
                 <InputField label="Trading Name" value={deal.client.tradingName} onChange={handleClientField('tradingName')} placeholder="ABC Trading" />
@@ -250,7 +245,7 @@ export default function DealStudio() {
 
       case 'Counterparty':
         return (
-          <SectionCard title="Counterparty Workspace" icon={Handshake}>
+          <SectionCard title="Counterparty Workspace" iconKey="handshake">
             <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/70 p-5">
               <p className="text-sm text-slate-300">Counterparty details in the shared deal model.</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -273,7 +268,7 @@ export default function DealStudio() {
         return (
           <div className="space-y-6">
             <FinancialSummary />
-            <SectionCard title="Pricing Workspace" icon={ClipboardList}>
+            <SectionCard title="Pricing Workspace" iconKey="clipboard-list">
               <PricingEditor />
             </SectionCard>
           </div>
@@ -281,7 +276,7 @@ export default function DealStudio() {
 
       case 'Documents':
         return (
-          <SectionCard title="Documents Workspace" icon={FileText}>
+          <SectionCard title="Documents Workspace" iconKey="file-text">
             <DocumentUploadZone onFilesChange={handleDocumentsChange} />
           </SectionCard>
         );
@@ -306,7 +301,7 @@ export default function DealStudio() {
 
       case 'Term Sheet':
         return (
-          <SectionCard title="Term Sheet Workspace" icon={FileCheck2}>
+          <SectionCard title="Term Sheet Workspace" iconKey="file-check-2">
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5">
               <p className="text-sm text-slate-300">Professional placeholder for term sheet generation and review workflow.</p>
               <p className="mt-2 text-xs text-slate-500">Template population, legal markup, and approval circulation are intentionally not wired in this sprint.</p>
@@ -316,7 +311,7 @@ export default function DealStudio() {
 
       case 'Approval':
         return (
-          <SectionCard title="Approval Workspace" icon={CheckCircle2}>
+          <SectionCard title="Approval Workspace" iconKey="check-circle-2">
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5">
               <p className="text-sm text-slate-300">Professional placeholder for approval routing and committee decision workflow.</p>
               <p className="mt-2 text-xs text-slate-500">Approval statuses and routing logic remain intentionally unconnected in this composition-only implementation.</p>
@@ -511,7 +506,7 @@ function renderSidebar(
 
   return (
     <>
-      <SectionCard title="Executive Summary" icon={CheckCircle2}>
+      <SectionCard title="Executive Summary" iconKey="check-circle-2">
         <div className="space-y-3 text-sm">
           <WorkspaceField label="Client" value={deal.client.legalName || 'Not Set'} />
           <WorkspaceField label="Counterparty" value={deal.counterparty.name || 'Not Set'} />

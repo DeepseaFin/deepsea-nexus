@@ -2,16 +2,12 @@
 
 import React from 'react';
 import {
-	AlertTriangle,
-	BadgeCheck,
-	Building2,
-	FileText,
-	Gavel,
-	Landmark,
-	ShieldAlert,
-	Sparkles,
-	TrendingUp,
-	Wallet,
+  Building2,
+  FileText,
+  Gavel,
+  Landmark,
+  ShieldAlert,
+  TrendingUp,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
@@ -138,7 +134,7 @@ export default function DealCommandCenter({
 
 			<div className="space-y-6">
 				<div className="grid gap-4 lg:grid-cols-3">
-					<SectionCard title="Deal Confidence Index" icon={Sparkles}>
+					<SectionCard title="Deal Confidence Index" iconKey="sparkles">
 						<div className="space-y-3">
 							<p className="text-3xl font-semibold text-emerald-300">{dealConfidenceIndex.score}%</p>
 							<p className="inline-flex rounded-full border border-emerald-800/60 bg-emerald-950/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
@@ -148,7 +144,7 @@ export default function DealCommandCenter({
 						</div>
 					</SectionCard>
 
-					<SectionCard title="Executive Verdict" icon={BadgeCheck}>
+					<SectionCard title="Executive Verdict" iconKey="badge-check">
 						<div className="space-y-3">
 							<p className="text-2xl font-semibold text-cyan-200">{executiveVerdict.label}</p>
 							<p className="text-sm leading-relaxed text-slate-300">{executiveVerdict.summary}</p>
@@ -160,7 +156,7 @@ export default function DealCommandCenter({
 						</div>
 					</SectionCard>
 
-					<SectionCard title="Funding Readiness" icon={Wallet}>
+					<SectionCard title="Funding Readiness" iconKey="wallet">
 						<div className="space-y-3">
 							<p className="text-3xl font-semibold text-slate-100">{fundingReadiness.score}%</p>
 							<p className="inline-flex rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
@@ -173,7 +169,7 @@ export default function DealCommandCenter({
 					</SectionCard>
 				</div>
 
-				<SectionCard title="Engine Health" icon={TrendingUp}>
+				<SectionCard title="Engine Health" iconKey="trending-up">
 					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 						{(Object.keys(healthConfig) as HealthDomain[]).map((key) => {
 							const metric = health[key];
@@ -204,7 +200,7 @@ export default function DealCommandCenter({
 				</SectionCard>
 
 				<div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
-					<SectionCard title="Critical Blockers" icon={AlertTriangle}>
+					<SectionCard title="Critical Blockers" iconKey="alert-triangle">
 						{criticalBlockers.length === 0 ? (
 							<p className="text-sm text-slate-400">No critical blockers in the current snapshot.</p>
 						) : (
@@ -224,7 +220,7 @@ export default function DealCommandCenter({
 						)}
 					</SectionCard>
 
-					<SectionCard title="Next Recommended Action" icon={BadgeCheck}>
+					<SectionCard title="Next Recommended Action" iconKey="badge-check">
 						<div className="space-y-3 rounded-xl border border-cyan-900/50 bg-cyan-950/20 p-4">
 							<p className="text-sm font-semibold text-cyan-200">{nextRecommendedAction.title}</p>
 							<p className="text-sm leading-relaxed text-slate-300">{nextRecommendedAction.description}</p>

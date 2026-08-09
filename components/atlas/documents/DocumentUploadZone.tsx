@@ -2,14 +2,13 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-	ArrowUpToLine,
-	FileArchive,
-	FileText,
-	HardDriveUpload,
-	Image as ImageIcon,
-	ShieldCheck,
-	Table2,
-	X,
+  FileArchive,
+  FileText,
+  HardDriveUpload,
+  Image as ImageIcon,
+  ShieldCheck,
+  Table2,
+  X,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { DocumentType, classifyDocument } from '@/atlas-core/engines/DocumentClassifier';
@@ -457,7 +456,7 @@ export default function DocumentUploadZone({
 					<SectionCard
 						key={item.label}
 						title={item.label}
-						icon={ArrowUpToLine}
+						iconKey="arrow-up-to-line"
 						className="h-full"
 					>
 						<div className="space-y-2">

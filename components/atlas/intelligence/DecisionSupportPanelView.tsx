@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { DecisionSupportPanel } from '@/src/capabilities/intelligence/decision-support/DecisionSupportPanel';
 
@@ -28,7 +28,7 @@ const DecisionSupportPanelView: React.FC<DecisionSupportPanelViewProps> = ({ pan
   return (
     <SectionCard
       title="Decision Support Panel"
-      icon={FileText}
+      iconKey="file-text"
       badge={{
         label: `${panel.totalDecisionSupportItems} Support Packages`,
         variant: 'info',

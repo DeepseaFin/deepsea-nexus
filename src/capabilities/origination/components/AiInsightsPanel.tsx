@@ -1,5 +1,5 @@
 "use client";
-import { AlertTriangle, CheckCircle2, FileWarning, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileWarning } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
 type AiInsightsPanelProps = {
@@ -14,7 +14,7 @@ type AiInsightsPanelProps = {
 export default function AiInsightsPanel({ insights }: AiInsightsPanelProps) {
   return (
     <aside className="space-y-2 xl:w-[360px]">
-      <SectionCard title="AI Insights" icon={Sparkles}>
+      <SectionCard title="AI Insights" iconKey="sparkles">
         <div className="space-y-3 text-sm">
           <div>
             <p className="mb-1 inline-flex items-center gap-1 font-semibold text-rose-200"><AlertTriangle className="h-4 w-4" />High Risk</p>

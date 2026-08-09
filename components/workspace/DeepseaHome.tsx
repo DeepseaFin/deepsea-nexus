@@ -1,6 +1,6 @@
 'use client';
 
-import { BellRing, CalendarDays, Check, FileText, FileUp, FolderKanban, HandCoins, MessageCircle, Search, Sparkles, UserPlus } from 'lucide-react';
+import { CalendarDays, Check, FileText, FileUp, HandCoins, MessageCircle, Search, UserPlus } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
 const quickActions = [
@@ -111,7 +111,7 @@ export default function DeepseaHome() {
           </div>
         </section>
 
-        <SectionCard title="Recommended Next Action" icon={Sparkles}>
+        <SectionCard title="Recommended Next Action" iconKey="sparkles">
           <div className="rounded-3xl border border-cyan-600/35 bg-[linear-gradient(180deg,rgba(8,47,73,0.92),rgba(2,6,23,0.98))] p-8 shadow-[0_26px_60px_rgba(8,47,73,0.42)] sm:p-10">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80">Recommended Next Action</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl">Crescent Trade Holdings</h2>
@@ -142,7 +142,7 @@ export default function DeepseaHome() {
           </div>
         </SectionCard>
 
-        <SectionCard title="What&apos;s New Today" icon={BellRing}>
+        <SectionCard title="What&apos;s New Today" iconKey="bell-ring">
           <p className="text-sm text-slate-400">Changes requiring your attention since your last session.</p>
 
           <div className="mt-5 divide-y divide-slate-800 border-t border-slate-800/80">
@@ -164,7 +164,7 @@ export default function DeepseaHome() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Today&apos;s Summary" icon={BellRing}>
+        <SectionCard title="Today&apos;s Summary" iconKey="bell-ring">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((item) => (
               <article key={item.title} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5">
@@ -176,7 +176,7 @@ export default function DeepseaHome() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={FolderKanban}>
+        <SectionCard title="Quick Actions" iconKey="folder-kanban">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {quickActions.map((item) => {
               const Icon = item.icon;
@@ -197,7 +197,7 @@ export default function DeepseaHome() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Continue Where You Left Off" icon={FolderKanban}>
+        <SectionCard title="Continue Where You Left Off" iconKey="folder-kanban">
           <div className="grid gap-4 lg:grid-cols-3">
             {recentWork.map((item) => (
               <article key={item.customer} className="rounded-xl border border-slate-800 bg-slate-950/70 p-5">

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Network } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { DecisionContextPanel } from '@/src/capabilities/intelligence/decision-context/DecisionContextPanel';
 
@@ -28,7 +28,7 @@ const DecisionContextPanelView: React.FC<DecisionContextPanelViewProps> = ({ pan
   return (
     <SectionCard
       title="Decision Context Panel"
-      icon={Network}
+      iconKey="network"
       badge={{
         label: `${panel.totalDecisionContexts} Contexts`,
         variant: 'info',

@@ -1,12 +1,7 @@
 'use client';
 
 import {
-  BellRing,
-  BrainCircuit,
-  BriefcaseBusiness,
   CalendarDays,
-  Clock3,
-  FolderKanban,
   Sparkles,
 } from 'lucide-react';
 import ActivityTimeline from '@/components/atlas/design-system/ActivityTimeline';
@@ -116,7 +111,7 @@ export default function DeepseaWorkspace() {
           </div>
         </header>
 
-        <SectionCard title="Today&apos;s Mission" icon={BellRing} badge={{ label: 'Sandbox', variant: 'warning' }}>
+        <SectionCard title="Today&apos;s Mission" iconKey="bell-ring" badge={{ label: 'Sandbox', variant: 'warning' }}>
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/6 p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-amber-200/80">Today&apos;s Mission</p>
             <p className="mt-3 max-w-3xl text-lg font-semibold text-slate-50">
@@ -128,7 +123,7 @@ export default function DeepseaWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Continue Working" icon={BriefcaseBusiness} badge={{ label: '3 cards', variant: 'success' }}>
+        <SectionCard title="Continue Working" iconKey="briefcase-business" badge={{ label: '3 cards', variant: 'success' }}>
           <div className="grid gap-4 xl:grid-cols-3">
             {continueWorking.map((item) => (
               <article key={item.name} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
@@ -147,7 +142,7 @@ export default function DeepseaWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Business Health" icon={BriefcaseBusiness} badge={{ label: 'Live', variant: 'info' }}>
+        <SectionCard title="Business Health" iconKey="briefcase-business" badge={{ label: 'Live', variant: 'info' }}>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {businessHealth.map((item) => (
               <article key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
@@ -158,7 +153,7 @@ export default function DeepseaWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="My Work" icon={FolderKanban} badge={{ label: 'Queue', variant: 'default' }}>
+        <SectionCard title="My Work" iconKey="folder-kanban" badge={{ label: 'Queue', variant: 'default' }}>
           <div className="grid gap-3 lg:grid-cols-2">
             {workQueue.map((item) => (
               <div
@@ -172,7 +167,7 @@ export default function DeepseaWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="AI Recommendations" icon={BrainCircuit} badge={{ label: '3 suggestions', variant: 'info' }}>
+        <SectionCard title="AI Recommendations" iconKey="brain-circuit" badge={{ label: '3 suggestions', variant: 'info' }}>
           <div className="grid gap-4 xl:grid-cols-3">
             {recommendations.map((item) => (
               <article key={item.suggestedAction} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
@@ -188,7 +183,7 @@ export default function DeepseaWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Recent Activity" icon={Clock3} badge={{ label: 'Latest five', variant: 'default' }}>
+        <SectionCard title="Recent Activity" iconKey="clock-3" badge={{ label: 'Latest five', variant: 'default' }}>
           <ActivityTimeline
             title="Placeholder Activity"
             events={activity.map((item) => ({

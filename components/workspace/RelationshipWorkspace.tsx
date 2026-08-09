@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import {
+  useState } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -9,9 +10,6 @@ import {
   HandCoins,
   HeartPulse,
   Landmark,
-  PanelsTopLeft,
-  Route,
-  Target,
   Upload,
   UserCircle2,
 } from 'lucide-react';
@@ -187,7 +185,7 @@ export default function RelationshipWorkspace() {
           </div>
         </section>
 
-        <SectionCard title="Today&apos;s Focus" icon={Target}>
+        <SectionCard title="Today&apos;s Focus" iconKey="target">
           <div className="grid gap-3 lg:grid-cols-3">
             {focusItems.map((item) => {
               const Icon = item.icon;
@@ -213,7 +211,7 @@ export default function RelationshipWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Relationship Journey" icon={Route}>
+        <SectionCard title="Relationship Journey" iconKey="route">
           <div className="overflow-x-auto">
             <div className="flex min-w-max items-center gap-2">
               {journeyStages.map((stage, index) => {
@@ -238,7 +236,7 @@ export default function RelationshipWorkspace() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Relationship Tabs" icon={PanelsTopLeft}>
+        <SectionCard title="Relationship Tabs" iconKey="panels-top-left">
           <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/70 p-1">
             <div className="flex min-w-max items-center gap-1">
               {tabs.map((tab) => (

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Lightbulb } from 'lucide-react';
+
 import ConfidenceBadge from './ConfidenceBadge';
 import SectionCard from './SectionCard';
 import type { InsightPanel } from '@/src/capabilities/intelligence/insight/InsightPanel';
@@ -29,7 +29,7 @@ const InsightPanelView: React.FC<InsightPanelViewProps> = ({ panel }) => {
   return (
     <SectionCard
       title="Insight Panel"
-      icon={Lightbulb}
+      iconKey="lightbulb"
       badge={{
         label: `${panel.totalInsights} Insights`,
         variant: 'info',

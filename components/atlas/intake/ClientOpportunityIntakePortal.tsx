@@ -60,7 +60,7 @@ export default function ClientOpportunityIntakePortal() {
     switch (currentStep) {
       case 0:
         return (
-          <SectionCard title="Welcome" icon={Sparkles}>
+          <SectionCard title="Welcome" iconKey="sparkles">
             <div className="space-y-4">
               <p className="text-sm text-slate-300">
                 Welcome to ATLAS Opportunity Intake. Submit your financing opportunity in under five minutes.
@@ -74,7 +74,7 @@ export default function ClientOpportunityIntakePortal() {
 
       case 1:
         return (
-          <SectionCard title="Company" icon={Building2}>
+          <SectionCard title="Company" iconKey="building-2">
             <div className="grid gap-4 md:grid-cols-2">
               <InputField
                 label="Company Name"
@@ -102,7 +102,7 @@ export default function ClientOpportunityIntakePortal() {
 
       case 2:
         return (
-          <SectionCard title="Funding Request" icon={ClipboardList}>
+          <SectionCard title="Funding Request" iconKey="clipboard-list">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-xs uppercase tracking-wide text-slate-400">Product</span>
@@ -141,7 +141,7 @@ export default function ClientOpportunityIntakePortal() {
 
       case 3:
         return (
-          <SectionCard title="Buyer" icon={Handshake}>
+          <SectionCard title="Buyer" iconKey="handshake">
             <div className="grid gap-4 md:grid-cols-2">
               <InputField
                 label="Buyer Name"
@@ -161,7 +161,7 @@ export default function ClientOpportunityIntakePortal() {
 
       case 4:
         return (
-          <SectionCard title="Document Upload" icon={FileUp}>
+          <SectionCard title="Document Upload" iconKey="file-up">
             <DocumentUploadZone
               title="Upload Supporting Documents"
               subtitle="Share invoices, licenses, and supporting files to complete opportunity intake."
@@ -172,7 +172,7 @@ export default function ClientOpportunityIntakePortal() {
 
       case 5:
         return (
-          <SectionCard title="Submission Complete" icon={CheckCircle2}>
+          <SectionCard title="Submission Complete" iconKey="check-circle-2">
             <div className="space-y-4">
               <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 text-sm text-emerald-100">
                 Your opportunity has been submitted successfully.

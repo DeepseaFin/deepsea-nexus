@@ -26,7 +26,7 @@ const RECENT_INTAKE_SESSIONS = [
 export default function CenterWorkspace({ hasMockSelection, onBrowseMockFiles, onClearMockFiles, queueItems }: CenterWorkspaceProps) {
   return (
     <section className="space-y-2">
-      <SectionCard title="Toolbar" icon={Upload}>
+      <SectionCard title="Toolbar" iconKey="upload">
         <div className="grid gap-2 sm:grid-cols-[auto_1fr_auto]">
           <button
             type="button"
@@ -57,7 +57,7 @@ export default function CenterWorkspace({ hasMockSelection, onBrowseMockFiles, o
 
       {!hasMockSelection ? (
         <>
-          <SectionCard title="Document Intake" icon={Upload}>
+          <SectionCard title="Document Intake" iconKey="upload">
             <div className="flex min-h-[640px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-950/70 px-6 text-center">
               <Upload className="h-11 w-11 text-cyan-400" />
               <p className="mt-4 text-2xl font-semibold text-slate-100">Drop Document Pack Here</p>
@@ -79,7 +79,7 @@ export default function CenterWorkspace({ hasMockSelection, onBrowseMockFiles, o
             </div>
           </SectionCard>
 
-          <SectionCard title="Recent Intake Sessions" icon={Upload}>
+          <SectionCard title="Recent Intake Sessions" iconKey="upload">
             <div className="space-y-2">
               {RECENT_INTAKE_SESSIONS.map((session) => (
                 <div key={session.id} className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
@@ -91,7 +91,7 @@ export default function CenterWorkspace({ hasMockSelection, onBrowseMockFiles, o
           </SectionCard>
         </>
       ) : (
-        <SectionCard title="Processing Queue" icon={Upload} action={{ label: 'Clear', onClick: onClearMockFiles }}>
+        <SectionCard title="Processing Queue" iconKey="upload" action={{ label: 'Clear', onClick: onClearMockFiles }}>
           <div className="min-h-[640px] overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/60">
             <table className="min-w-full text-left text-sm text-slate-200">
               <thead className="bg-slate-900/80 text-[11px] uppercase tracking-[0.2em] text-slate-500">

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ClipboardList } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { ScorecardPanel } from '@/src/capabilities/intelligence/scorecard/ScorecardPanel';
 
@@ -28,7 +28,7 @@ const ScorecardPanelView: React.FC<ScorecardPanelViewProps> = ({ panel }) => {
   return (
     <SectionCard
       title="Scorecard Panel"
-      icon={ClipboardList}
+      iconKey="clipboard-list"
       badge={{
         label: `${panel.totalScorecards} Scorecards`,
         variant: 'info',

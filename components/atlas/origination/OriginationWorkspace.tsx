@@ -98,7 +98,7 @@ export default function OriginationWorkspace() {
     switch (currentStep) {
       case 0:
         return (
-          <SectionCard title="Opportunity" icon={Sparkles}>
+          <SectionCard title="Opportunity" iconKey="sparkles">
             <div className="space-y-5">
               <div>
                 <p className="text-sm text-slate-300">Use this workspace to begin a new financing opportunity.</p>
@@ -119,7 +119,7 @@ export default function OriginationWorkspace() {
 
       case 1:
         return (
-          <SectionCard title="Participants" icon={Building2}>
+          <SectionCard title="Participants" iconKey="building-2">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Company</p>
@@ -139,7 +139,7 @@ export default function OriginationWorkspace() {
 
       case 2:
         return (
-          <SectionCard title="Commercials" icon={ClipboardList}>
+          <SectionCard title="Commercials" iconKey="clipboard-list">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2 rounded-xl border border-cyan-800/40 bg-cyan-950/20 p-4 text-sm text-cyan-100">
                 Product is fixed to Receivables Financing for this workspace.
@@ -154,7 +154,7 @@ export default function OriginationWorkspace() {
 
       case 3:
         return (
-          <SectionCard title="Documents" icon={FileUp}>
+          <SectionCard title="Documents" iconKey="file-up">
             <div className="space-y-5">
               <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Simple Checklist</p>
@@ -176,7 +176,7 @@ export default function OriginationWorkspace() {
 
       case 4:
         return (
-          <SectionCard title="Review" icon={Handshake}>
+          <SectionCard title="Review" iconKey="handshake">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <SummaryItem label="Opportunity" value={deal.deal.dealName} />
               <SummaryItem label="Company" value={deal.client.legalName} />
@@ -190,7 +190,7 @@ export default function OriginationWorkspace() {
 
       case 5:
         return (
-          <SectionCard title="Submit to ATLAS" icon={CheckCircle2}>
+          <SectionCard title="Submit to ATLAS" iconKey="check-circle-2">
             <div className="space-y-5">
               <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 text-sm text-emerald-100">
                 Ready to create a new case in ATLAS using the information collected in this workspace.
@@ -222,7 +222,7 @@ export default function OriginationWorkspace() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <SectionCard title="Origination Workspace" icon={Sparkles}>
+        <SectionCard title="Origination Workspace" iconKey="sparkles">
           <div className="space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-300/70">ATLAS Origination</p>

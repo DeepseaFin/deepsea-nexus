@@ -1,11 +1,4 @@
-import {
-  Activity,
-  ArrowUpRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  ShieldAlert,
-  Workflow,
-} from "lucide-react";
+
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import ActivityTimeline from "@/components/atlas/design-system/ActivityTimeline";
 import QuickActionBar, { type QuickAction } from "@/components/atlas/design-system/QuickActionBar";
@@ -348,7 +341,7 @@ export default function Opportunity360Workspace({
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-          <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
+          <SectionCard title="Opportunity 360" iconKey="briefcase-business" badge={{ label: "Deal Cockpit", variant: "info" }}>
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
               No active opportunity context is currently available.
             </div>
@@ -381,7 +374,7 @@ export default function Opportunity360Workspace({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-        <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
+        <SectionCard title="Opportunity 360" iconKey="briefcase-business" badge={{ label: "Deal Cockpit", variant: "info" }}>
           <p className="mb-4 text-sm text-slate-400">
             You are in Opportunity 360. Workflow progress, risk signals, and documents are live, and the next step is to open Credit Decision for approval action.
           </p>
@@ -419,13 +412,13 @@ export default function Opportunity360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Executive Decision Panel" icon={ArrowUpRight} badge={{ label: "Command", variant: "warning" }}>
+        <SectionCard title="Executive Decision Panel" iconKey="arrow-up-right" badge={{ label: "Command", variant: "warning" }}>
           <DealCommandCenter {...buildDealCommandCenterProps(selectedContext)} />
         </SectionCard>
 
         <BusinessPassportSummary passport={passport} />
 
-        <SectionCard title="Workflow Progress" icon={Workflow} badge={{ label: "In Motion", variant: "info" }}>
+        <SectionCard title="Workflow Progress" iconKey="workflow" badge={{ label: "In Motion", variant: "info" }}>
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
@@ -451,7 +444,7 @@ export default function Opportunity360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Risk and Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
+        <SectionCard title="Risk and Intelligence" iconKey="shield-alert" badge={{ label: "Live Signals", variant: "warning" }}>
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
@@ -510,11 +503,11 @@ export default function Opportunity360Workspace({
           </div>
         </OracleSectionCard>
 
-        <SectionCard title="Timeline" icon={Activity} badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
+        <SectionCard title="Timeline" iconKey="activity" badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
           <ActivityTimeline title="Opportunity Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
+        <SectionCard title="Quick Actions" iconKey="badge-check" badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>

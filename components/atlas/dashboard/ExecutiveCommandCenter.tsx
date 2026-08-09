@@ -1,11 +1,5 @@
 import Link from "next/link";
-import {
-  BadgeCheck,
-  BellRing,
-  BriefcaseBusiness,
-  BrainCircuit,
-  FolderKanban,
-} from "lucide-react";
+
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import KPIGrid from "@/components/atlas/design-system/KPIGrid";
 import QuickActionBar from "@/components/atlas/design-system/QuickActionBar";
@@ -205,7 +199,7 @@ export default function ExecutiveCommandCenter() {
       activity={recentActivity}
       main={(
         <div className="space-y-4">
-          <SectionCard title="Portfolio Overview" icon={BriefcaseBusiness} badge={{ label: "Executive", variant: "info" }}>
+          <SectionCard title="Portfolio Overview" iconKey="briefcase-business" badge={{ label: "Executive", variant: "info" }}>
             <p className="mb-4 text-sm text-slate-400">
               You are in Executive Command Center. Portfolio activity is live, relationship risk is monitored below, and the next step is to route priority institutions into Institution 360 or Operations Control.
             </p>
@@ -215,7 +209,7 @@ export default function ExecutiveCommandCenter() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
             <BusinessPassportSummary passport={passport} />
 
-            <SectionCard title="Relationship Alerts" icon={BellRing} badge={{ label: "Journey", variant: "warning" }}>
+            <SectionCard title="Relationship Alerts" iconKey="bell-ring" badge={{ label: "Journey", variant: "warning" }}>
               <p className="text-sm text-slate-400">{relationshipPanelConfig.subtitle}</p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -261,7 +255,7 @@ export default function ExecutiveCommandCenter() {
             </SectionCard>
           </div>
 
-          <SectionCard title="Business Passport Progress" icon={BadgeCheck} badge={{ label: "Onboarding", variant: "success" }}>
+          <SectionCard title="Business Passport Progress" iconKey="badge-check" badge={{ label: "Onboarding", variant: "success" }}>
             <KPIGrid
               items={[
                 {
@@ -317,7 +311,7 @@ export default function ExecutiveCommandCenter() {
             <RMWorkQueue />
           </div>
 
-          <SectionCard title="Institutional Intelligence" icon={BrainCircuit} badge={{ label: "AI Summary", variant: "info" }}>
+          <SectionCard title="Institutional Intelligence" iconKey="brain-circuit" badge={{ label: "AI Summary", variant: "info" }}>
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.3fr)_360px]">
               <JourneyKnowledgeInsightsPanel insights={knowledgeInsights} />
               <JourneyAiPanel
@@ -329,7 +323,7 @@ export default function ExecutiveCommandCenter() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Quick Actions" icon={FolderKanban} badge={{ label: "Operational", variant: "info" }}>
+          <SectionCard title="Quick Actions" iconKey="folder-kanban" badge={{ label: "Operational", variant: "info" }}>
             <QuickActionBar
               actions={[
                 { label: "New Client", href: "/atlas/clients" },

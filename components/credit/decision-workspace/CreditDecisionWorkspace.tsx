@@ -1,12 +1,4 @@
-import {
-  Activity,
-  ArrowUpRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  FileText,
-  ShieldAlert,
-  Workflow,
-} from "lucide-react";
+
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import ActivityTimeline from "@/components/atlas/design-system/ActivityTimeline";
 import QuickActionBar, { type QuickAction } from "@/components/atlas/design-system/QuickActionBar";
@@ -354,7 +346,7 @@ export default function CreditDecisionWorkspace({
     return (
       <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-          <SectionCard title="Credit Decision" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
+          <SectionCard title="Credit Decision" iconKey="briefcase-business" badge={{ label: "Decision", variant: "info" }}>
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-sm text-slate-300">
               No active opportunity context is currently available for credit decisioning.
             </div>
@@ -392,7 +384,7 @@ export default function CreditDecisionWorkspace({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-        <SectionCard title="Credit Summary" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
+        <SectionCard title="Credit Summary" iconKey="briefcase-business" badge={{ label: "Decision", variant: "info" }}>
           <p className="mb-4 text-sm text-slate-400">
             You are in Credit Decision. Credit quality, evidence readiness, and approval status are shown below, and the next step is to issue an approval decision or return to Opportunity 360 for context.
           </p>
@@ -428,13 +420,13 @@ export default function CreditDecisionWorkspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Executive Recommendation" icon={ArrowUpRight} badge={{ label: "Command", variant: "warning" }}>
+        <SectionCard title="Executive Recommendation" iconKey="arrow-up-right" badge={{ label: "Command", variant: "warning" }}>
           <DealCommandCenter {...buildDealCommandCenterProps(selectedContext)} />
         </SectionCard>
 
         <BusinessPassportSummary passport={passport} />
 
-        <SectionCard title="Credit Assessment" icon={ShieldAlert} badge={{ label: "Underwriting", variant: "info" }}>
+        <SectionCard title="Credit Assessment" iconKey="shield-alert" badge={{ label: "Underwriting", variant: "info" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <article className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
               <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Identity</p>
@@ -463,7 +455,7 @@ export default function CreditDecisionWorkspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Knowledge and Evidence" icon={BadgeCheck} badge={{ label: "Intelligence", variant: "info" }}>
+        <SectionCard title="Knowledge and Evidence" iconKey="badge-check" badge={{ label: "Intelligence", variant: "info" }}>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
             <div className="space-y-4">
               <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
@@ -504,18 +496,18 @@ export default function CreditDecisionWorkspace({
           </div>
         </OracleSectionCard>
 
-        <SectionCard title="Approval Workflow" icon={Workflow} badge={{ label: "Governance", variant: "warning" }}>
+        <SectionCard title="Approval Workflow" iconKey="workflow" badge={{ label: "Governance", variant: "warning" }}>
           <div className="space-y-4">
             <WorkflowStatus config={workflowPanelConfig} model={defaultWorkflowPanelModel.workflowStatus} />
             <ApprovalPanel model={defaultApprovalPanelModel} />
           </div>
         </SectionCard>
 
-        <SectionCard title="Decision Panel" icon={FileText} badge={{ label: "Action", variant: "info" }}>
+        <SectionCard title="Decision Panel" iconKey="file-text" badge={{ label: "Action", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
 
-        <SectionCard title="Activity Timeline" icon={Activity} badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
+        <SectionCard title="Activity Timeline" iconKey="activity" badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
           <ActivityTimeline title="Credit Decision Timeline" events={activityEvents} />
         </SectionCard>
       </div>

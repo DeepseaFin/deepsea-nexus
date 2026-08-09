@@ -1,4 +1,3 @@
-import { Activity, GitBranch, History, Info } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
 type InspectorData = {
@@ -24,7 +23,7 @@ export default function RightInspector({ data, selectedDocumentName, intakeSumma
   return (
     <aside className="w-full space-y-2 xl:w-[360px]">
       {intakeSummary && (
-        <SectionCard title="Intake Summary" icon={Info}>
+        <SectionCard title="Intake Summary" iconKey="info">
           <div className="grid grid-cols-2 gap-2 text-sm">
             <p className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1 text-slate-300">Files: {intakeSummary.files}</p>
             <p className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1 text-slate-300">ETA: {intakeSummary.estimatedProcessingTime}</p>
@@ -35,7 +34,7 @@ export default function RightInspector({ data, selectedDocumentName, intakeSumma
         </SectionCard>
       )}
 
-      <SectionCard title="Metadata" icon={Info}>
+      <SectionCard title="Metadata" iconKey="info">
         {!selectedDocumentName ? (
           <p className="text-sm text-slate-400">Select a document to inspect metadata.</p>
         ) : (
@@ -49,7 +48,7 @@ export default function RightInspector({ data, selectedDocumentName, intakeSumma
         )}
       </SectionCard>
 
-      <SectionCard title="Relationships" icon={GitBranch}>
+      <SectionCard title="Relationships" iconKey="git-branch">
         <div className="space-y-1 text-sm text-slate-300">
           {data.relationships.map((item) => (
             <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>
@@ -57,7 +56,7 @@ export default function RightInspector({ data, selectedDocumentName, intakeSumma
         </div>
       </SectionCard>
 
-      <SectionCard title="Version History" icon={History}>
+      <SectionCard title="Version History" iconKey="history">
         <div className="space-y-1 text-sm text-slate-300">
           {data.versions.map((item) => (
             <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>
@@ -65,7 +64,7 @@ export default function RightInspector({ data, selectedDocumentName, intakeSumma
         </div>
       </SectionCard>
 
-      <SectionCard title="Activity Timeline" icon={Activity}>
+      <SectionCard title="Activity Timeline" iconKey="activity">
         <div className="space-y-1 text-sm text-slate-300">
           {data.timeline.map((item) => (
             <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>

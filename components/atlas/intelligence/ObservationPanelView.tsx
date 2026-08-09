@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SearchCheck } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { ObservationPanel } from '@/src/capabilities/intelligence/observation/ObservationPanel';
 
@@ -28,7 +28,7 @@ const ObservationPanelView: React.FC<ObservationPanelViewProps> = ({ panel }) =>
   return (
     <SectionCard
       title="Observation Panel"
-      icon={SearchCheck}
+      iconKey="search-check"
       badge={{
         label: `${panel.totalObservations} Observations`,
         variant: 'info',

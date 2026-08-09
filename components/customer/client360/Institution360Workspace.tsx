@@ -1,12 +1,4 @@
-import {
-  Activity,
-  ArrowUpRight,
-  BadgeCheck,
-  BookOpenText,
-  Building2,
-  FolderOpen,
-  Network,
-} from "lucide-react";
+
 import Link from "next/link";
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import ActivityTimeline from "@/components/atlas/design-system/ActivityTimeline";
@@ -255,7 +247,7 @@ export default function Institution360Workspace({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-        <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Institution 360", variant: "info" }}>
+        <SectionCard title="Institution 360" iconKey="building-2" badge={{ label: "Institution 360", variant: "info" }}>
           <p className="mb-4 text-sm text-slate-400">
             You are in Institution 360. Relationship health and active opportunities are shown below, and the next step is to open Opportunity 360 or Business Passport for action.
           </p>
@@ -289,7 +281,7 @@ export default function Institution360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Institution Readiness" icon={BadgeCheck} badge={{ label: "Business Completeness", variant: "warning" }}>
+        <SectionCard title="Institution Readiness" iconKey="badge-check" badge={{ label: "Business Completeness", variant: "warning" }}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Identity</p>
@@ -332,7 +324,7 @@ export default function Institution360Workspace({
 
         <BusinessPassportSummary passport={passport} />
 
-        <SectionCard title="Active Opportunities" icon={ArrowUpRight} badge={{ label: `${contexts.length} live`, variant: "warning" }}>
+        <SectionCard title="Active Opportunities" iconKey="arrow-up-right" badge={{ label: `${contexts.length} live`, variant: "warning" }}>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
             {primaryOpportunity ? <DealCommandCenter {...buildDealCommandCenterProps(primaryOpportunity)} /> : null}
 
@@ -372,7 +364,7 @@ export default function Institution360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Relationship Journey" icon={Network} badge={{ label: relationshipModel.health.status, variant: "success" }}>
+        <SectionCard title="Relationship Journey" iconKey="network" badge={{ label: relationshipModel.health.status, variant: "success" }}>
           <div className="space-y-4">
             <RelationshipHeader config={relationshipPanelConfig} summary={relationshipModel.summary} />
             <RelationshipHealthCard config={relationshipPanelConfig} health={relationshipModel.health} />
@@ -380,11 +372,11 @@ export default function Institution360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Documents" icon={FolderOpen} badge={{ label: defaultDocumentsPanelModel.missingDocuments.length ? "Action required" : "Current", variant: "warning" }}>
+        <SectionCard title="Documents" iconKey="folder-open" badge={{ label: defaultDocumentsPanelModel.missingDocuments.length ? "Action required" : "Current", variant: "warning" }}>
           <DocumentsPanel model={defaultDocumentsPanelModel} />
         </SectionCard>
 
-        <SectionCard title="Knowledge and AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
+        <SectionCard title="Knowledge and AI" iconKey="book-open-text" badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_320px]">
             <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
             <JourneyAiPanel
@@ -396,11 +388,11 @@ export default function Institution360Workspace({
           </div>
         </SectionCard>
 
-        <SectionCard title="Recent Activity Timeline" icon={Activity} badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
+        <SectionCard title="Recent Activity Timeline" iconKey="activity" badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
           <ActivityTimeline title="Institutional Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={BadgeCheck} badge={{ label: "Operational", variant: "info" }}>
+        <SectionCard title="Quick Actions" iconKey="badge-check" badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>

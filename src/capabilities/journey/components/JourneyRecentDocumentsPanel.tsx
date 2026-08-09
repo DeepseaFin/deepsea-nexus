@@ -1,4 +1,4 @@
-import { Clock3, FileText, HardDrive, Layers, UserCircle2 } from "lucide-react";
+import { Clock3, HardDrive, Layers, UserCircle2 } from "lucide-react";
 import SectionCard from "@/components/atlas/intelligence/SectionCard";
 import type { JourneyRecentDocumentsViewModel } from "@/src/capabilities/journey/adapters/getJourneyRecentDocumentsProjection";
 
@@ -45,7 +45,7 @@ export default function JourneyRecentDocumentsPanel({ documents, isLoading = fal
   return (
     <SectionCard
       title="Recent Documents"
-      icon={FileText}
+      iconKey="file-text"
       badge={{
         label: isLoading ? "Loading" : `${documents.length} Items`,
         variant: "info",

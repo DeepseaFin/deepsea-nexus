@@ -1,15 +1,14 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { BellRing, FolderKanban, HandCoins, Sparkles, type LucideIcon } from 'lucide-react';
 import type { WorkspaceSectionIconName } from '@/lib/workspace/WorkspaceContext';
-import SectionCard from '@/components/atlas/intelligence/SectionCard';
+import SectionCard, { type SectionCardIconKey } from '@/components/atlas/intelligence/SectionCard';
 
-const sectionIcons: Record<WorkspaceSectionIconName, LucideIcon> = {
-  sparkles: Sparkles,
-  bell: BellRing,
-  handCoins: HandCoins,
-  folder: FolderKanban,
+const sectionIconKeys: Record<WorkspaceSectionIconName, SectionCardIconKey> = {
+  sparkles: 'sparkles',
+  bell: 'bell-ring',
+  handCoins: 'hand-coins',
+  folder: 'folder-kanban',
 };
 
 export default function WorkspaceSection({
@@ -21,10 +20,10 @@ export default function WorkspaceSection({
   iconName: WorkspaceSectionIconName;
   children: ReactNode;
 }) {
-  const Icon = sectionIcons[iconName];
+  const iconKey = sectionIconKeys[iconName];
 
   return (
-    <SectionCard title={title} icon={Icon}>
+    <SectionCard title={title} iconKey={iconKey}>
       {children}
     </SectionCard>
   );

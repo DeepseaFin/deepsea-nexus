@@ -1,10 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
 import {
-  Bot,
-  BrainCircuit,
+  useMemo,
+  useState } from 'react';
+import {
   Building2,
   Download,
   FileCheck2,
@@ -12,7 +12,6 @@ import {
   Gavel,
   HandCoins,
   Landmark,
-  RefreshCcw,
   Search,
   ShieldAlert,
   Sparkles,
@@ -280,7 +279,7 @@ export default function RelationshipIntelligenceWorkspace({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(8,145,178,0.18),transparent_35%),linear-gradient(180deg,#020617_0%,#020617_46%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1920px] space-y-4 pb-28">
-        <SectionCard title="Relationship Intelligence" icon={BrainCircuit}>
+        <SectionCard title="Relationship Intelligence" iconKey="brain-circuit">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm text-slate-300">{workspaceSummary}</p>
@@ -384,7 +383,7 @@ export default function RelationshipIntelligenceWorkspace({
 
         {tab === 'Overview' && (
           <div className="grid gap-4 xl:grid-cols-3">
-            <SectionCard title="Network Intelligence Summary" icon={Gauge}>
+            <SectionCard title="Network Intelligence Summary" iconKey="gauge">
               <div className="space-y-2 text-sm text-slate-200">
                 <p>ATLAS mapped {visibleNodes.length.toLocaleString('en-US')} entities across {topKpis[4]?.value} connected countries.</p>
                 <p>Cross-exposure monitoring indicates concentration drift in two buyer clusters.</p>
@@ -392,14 +391,14 @@ export default function RelationshipIntelligenceWorkspace({
                 <p>AI confidence score sustained above threshold at {topKpis[8]?.value}.</p>
               </div>
             </SectionCard>
-            <SectionCard title="Priority Signals" icon={ShieldAlert}>
+            <SectionCard title="Priority Signals" iconKey="shield-alert">
               <div className="space-y-2 text-xs">
                 <div className="rounded-lg border border-rose-900/40 bg-rose-950/20 p-2 text-rose-100">Hidden relationship detected via shared director across 4 counterparties.</div>
                 <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-2 text-amber-100">Cross exposure exceeds policy in one corridor.</div>
                 <div className="rounded-lg border border-cyan-900/40 bg-cyan-950/20 p-2 text-cyan-100">High dependency on one bank line in active facilities.</div>
               </div>
             </SectionCard>
-            <SectionCard title="Operational Context" icon={Landmark}>
+            <SectionCard title="Operational Context" iconKey="landmark">
               <div className="space-y-2 text-sm text-slate-200">
                 <p>Legal matters in scope: {topKpis[7]?.value}</p>
                 <p>Bank relationships in scope: {topKpis[5]?.value}</p>
@@ -411,7 +410,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Exposure' && (
-          <SectionCard title="Exposure Summary" icon={HandCoins}>
+          <SectionCard title="Exposure Summary" iconKey="hand-coins">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase text-slate-500">Current Exposure</p><p className="text-sm font-semibold text-slate-100">{money(exposureSummary.currentExposure)}</p></div>
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase text-slate-500">Historical Exposure</p><p className="text-sm font-semibold text-slate-100">{money(exposureSummary.historicalExposure)}</p></div>
@@ -447,7 +446,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Ownership' && (
-          <SectionCard title="Ownership Intelligence Tree" icon={Building2}>
+          <SectionCard title="Ownership Intelligence Tree" iconKey="building-2">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">Ultimate Beneficial Owner: Live ownership trace assembled from runtime passport data.</div>
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">Shareholders: mapped from current governance context</div>
@@ -460,7 +459,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Banking' && (
-          <SectionCard title="Banking Relationship Intelligence" icon={Landmark}>
+          <SectionCard title="Banking Relationship Intelligence" iconKey="landmark">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">Funding Banks: {topKpis[5]?.value}</div>
               <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">Collection Banks: live collection account mapping</div>
@@ -475,7 +474,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Legal' && (
-          <SectionCard title="Legal Intelligence" icon={Gavel}>
+          <SectionCard title="Legal Intelligence" iconKey="gavel">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {['Linked Documents', 'Guarantees', 'Assignments', 'Security', 'Power of Attorney', 'Court Cases', 'Disputes', 'Legal Opinions'].map((item) => (
                 <div key={item} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">{item}: mapped from live runtime context</div>
@@ -485,7 +484,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Risk' && (
-          <SectionCard title="Risk Intelligence Stack" icon={ShieldAlert}>
+          <SectionCard title="Risk Intelligence Stack" iconKey="shield-alert">
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
               {[
                 'Country Risk',
@@ -506,7 +505,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'Timeline' && (
-          <SectionCard title="Relationship Timeline" icon={RefreshCcw}>
+          <SectionCard title="Relationship Timeline" iconKey="refresh-ccw">
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
               {timelineRows.map((item, index) => (
                 <div key={item} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-200">
@@ -519,7 +518,7 @@ export default function RelationshipIntelligenceWorkspace({
         )}
 
         {tab === 'AI Insights' && (
-          <SectionCard title="ATLAS Intelligence" icon={Bot}>
+          <SectionCard title="ATLAS Intelligence" iconKey="bot">
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {[
                 'Hidden relationship detected across common director structures.',
@@ -539,7 +538,7 @@ export default function RelationshipIntelligenceWorkspace({
           </SectionCard>
         )}
 
-        <SectionCard title="Bottom Analytics" icon={FileCheck2}>
+        <SectionCard title="Bottom Analytics" iconKey="file-check-2">
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase text-slate-500">Network Density</p><p className="text-sm text-slate-100">{bottomAnalytics.networkDensity}</p></div>
             <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase text-slate-500">Most Connected Entity</p><p className="text-sm text-slate-100">{bottomAnalytics.mostConnected}</p></div>

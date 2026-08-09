@@ -52,7 +52,7 @@ export default function ClientOpportunityPortal() {
     switch (currentStep) {
       case 0:
         return (
-          <SectionCard title="Welcome" icon={Sparkles}>
+          <SectionCard title="Welcome" iconKey="sparkles">
             <div className="space-y-5">
               <div>
                 <h2 className="text-3xl font-semibold text-slate-100 sm:text-4xl">Need Working Capital?</h2>
@@ -75,7 +75,7 @@ export default function ClientOpportunityPortal() {
 
       case 1:
         return (
-          <SectionCard title="Company" icon={Building2}>
+          <SectionCard title="Company" iconKey="building-2">
             <div className="grid gap-4 md:grid-cols-2">
               <InputField label="Company Name" value={deal.client.legalName} onChange={updateCompanyField('legalName')} placeholder="ABC Limited" />
               <InputField label="Country" value={deal.client.country} onChange={updateCompanyField('country')} placeholder="United Arab Emirates" />
@@ -88,7 +88,7 @@ export default function ClientOpportunityPortal() {
 
       case 2:
         return (
-          <SectionCard title="Funding Request" icon={ClipboardList}>
+          <SectionCard title="Funding Request" iconKey="clipboard-list">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-xs uppercase tracking-wide text-slate-400">Product</span>
@@ -122,7 +122,7 @@ export default function ClientOpportunityPortal() {
 
       case 3:
         return (
-          <SectionCard title="Buyer" icon={Handshake}>
+          <SectionCard title="Buyer" iconKey="handshake">
             <div className="grid gap-4 md:grid-cols-2">
               <InputField label="Buyer Name" value={deal.counterparty.name} onChange={updateBuyerField('name')} placeholder="Mashreq Bank PJSC" />
               <InputField label="Buyer Country" value={deal.counterparty.country} onChange={updateBuyerField('country')} placeholder="United Arab Emirates" />
@@ -132,7 +132,7 @@ export default function ClientOpportunityPortal() {
 
       case 4:
         return (
-          <SectionCard title="Documents" icon={FileUp}>
+          <SectionCard title="Documents" iconKey="file-up">
             <div className="space-y-5">
               <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Suggested Checklist</p>
@@ -154,7 +154,7 @@ export default function ClientOpportunityPortal() {
 
       case 5:
         return (
-          <SectionCard title="Confirmation" icon={CheckCircle2}>
+          <SectionCard title="Confirmation" iconKey="check-circle-2">
             <div className="space-y-5">
               <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4 text-sm text-emerald-100">
                 Your opportunity has been submitted.

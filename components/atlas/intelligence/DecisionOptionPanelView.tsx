@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Scale } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { DecisionOptionPanel } from '@/src/capabilities/intelligence/decision-option/DecisionOptionPanel';
 
@@ -28,7 +28,7 @@ const DecisionOptionPanelView: React.FC<DecisionOptionPanelViewProps> = ({ panel
   return (
     <SectionCard
       title="Decision Option Panel"
-      icon={Scale}
+      iconKey="scale"
       badge={{
         label: `${panel.totalDecisionOptions} Options`,
         variant: 'info',

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BarChart3 } from 'lucide-react';
+
 import SectionCard from './SectionCard';
 import type { KPIPanel } from '@/src/capabilities/intelligence/kpi/KPIPanel';
 
@@ -28,7 +28,7 @@ const KPIPanelView: React.FC<KPIPanelViewProps> = ({ panel }) => {
   return (
     <SectionCard
       title="KPI Panel"
-      icon={BarChart3}
+      iconKey="bar-chart-3"
       badge={{
         label: `${panel.totalKPIs} KPIs`,
         variant: 'info',

@@ -1,19 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import {
+  useMemo,
+  useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  Building2,
   CheckCircle2,
-  ClipboardList,
-  FileText,
-  FolderOpen,
   Search,
-  ShieldCheck,
-  Sparkles,
   UserPlus,
-  Users,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import TrustScore from '@/components/atlas/intelligence/TrustScore';
@@ -104,7 +99,7 @@ export default function NewDealWizard() {
     switch (currentStep) {
       case 1:
         return (
-          <SectionCard title="Step 1 - Select Client" icon={Users}>
+          <SectionCard title="Step 1 - Select Client" iconKey="users">
             <div className="space-y-4">
               <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
                 <Search className="h-4 w-4 text-cyan-300" />
@@ -140,7 +135,7 @@ export default function NewDealWizard() {
 
       case 2:
         return (
-          <SectionCard title="Step 2 - Select Counterparty" icon={Building2}>
+          <SectionCard title="Step 2 - Select Counterparty" iconKey="building-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
                 <Search className="h-4 w-4 text-cyan-300" />
@@ -176,7 +171,7 @@ export default function NewDealWizard() {
 
       case 3:
         return (
-          <SectionCard title="Step 3 - Deal Details" icon={ClipboardList}>
+          <SectionCard title="Step 3 - Deal Details" iconKey="clipboard-list">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <span className="text-xs uppercase tracking-wide text-slate-400">Product</span>
@@ -243,14 +238,14 @@ export default function NewDealWizard() {
 
       case 4:
         return (
-          <SectionCard title="Step 4 - Pricing" icon={Sparkles}>
+          <SectionCard title="Step 4 - Pricing" iconKey="sparkles">
             <PricingEditor />
           </SectionCard>
         );
 
       case 5:
         return (
-          <SectionCard title="Step 5 - Documents" icon={FolderOpen}>
+          <SectionCard title="Step 5 - Documents" iconKey="folder-open">
             <DocumentUploadZone onFilesChange={setUploadedFiles} />
           </SectionCard>
         );
@@ -258,7 +253,7 @@ export default function NewDealWizard() {
       case 6:
         return (
           <div className="space-y-6">
-            <SectionCard title="Step 6 - AI Review" icon={ShieldCheck}>
+            <SectionCard title="Step 6 - AI Review" iconKey="shield-check">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <p className="text-xs uppercase tracking-wide text-slate-400">Document Intelligence</p>
@@ -288,7 +283,7 @@ export default function NewDealWizard() {
 
       case 7:
         return (
-          <SectionCard title="Step 7 - Review & Create Deal" icon={FileText}>
+          <SectionCard title="Step 7 - Review & Create Deal" iconKey="file-text">
             <div className="space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <SummaryRow label="Client" value={selectedClient} />

@@ -1,4 +1,4 @@
-import { BadgeCheck } from 'lucide-react';
+
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import BusinessIdentityCard from '@/components/atlas/business-passport/BusinessIdentityCard';
 import type { BusinessPassport } from '@/lib/business-passport/domain/BusinessPassport';
@@ -17,7 +17,7 @@ export default function BusinessPassportSummary({ passport, className }: Busines
   return (
     <SectionCard
       title="Business Passport"
-      icon={BadgeCheck}
+      iconKey="badge-check"
       badge={{
         label: 'Primary',
         variant: 'info',

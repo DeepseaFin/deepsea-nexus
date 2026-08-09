@@ -3,14 +3,8 @@
 import {
   AlertTriangle,
   CheckCircle2,
-  CircleDollarSign,
-  FileSearch,
-  Globe2,
-  Scale,
   Search,
   ShieldAlert,
-  Sparkles,
-  TrendingUp,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import TrustScore from '@/components/atlas/intelligence/TrustScore';
@@ -122,7 +116,7 @@ const exposureCards = [
 export default function AskAtlasWorkspace() {
   return (
     <div className="space-y-6">
-      <SectionCard title="Ask ATLAS" icon={Search}>
+      <SectionCard title="Ask ATLAS" iconKey="search">
         <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
           <Search className="h-4 w-4 text-cyan-300" />
           <input
@@ -135,7 +129,7 @@ export default function AskAtlasWorkspace() {
 
       <SectionCard
         title="Executive Recommendation"
-        icon={Sparkles}
+        iconKey="sparkles"
         className="relative overflow-hidden border-cyan-900/40 bg-slate-950/70"
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_40%)]" />
@@ -158,7 +152,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Key Reasons" icon={FileSearch}>
+      <SectionCard title="Key Reasons" iconKey="file-search">
         <div className="grid gap-4 md:grid-cols-3">
           <ReasonList title="Positive Factors" items={positiveFactors} tone="positive" />
           <ReasonList title="Conditions" items={conditions} tone="warning" />
@@ -166,7 +160,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Outstanding Items" icon={AlertTriangle}>
+      <SectionCard title="Outstanding Items" iconKey="alert-triangle">
         <div className="grid gap-4 md:grid-cols-3">
           {outstandingItems.map((block) => (
             <div key={block.title} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -184,7 +178,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Recommended Next Action" icon={TrendingUp}>
+      <SectionCard title="Recommended Next Action" iconKey="trending-up">
         <div className="rounded-xl border border-cyan-800/40 bg-cyan-950/20 p-5">
           <p className="text-sm font-semibold text-cyan-100">
             Close legal rider confirmation and board resolution, then submit for conditional approval in the next committee window.
@@ -193,7 +187,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Explain Recommendation" icon={Scale}>
+      <SectionCard title="Explain Recommendation" iconKey="scale">
         <div className="space-y-3">
           {explanationSections.map((section) => (
             <details key={section.title} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -220,7 +214,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Similar Transactions" icon={CircleDollarSign}>
+      <SectionCard title="Similar Transactions" iconKey="circle-dollar-sign">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-800 text-sm">
             <thead>
@@ -249,7 +243,7 @@ export default function AskAtlasWorkspace() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Exposure" icon={Globe2}>
+      <SectionCard title="Exposure" iconKey="globe-2">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {exposureCards.map((card) => (
             <div key={card.label} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">

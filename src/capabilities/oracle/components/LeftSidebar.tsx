@@ -1,6 +1,5 @@
 'use client';
 
-import { Bot, Clock3, FileText, Star, ShieldAlert } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 
 export type WorkspaceDoc = {
@@ -30,7 +29,7 @@ export default function LeftSidebar({ documents, favorites, selectedId, onSelect
 
   return (
     <aside className="w-full space-y-2 xl:w-[280px]">
-      <SectionCard title="Recent Documents" icon={FileText}>
+      <SectionCard title="Recent Documents" iconKey="file-text">
         <div className="space-y-2">
           {documents.map((doc) => (
             <button
@@ -53,7 +52,7 @@ export default function LeftSidebar({ documents, favorites, selectedId, onSelect
         </div>
       </SectionCard>
 
-      <SectionCard title="Favourites" icon={Star}>
+      <SectionCard title="Favourites" iconKey="star">
         <div className="space-y-1 text-sm text-slate-300">
           {favorites.map((item) => (
             <p key={item} className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1">{item}</p>
@@ -61,15 +60,15 @@ export default function LeftSidebar({ documents, favorites, selectedId, onSelect
         </div>
       </SectionCard>
 
-      <SectionCard title="AI Queue" icon={Bot}>
+      <SectionCard title="AI Queue" iconKey="bot">
         <p className="text-sm text-slate-300">{aiQueue} documents pending AI extraction and validation.</p>
       </SectionCard>
 
-      <SectionCard title="Expiring Documents" icon={Clock3}>
+      <SectionCard title="Expiring Documents" iconKey="clock-3">
         <p className="text-sm text-slate-300">{expiring} documents approaching policy expiry windows.</p>
       </SectionCard>
 
-      <SectionCard title="Needs Review" icon={ShieldAlert}>
+      <SectionCard title="Needs Review" iconKey="shield-alert">
         <div className="inline-flex items-center rounded-full border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-xs text-amber-200">
           {needsReview} requiring manual review
         </div>

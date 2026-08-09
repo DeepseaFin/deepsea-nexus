@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent } from 'react';
 import {
-  AlertTriangle,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type WheelEvent as ReactWheelEvent } from 'react';
+import {
   ChevronDown,
   ChevronUp,
-  Network,
-  Route,
-  Sparkles,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import {
@@ -1148,7 +1150,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
 
         {!leftCollapsed && (
         <>
-        <SectionCard title="Visualization Modes" icon={Network}>
+        <SectionCard title="Visualization Modes" iconKey="network">
           <div className="grid gap-2">
             {VISUALIZATION_MODES.map((item) => (
               <button
@@ -1170,7 +1172,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
           </div>
         </SectionCard>
 
-        <SectionCard title="Left Filter Panel" icon={Network}>
+        <SectionCard title="Left Filter Panel" iconKey="network">
           <div className="space-y-3 text-sm">
             <div>
               <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">Entity Type</p>
@@ -1269,7 +1271,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
       </div>
 
       <div className="space-y-4">
-        <SectionCard title="Interactive Force Relationship Graph" icon={Network}>
+        <SectionCard title="Interactive Force Relationship Graph" iconKey="network">
           <div className="sticky top-0 z-20 mb-3 rounded-lg border border-slate-700 bg-slate-950/90 p-2 backdrop-blur">
             <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
               <button type="button" onClick={autoArrange} className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-300">Auto Arrange</button>
@@ -1577,7 +1579,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
         </SectionCard>
 
         <div className="grid gap-4 xl:grid-cols-2">
-          <SectionCard title="Relationship Timeline" icon={Route}>
+          <SectionCard title="Relationship Timeline" iconKey="route">
             <div className="space-y-2 text-xs text-slate-300">
               {timeline.map((item) => (
                 <div key={item} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">{item}</div>
@@ -1585,7 +1587,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
             </div>
           </SectionCard>
 
-          <SectionCard title="AI Findings" icon={Sparkles}>
+          <SectionCard title="AI Findings" iconKey="sparkles">
             <div className="space-y-2 text-xs">
               {aiFindings.map((item) => (
                 <div key={item} className="rounded-lg border border-cyan-900/30 bg-cyan-950/15 p-2 text-cyan-100">{item}</div>
@@ -1608,7 +1610,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
         {!rightCollapsed && (
         <>
         <div ref={rightPanelResizerRef} className="absolute -left-2 top-16 h-[70%] w-1.5 cursor-col-resize rounded bg-slate-700/60" aria-hidden />
-        <SectionCard title="Entity Inspector" icon={Network}>
+        <SectionCard title="Entity Inspector" iconKey="network">
           {!selectedNode && <p className="text-sm text-slate-400">Select a node to inspect relationship intelligence.</p>}
 
           {selectedNode && (
@@ -1898,7 +1900,7 @@ export default function RelationshipIntelligenceGraph({ nodes, edges, searchQuer
           )}
         </SectionCard>
 
-        <SectionCard title="Risk Overlay Legend" icon={AlertTriangle}>
+        <SectionCard title="Risk Overlay Legend" iconKey="alert-triangle">
           <div className="space-y-2 text-xs text-slate-300">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-green-500" />Low</div>
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-yellow-400" />Moderate</div>

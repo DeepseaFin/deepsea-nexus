@@ -16,7 +16,7 @@ export interface JourneyEvidenceSeed {
 export const JOURNEY_EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
   {
     oracleDocument: {
-      documentId: "ev-001",
+      documentId: "evidence-001",
       documentCode: "Certificate of Incorporation",
       mimeType: "application/pdf",
       checksum: "sha256-cert-incorporation",
@@ -33,7 +33,7 @@ export const JOURNEY_EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
   },
   {
     oracleDocument: {
-      documentId: "ev-002",
+      documentId: "evidence-002",
       documentCode: "Trade License",
       mimeType: "application/pdf",
       checksum: "sha256-trade-license",
@@ -50,7 +50,7 @@ export const JOURNEY_EVIDENCE_SEEDS: readonly JourneyEvidenceSeed[] = [
   },
   {
     oracleDocument: {
-      documentId: "ev-003",
+      documentId: "evidence-003",
       documentCode: "Board Resolution",
       mimeType: "application/pdf",
       checksum: "sha256-board-resolution",

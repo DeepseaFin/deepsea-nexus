@@ -1,12 +1,4 @@
-import {
-  Activity,
-  AlertTriangle,
-  BadgeCheck,
-  BriefcaseBusiness,
-  Clock3,
-  FileText,
-  Workflow,
-} from "lucide-react";
+
 import BusinessPassportSummary from "@/components/atlas/business-passport/BusinessPassportSummary";
 import ActivityTimeline from "@/components/atlas/design-system/ActivityTimeline";
 import QuickActionBar, { type QuickAction } from "@/components/atlas/design-system/QuickActionBar";
@@ -330,7 +322,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
-        <SectionCard title="Operations KPIs" icon={BriefcaseBusiness} badge={{ label: "Live", variant: "info" }}>
+        <SectionCard title="Operations KPIs" iconKey="briefcase-business" badge={{ label: "Live", variant: "info" }}>
           <p className="mb-4 text-sm text-slate-400">
             You are in Operations Control. Active operations, approval pressure, and workflow bottlenecks are shown below, and the next step is to open Opportunity 360 or Work Queue assignment.
           </p>
@@ -362,7 +354,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           </div>
         </SectionCard>
 
-        <SectionCard title="Operations Work Queue" icon={Workflow} badge={{ label: "Assignment Driven", variant: "warning" }}>
+        <SectionCard title="Operations Work Queue" iconKey="workflow" badge={{ label: "Assignment Driven", variant: "warning" }}>
           {workQueueAssignments.length === 0 ? (
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
               Work queue assignments will appear once opportunities enter active operations.
@@ -372,7 +364,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           )}
         </SectionCard>
 
-        <SectionCard title="Pending Approvals" icon={BadgeCheck} badge={{ label: "Governance", variant: "warning" }}>
+        <SectionCard title="Pending Approvals" iconKey="badge-check" badge={{ label: "Governance", variant: "warning" }}>
           <ApprovalPanel model={defaultApprovalPanelModel} />
         </SectionCard>
 
@@ -401,7 +393,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           </div>
         </OracleSectionCard>
 
-        <SectionCard title="Workflow Bottlenecks" icon={Clock3} badge={{ label: "Operational Throughput", variant: "warning" }}>
+        <SectionCard title="Workflow Bottlenecks" iconKey="clock-3" badge={{ label: "Operational Throughput", variant: "warning" }}>
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <article className="rounded-lg border border-rose-700/50 bg-rose-950/20 p-3">
@@ -455,7 +447,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           </div>
         </SectionCard>
 
-        <SectionCard title="Risk Alerts" icon={AlertTriangle} badge={{ label: "Highest Priority", variant: "error" }}>
+        <SectionCard title="Risk Alerts" iconKey="alert-triangle" badge={{ label: "Highest Priority", variant: "error" }}>
           <div className="space-y-4">
             <BusinessPassportSummary passport={passport} />
 
@@ -491,11 +483,11 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
           </div>
         </SectionCard>
 
-        <SectionCard title="Recent Operations Activity" icon={Activity} badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
+        <SectionCard title="Recent Operations Activity" iconKey="activity" badge={{ label: `${activityEvents.length} events`, variant: "default" }}>
           <ActivityTimeline title="Operations Activity Timeline" events={activityEvents} />
         </SectionCard>
 
-        <SectionCard title="Quick Actions" icon={FileText} badge={{ label: "Operational", variant: "info" }}>
+        <SectionCard title="Quick Actions" iconKey="file-text" badge={{ label: "Operational", variant: "info" }}>
           <QuickActionBar actions={[...resolvedQuickActions]} />
         </SectionCard>
       </div>
