@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
-  Activity,
   FileSearch,
-  Receipt,
-  Search,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { useDeal } from '@/components/atlas/common/DealContext';
@@ -482,7 +479,7 @@ export default function CollectionsPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1800px] space-y-6">
-        <SectionCard title="Collections & Monitoring Center" icon={Receipt}>
+        <SectionCard title="Collections & Monitoring Center" iconKey="file-text">
           <p className="text-sm text-slate-300">Monitor, predict and control all incoming receivables.</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
@@ -495,7 +492,7 @@ export default function CollectionsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Global Search" icon={Search}>
+        <SectionCard title="Global Search" iconKey="search">
           <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
             <div className="flex items-center gap-2">
               <FileSearch className="h-4 w-4 text-cyan-300" />
@@ -544,7 +541,7 @@ export default function CollectionsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={Activity}>
+        <SectionCard title="Workspace Tabs" iconKey="activity">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button

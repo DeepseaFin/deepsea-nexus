@@ -6,15 +6,9 @@ import {
   Archive,
   BellRing,
   CheckCircle2,
-  ClipboardList,
   Download,
-  Filter,
-  ListChecks,
-  Megaphone,
-  RefreshCw,
   Search,
   ShieldAlert,
-  Sparkles,
   UserCheck,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
@@ -432,7 +426,7 @@ export default function NotificationCenterPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1850px] space-y-6 pb-24">
-        <SectionCard title="Notification & Task Center" icon={BellRing}>
+        <SectionCard title="Notification & Task Center" iconKey="bell-ring">
           <p className="text-sm text-slate-300">Enterprise Operational Inbox</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             {metrics.map((m) => (
@@ -444,7 +438,7 @@ export default function NotificationCenterPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Filters & Search" icon={Filter}>
+        <SectionCard title="Filters & Search" iconKey="panels-top-left">
           <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4 text-cyan-300" />
@@ -469,7 +463,7 @@ export default function NotificationCenterPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={ListChecks}>
+        <SectionCard title="Workspace Tabs" iconKey="clipboard-list">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
@@ -573,7 +567,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'Approvals' ? (
-                <SectionCard title="Approval Tasks" icon={UserCheck}>
+                <SectionCard title="Approval Tasks" iconKey="user-plus">
                   <div className="space-y-2">
                     {filteredNotifications
                       .filter((n) => n.module === 'Approvals' || n.module === 'Legal' || n.module === 'Risk')
@@ -588,7 +582,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'Reminders' ? (
-                <SectionCard title="Operational Reminders" icon={RefreshCw}>
+                <SectionCard title="Operational Reminders" iconKey="refresh-ccw">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {reminders.map((item) => (
                       <div key={item} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -601,7 +595,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'Escalations' ? (
-                <SectionCard title="Escalation Channels" icon={ShieldAlert}>
+                <SectionCard title="Escalation Channels" iconKey="shield-alert">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {escalations.map((item) => (
                       <div key={item} className="rounded-xl border border-fuchsia-900/40 bg-fuchsia-950/20 p-3">
@@ -614,7 +608,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'Announcements' ? (
-                <SectionCard title="Announcements" icon={Megaphone}>
+                <SectionCard title="Announcements" iconKey="bell-ring">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {announcements.map((item) => (
                       <div key={item} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -627,7 +621,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'History' ? (
-                <SectionCard title="Notification & Task History" icon={ClipboardList}>
+                <SectionCard title="Notification & Task History" iconKey="clipboard-list">
                   <div className="space-y-2 text-sm">
                     {[...filteredNotifications, ...filteredTasks.map((t) => ({
                       id: t.taskId,
@@ -649,7 +643,7 @@ export default function NotificationCenterPage() {
               ) : null}
 
               {activeTab === 'Analytics' ? (
-                <SectionCard title="Operational Analytics" icon={Sparkles}>
+                <SectionCard title="Operational Analytics" iconKey="sparkles">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Inbox Throughput</p><p className="text-sm text-slate-100">{notifications.length} events today</p></div>
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Task Completion Rate</p><p className="text-sm text-emerald-300">{Math.round((tasks.filter((t) => t.status === 'Completed').length / tasks.length) * 100)}%</p></div>
@@ -661,7 +655,7 @@ export default function NotificationCenterPage() {
             </div>
 
             <div className="space-y-4">
-              <SectionCard title="ATLAS Daily Brief" icon={Sparkles}>
+              <SectionCard title="ATLAS Daily Brief" iconKey="sparkles">
                 <div className="space-y-2 text-sm text-slate-200">
                   <p className="font-semibold text-slate-100">{dailyBrief.greeting}</p>
                   <p>{dailyBrief.priorities}</p>
@@ -675,7 +669,7 @@ export default function NotificationCenterPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Right Sidebar" icon={ShieldAlert}>
+              <SectionCard title="Right Sidebar" iconKey="shield-alert">
                 <div className="space-y-2 text-sm">
                   <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-3 text-amber-100">Today&apos;s Priorities: {notifications.filter((n) => n.priority === 'Critical' || n.priority === 'High').length} critical/high events</div>
                   <div className="rounded-lg border border-cyan-900/40 bg-cyan-950/20 p-3 text-cyan-100">Upcoming Deadlines: {tasks.filter((t) => t.status === 'Open' || t.status === 'In Progress').length} tasks in next 24h</div>

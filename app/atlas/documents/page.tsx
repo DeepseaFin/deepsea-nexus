@@ -6,20 +6,11 @@ import {
   Archive,
   ArrowDownUp,
   ArrowRight,
-  Bot,
-  Clock3,
   Download,
   Eye,
   FileCheck2,
-  FileSearch,
-  FileStack,
-  Files,
-  Filter,
-  GitCompare,
-  HardDrive,
   RefreshCw,
   Share2,
-  ShieldAlert,
   Signature,
   Upload,
 } from 'lucide-react';
@@ -446,7 +437,7 @@ export default function DocumentsPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1850px] space-y-6 pb-24">
-        <SectionCard title="Institutional Document Vault" icon={FileStack}>
+        <SectionCard title="Institutional Document Vault" iconKey="folder-open">
           <p className="text-sm text-slate-300">Enterprise Knowledge & Document Repository</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             {kpis.map((item) => (
@@ -458,7 +449,7 @@ export default function DocumentsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Universal Search" icon={FileSearch}>
+        <SectionCard title="Universal Search" iconKey="file-search">
           <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
             <input
               type="text"
@@ -470,7 +461,7 @@ export default function DocumentsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Advanced Filters" icon={Filter}>
+        <SectionCard title="Advanced Filters" iconKey="panels-top-left">
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
             <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200">{options.countries.map((v) => <option key={v}>{v}</option>)}</select>
             <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200">{options.clients.map((v) => <option key={v}>{v}</option>)}</select>
@@ -490,7 +481,7 @@ export default function DocumentsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={Files}>
+        <SectionCard title="Workspace Tabs" iconKey="folder-open">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
@@ -582,7 +573,7 @@ export default function DocumentsPage() {
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
-                <SectionCard title="Version Control" icon={RefreshCw}>
+                <SectionCard title="Version Control" iconKey="refresh-ccw">
                   <div className="space-y-3">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Current Version</p>
@@ -604,7 +595,7 @@ export default function DocumentsPage() {
                   </div>
                 </SectionCard>
 
-                <SectionCard title="AI Document Insights" icon={Bot}>
+                <SectionCard title="AI Document Insights" iconKey="bot">
                   <div className="space-y-2">
                     {aiInsights.map((insight) => (
                       <div key={insight.title} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -618,7 +609,7 @@ export default function DocumentsPage() {
                 </SectionCard>
               </div>
 
-              <SectionCard title="Document Relationship Map" icon={GitCompare}>
+              <SectionCard title="Document Relationship Map" iconKey="git-branch">
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   {RELATIONSHIP_FLOW.map((item, index) => (
                     <div key={item.label} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -633,7 +624,7 @@ export default function DocumentsPage() {
             </div>
 
             <div className="space-y-4">
-              <SectionCard title="Document Preview Panel" icon={Eye}>
+              <SectionCard title="Document Preview Panel" iconKey="file-search">
                 <div className="space-y-3 text-sm text-slate-200">
                   <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Document Summary</p>
@@ -671,7 +662,7 @@ export default function DocumentsPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Storage Usage" icon={HardDrive}>
+              <SectionCard title="Storage Usage" iconKey="folder-open">
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Repository Usage</p>
                   <p className="mt-1 text-sm font-semibold text-slate-100">{storageUsed.toFixed(1)} MB / {storageCap} MB</p>
@@ -682,7 +673,7 @@ export default function DocumentsPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Right Sidebar" icon={Clock3}>
+              <SectionCard title="Right Sidebar" iconKey="clock-3">
                 <div className="space-y-2 text-sm">
                   <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-slate-200">Recent Activity: 14 document updates in last 4 hours.</div>
                   <div className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 text-amber-100">Pending Reviews: 9 legal packs waiting internal review.</div>
@@ -692,7 +683,7 @@ export default function DocumentsPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Vault Signals" icon={ShieldAlert}>
+              <SectionCard title="Vault Signals" iconKey="shield-alert">
                 <div className="space-y-2 text-sm text-slate-200">
                   <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">Workflow Health: <span className="text-cyan-300">{orchestration.analytics.workflowHealthScore}%</span></div>
                   <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">Next Recommended Action: {orchestration.analytics.nextRecommendedAction}</div>

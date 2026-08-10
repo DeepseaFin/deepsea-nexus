@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Activity,
   ArrowUpRight,
   Building2,
   CheckCircle2,
@@ -11,20 +10,17 @@ import {
   Command,
   FileSearch,
   FolderOpen,
-  Gauge,
   Gavel,
   HandCoins,
+  Plus,
   Landmark,
   ListChecks,
   Mic,
-  Pin,
-  Plus,
   ReceiptText,
   RefreshCcw,
   Search,
   Settings,
   ShieldAlert,
-  Sparkles,
   UserPlus,
   Users,
   Wallet,
@@ -475,7 +471,7 @@ export default function IntelligencePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_42%,#030712_100%)] px-4 pb-8 pt-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1880px] space-y-4">
-        <SectionCard title="Ask ATLAS" icon={Sparkles}>
+        <SectionCard title="Ask ATLAS" iconKey="sparkles">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-slate-100">Enterprise AI Command Center</p>
@@ -561,7 +557,7 @@ export default function IntelligencePage() {
 
         <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr_340px]">
           <div className="space-y-4">
-            <SectionCard title="Quick Commands" icon={Command}>
+            <SectionCard title="Quick Commands" iconKey="panels-top-left">
               <div className="grid gap-2 sm:grid-cols-2">
                 {QUICK_COMMANDS.map((item) => (
                   <button
@@ -579,7 +575,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Global Action Buttons" icon={Plus}>
+            <SectionCard title="Global Action Buttons" iconKey="sparkles">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 <button type="button" onClick={() => router.push('/atlas/deals')} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200"><Plus className="h-3.5 w-3.5" />New Deal</button>
                 <button type="button" onClick={() => router.push('/atlas/clients')} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200"><UserPlus className="h-3.5 w-3.5" />New Client</button>
@@ -590,7 +586,7 @@ export default function IntelligencePage() {
             </SectionCard>
 
             {aiResponse && (
-              <SectionCard title="AI Response Panel" icon={Sparkles}>
+              <SectionCard title="AI Response Panel" iconKey="sparkles">
                 <div className="space-y-3 rounded-xl border border-cyan-900/40 bg-cyan-950/10 p-4">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Question</p>
@@ -624,7 +620,7 @@ export default function IntelligencePage() {
           </div>
 
           <div className="space-y-4">
-            <SectionCard title="Command Palette" icon={Command}>
+            <SectionCard title="Command Palette" iconKey="panels-top-left">
               <div className="space-y-2">
                 {groupedCommands.map((bucket) => (
                   <div key={bucket.category} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">
@@ -661,7 +657,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Recent Searches" icon={Clock3}>
+            <SectionCard title="Recent Searches" iconKey="clock-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-slate-400">Last 10 searches stored locally.</p>
@@ -695,7 +691,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Smart Navigation" icon={Gauge}>
+            <SectionCard title="Smart Navigation" iconKey="gauge">
               <div className="space-y-2">
                 {smartSuggestions.length === 0 && (
                   <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-500">Type client or facility keywords like ABC to get smart suggestions.</div>
@@ -723,7 +719,7 @@ export default function IntelligencePage() {
           </div>
 
           <div className="space-y-4">
-            <SectionCard title="Recent Activity" icon={Activity}>
+            <SectionCard title="Recent Activity" iconKey="activity">
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Credit memo generated for Apex Materials.</div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Treasury allocation approved for two facilities.</div>
@@ -731,7 +727,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Saved Searches" icon={Search}>
+            <SectionCard title="Saved Searches" iconKey="search">
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Funding due this week</div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Collections above AED 100,000</div>
@@ -739,7 +735,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Favourite Clients" icon={Users}>
+            <SectionCard title="Favourite Clients" iconKey="users">
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">ABC Limited</div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Apex Holdings</div>
@@ -747,7 +743,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Pinned Deals" icon={Pin}>
+            <SectionCard title="Pinned Deals" iconKey="target">
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Receivable Program 1012</div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">Bridge Funding 981</div>
@@ -755,7 +751,7 @@ export default function IntelligencePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="AI Notifications" icon={Sparkles}>
+            <SectionCard title="AI Notifications" iconKey="sparkles">
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-2 text-amber-100">3 deals near covenant threshold.</div>
                 <div className="rounded-lg border border-cyan-900/40 bg-cyan-950/20 p-2 text-cyan-100">Funding spread opportunity detected in healthcare portfolio.</div>

@@ -8,11 +8,6 @@ import {
   Download,
   FileText,
   Gavel,
-  GitBranch,
-  ShieldAlert,
-  Sparkles,
-  Timer,
-  UserCheck,
   Users,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
@@ -527,7 +522,7 @@ export default function ApprovalCenterPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1850px] space-y-6 pb-24">
-        <SectionCard title="Enterprise Approval Center" icon={Gavel}>
+        <SectionCard title="Enterprise Approval Center" iconKey="gavel">
           <p className="text-sm text-slate-300">Institutional Workflow & Decision Management</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             {topMetrics.map((metric) => (
@@ -539,7 +534,7 @@ export default function ApprovalCenterPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={Users}>
+        <SectionCard title="Workspace Tabs" iconKey="users">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
@@ -650,7 +645,7 @@ export default function ApprovalCenterPage() {
               ) : null}
 
               {activeTab === 'Workflow Designer' ? (
-                <SectionCard title="Workflow Designer" icon={GitBranch}>
+                <SectionCard title="Workflow Designer" iconKey="git-branch">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {workflowPreview.map((stage, index) => (
                       <div key={stage.key} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -708,7 +703,7 @@ export default function ApprovalCenterPage() {
               ) : null}
 
               {activeTab === 'Escalations' ? (
-                <SectionCard title="Escalation Rules" icon={AlertTriangle}>
+                <SectionCard title="Escalation Rules" iconKey="alert-triangle">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">SLA</p><p className="text-sm text-slate-100">{escalationRule.slaHours} hours</p></div>
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Manager escalation</p><p className="text-sm text-slate-100">{escalationRule.managerEscalationHours} hours</p></div>
@@ -720,7 +715,7 @@ export default function ApprovalCenterPage() {
               ) : null}
 
               {activeTab === 'Delegations' ? (
-                <SectionCard title="Delegations" icon={UserCheck}>
+                <SectionCard title="Delegations" iconKey="user-plus">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
                     {delegations.map((item) => (
                       <div key={`${item.type}-${item.user}`} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -768,7 +763,7 @@ export default function ApprovalCenterPage() {
               ) : null}
 
               {activeTab === 'Analytics' ? (
-                <SectionCard title="Approval Analytics" icon={Timer}>
+                <SectionCard title="Approval Analytics" iconKey="clock-3">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Approval turnaround</p><p className="text-sm text-slate-100">{analytics.turnaround}</p></div>
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Bottlenecks</p><p className="text-sm text-slate-100">{analytics.bottlenecks}</p></div>
@@ -782,7 +777,7 @@ export default function ApprovalCenterPage() {
             </div>
 
             <div className="space-y-4">
-              <SectionCard title="Right Sidebar" icon={ShieldAlert}>
+              <SectionCard title="Right Sidebar" iconKey="shield-alert">
                 <div className="space-y-2 text-sm">
                   <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3 text-amber-100">Pending Urgent: {approvals.filter((a) => a.priority === 'Critical' && a.status !== 'Approved').length}</div>
                   <div className="rounded-lg border border-cyan-900/50 bg-cyan-950/20 p-3 text-cyan-100">Awaiting My Decision: {approvals.filter((a) => a.status === 'Pending' || a.status === 'Under Review').length}</div>
@@ -791,7 +786,7 @@ export default function ApprovalCenterPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="AI Recommendations" icon={Sparkles}>
+              <SectionCard title="AI Recommendations" iconKey="sparkles">
                 <div className="space-y-2">
                   {aiRecommendations.map((rec) => (
                     <div key={rec.summary} className="rounded-lg border border-fuchsia-900/40 bg-fuchsia-950/20 p-3">

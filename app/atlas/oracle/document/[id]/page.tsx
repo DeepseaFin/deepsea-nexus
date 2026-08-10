@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Clock3, Download, FileText, Info } from 'lucide-react';
+import { Download } from 'lucide-react';
 import Link from 'next/link';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -153,11 +153,11 @@ export default function OracleDocumentPage({ params }: OracleDocumentPageProps) 
         </header>
 
         {isLoading ? (
-          <SectionCard title="Loading" icon={Clock3}>
+          <SectionCard title="Loading" iconKey="clock-3">
             <p className="text-sm text-slate-300">Loading document details from the registry.</p>
           </SectionCard>
         ) : errorMessage ? (
-          <SectionCard title="Document Status" icon={Info}>
+          <SectionCard title="Document Status" iconKey="info">
             <p className="text-sm text-rose-200">{errorMessage}</p>
           </SectionCard>
         ) : document ? (
@@ -176,7 +176,7 @@ export default function OracleDocumentPage({ params }: OracleDocumentPageProps) 
             </section>
 
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]">
-              <SectionCard title="General Information" icon={FileText}>
+              <SectionCard title="General Information" iconKey="file-text">
                 <div className="space-y-3">
                   <article className="rounded-lg border border-slate-800 bg-slate-950/70 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Document Code</p>
@@ -197,7 +197,7 @@ export default function OracleDocumentPage({ params }: OracleDocumentPageProps) 
                 </div>
               </SectionCard>
 
-              <SectionCard title="Repository" icon={Info}>
+              <SectionCard title="Repository" iconKey="info">
                 <div className="space-y-3">
                   <article className="rounded-lg border border-slate-800 bg-slate-950/70 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Bucket</p>
@@ -218,7 +218,7 @@ export default function OracleDocumentPage({ params }: OracleDocumentPageProps) 
                 </div>
               </SectionCard>
 
-              <SectionCard title="Actions" icon={Info}>
+              <SectionCard title="Actions" iconKey="info">
                 <div className="space-y-2">
                   <button
                     type="button"

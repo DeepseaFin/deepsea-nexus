@@ -1,12 +1,7 @@
 'use client';
 
 import {
-  Activity,
-  FileText,
   Search,
-  ShieldCheck,
-  SlidersHorizontal,
-  WandSparkles,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
@@ -168,11 +163,11 @@ export default function TermSheetsPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <SectionCard title="Term Sheet Management" icon={FileText}>
+        <SectionCard title="Term Sheet Management" iconKey="file-text">
           <p className="text-sm text-slate-300">Generate, review and manage financing documents.</p>
         </SectionCard>
 
-        <SectionCard title="Search & Filters" icon={SlidersHorizontal}>
+        <SectionCard title="Search & Filters" iconKey="panels-top-left">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <div className="xl:col-span-2">
               <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
@@ -220,7 +215,7 @@ export default function TermSheetsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="KPI Cards" icon={ShieldCheck}>
+        <SectionCard title="KPI Cards" iconKey="shield-check">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {kpis.map((kpi) => (
               <div key={kpi.label} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -233,7 +228,7 @@ export default function TermSheetsPage() {
         </SectionCard>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]">
-          <SectionCard title="Term Sheet Table" icon={FileText} className="h-full">
+          <SectionCard title="Term Sheet Table" iconKey="file-text" className="h-full">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800 text-sm">
                 <thead>
@@ -266,7 +261,7 @@ export default function TermSheetsPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Preview Panel" icon={WandSparkles}>
+          <SectionCard title="Preview Panel" iconKey="sparkles">
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Executive Summary</p>
@@ -325,7 +320,7 @@ export default function TermSheetsPage() {
           </SectionCard>
         </div>
 
-        <SectionCard title="Generation Status" icon={ShieldCheck}>
+        <SectionCard title="Generation Status" iconKey="shield-check">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {generationStatuses.map((status) => (
               <div key={status.title} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -340,7 +335,7 @@ export default function TermSheetsPage() {
         </SectionCard>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <SectionCard title="Recent Activity" icon={Activity}>
+          <SectionCard title="Recent Activity" iconKey="activity">
             <div className="space-y-3">
               {recentActivity.map((item) => (
                 <div key={`${item.time}-${item.title}`} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">

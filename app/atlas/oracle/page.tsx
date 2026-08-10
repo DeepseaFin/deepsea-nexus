@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CheckCircle2, Clock3, FileUp, FileWarning, ListChecks, Sparkles, UploadCloud } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, FileWarning, UploadCloud } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import { DocumentClassificationService } from '@/lib/documents/documentClassificationService';
 import { DocumentMetadataExtractionService } from '@/lib/documents/documentMetadataExtractionService';
@@ -324,7 +324,7 @@ export default function OraclePage() {
 
         <div className="grid gap-2 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
           <aside className="space-y-2">
-            <SectionCard title="Recent Documents" icon={ListChecks}>
+            <SectionCard title="Recent Documents" iconKey="clipboard-list">
               <div className="space-y-2">
                 {recentDocuments.map((doc) => (
                   <button
@@ -344,7 +344,7 @@ export default function OraclePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="My Work" icon={ListChecks}>
+            <SectionCard title="My Work" iconKey="clipboard-list">
               <div className="space-y-2">
                 {WORK_ITEMS.map((item) => (
                   <div key={item} className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
@@ -356,7 +356,7 @@ export default function OraclePage() {
           </aside>
 
           <section className="space-y-2">
-            <SectionCard title="ORACLE Upload Engine" icon={FileUp}>
+            <SectionCard title="ORACLE Upload Engine" iconKey="file-up">
               <div
                 role="button"
                 tabIndex={0}
@@ -423,7 +423,7 @@ export default function OraclePage() {
           </section>
 
           <aside className="space-y-2">
-            <SectionCard title="Pipeline Status" icon={Sparkles}>
+            <SectionCard title="Pipeline Status" iconKey="sparkles">
               <div className="space-y-3 text-sm">
                 <div>
                   <p className="mb-1 inline-flex items-center gap-1 font-semibold text-cyan-200"><Clock3 className="h-4 w-4" />Upload Status</p>

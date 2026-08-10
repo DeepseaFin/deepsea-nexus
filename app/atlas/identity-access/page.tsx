@@ -2,13 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import {
-  AlertTriangle,
-  CheckCircle2,
   Download,
   KeyRound,
   Lock,
-  ShieldAlert,
-  ShieldCheck,
   UserPlus,
   UserRoundCheck,
   Users,
@@ -228,7 +224,7 @@ export default function IdentityAccessPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1850px] space-y-6 pb-24">
-        <SectionCard title="Identity & Access Management" icon={ShieldCheck}>
+        <SectionCard title="Identity & Access Management" iconKey="shield-check">
           <p className="text-sm text-slate-300">Enterprise Users, Roles, Permissions & Departments</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             {metrics.map((m) => (
@@ -240,7 +236,7 @@ export default function IdentityAccessPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={Users}>
+        <SectionCard title="Workspace Tabs" iconKey="users">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
@@ -320,7 +316,7 @@ export default function IdentityAccessPage() {
               ) : null}
 
               {activeTab === 'Roles' ? (
-                <SectionCard title="Role Catalog" icon={UserRoundCheck}>
+                <SectionCard title="Role Catalog" iconKey="badge-check">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {ROLES.map((role) => (
                       <div key={role} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -333,7 +329,7 @@ export default function IdentityAccessPage() {
               ) : null}
 
               {activeTab === 'Departments' ? (
-                <SectionCard title="Department Registry" icon={Users}>
+                <SectionCard title="Department Registry" iconKey="users">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {DEPARTMENTS.map((dept, i) => (
                       <div key={dept} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -384,7 +380,7 @@ export default function IdentityAccessPage() {
               ) : null}
 
               {activeTab === 'Approval Matrix' ? (
-                <SectionCard title="Approval Configuration" icon={CheckCircle2}>
+                <SectionCard title="Approval Configuration" iconKey="check-circle-2">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Approval Levels</p><p className="mt-1 text-sm text-slate-100">{'L1 RM -> L2 Department Head -> L3 Committee'}</p></div>
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Escalation</p><p className="mt-1 text-sm text-slate-100">Auto-escalate after 4 business hours</p></div>
@@ -426,7 +422,7 @@ export default function IdentityAccessPage() {
               ) : null}
 
               {activeTab === 'Security' ? (
-                <SectionCard title="Security Controls" icon={ShieldAlert}>
+                <SectionCard title="Security Controls" iconKey="shield-alert">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">Password Policy</p><p className="mt-1 text-sm text-slate-100">Min 14 chars, complexity + history 12</p></div>
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p className="text-xs text-slate-500">MFA</p><p className="mt-1 text-sm text-slate-100">Authenticator + device binding required</p></div>
@@ -441,7 +437,7 @@ export default function IdentityAccessPage() {
             </div>
 
             <div className="space-y-4">
-              <SectionCard title="Right Sidebar" icon={AlertTriangle}>
+              <SectionCard title="Right Sidebar" iconKey="alert-triangle">
                 <div className="space-y-2 text-sm">
                   <div className="rounded-lg border border-rose-900/50 bg-rose-950/20 p-3 text-rose-100">Security Alerts: 3 high-priority alerts require review.</div>
                   <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3 text-amber-100">Locked Users: {users.filter((u) => u.status === 'Locked').length}</div>

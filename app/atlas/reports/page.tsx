@@ -1,25 +1,12 @@
 'use client';
 
 import {
-  BarChart3,
-  BellRing,
-  Building2,
   CalendarRange,
   CheckCircle2,
-  ClipboardList,
   Download,
   FileText,
-  Filter,
-  HandCoins,
-  Landmark,
   Mail,
-  Move3D,
-  PieChart,
-  Search,
-  ShieldAlert,
   Sparkles,
-  TrendingUp,
-  Wallet,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
@@ -338,7 +325,7 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-[1850px] space-y-6 pb-24">
-        <SectionCard title="Reporting & Business Intelligence Center" icon={BarChart3}>
+        <SectionCard title="Reporting & Business Intelligence Center" iconKey="bar-chart-3">
           <p className="text-sm text-slate-300">Executive Analytics, Portfolio Intelligence & Institutional Reporting</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
@@ -356,7 +343,7 @@ export default function ReportsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Global Search" icon={Search}>
+        <SectionCard title="Global Search" iconKey="search">
           <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
             <input
               value={search}
@@ -386,7 +373,7 @@ export default function ReportsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Workspace Tabs" icon={Landmark}>
+        <SectionCard title="Workspace Tabs" iconKey="landmark">
           <div className="flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
@@ -409,7 +396,7 @@ export default function ReportsPage() {
               {activeTab === 'Executive Dashboard' ? (
                 <>
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <SectionCard title="Portfolio Growth" icon={TrendingUp}>
+                    <SectionCard title="Portfolio Growth" iconKey="trending-up">
                       <div className="space-y-2">
                         {monthSeries.map((m) => (
                           <div key={`g-${m.month}`}>
@@ -425,7 +412,7 @@ export default function ReportsPage() {
                       </div>
                     </SectionCard>
 
-                    <SectionCard title="Monthly Funding vs Collections" icon={Wallet}>
+                    <SectionCard title="Monthly Funding vs Collections" iconKey="wallet">
                       <div className="space-y-2">
                         {monthSeries.map((m) => (
                           <div key={`fc-${m.month}`} className="grid grid-cols-[40px_1fr] gap-2">
@@ -441,7 +428,7 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-3">
-                    <SectionCard title="Yield Trend" icon={BarChart3}>
+                    <SectionCard title="Yield Trend" iconKey="bar-chart-3">
                       <div className="space-y-2">
                         {monthSeries.map((m) => (
                           <div key={`y-${m.month}`} className="flex items-center justify-between text-sm text-slate-200">
@@ -452,7 +439,7 @@ export default function ReportsPage() {
                       </div>
                     </SectionCard>
 
-                    <SectionCard title="Top Clients" icon={Building2}>
+                    <SectionCard title="Top Clients" iconKey="building-2">
                       <div className="space-y-2">
                         {filtered
                           .slice()
@@ -467,7 +454,7 @@ export default function ReportsPage() {
                       </div>
                     </SectionCard>
 
-                    <SectionCard title="Top Buyers" icon={HandCoins}>
+                    <SectionCard title="Top Buyers" iconKey="hand-coins">
                       <div className="space-y-2">
                         {topBuyers.map((buyer) => (
                           <div key={buyer.name} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2 text-sm text-slate-200">
@@ -480,7 +467,7 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <SectionCard title="Country / Industry Exposure" icon={PieChart}>
+                    <SectionCard title="Country / Industry Exposure" iconKey="bar-chart-3">
                       <div className="grid gap-3 sm:grid-cols-2">
                         {portfolioDist.country.slice(0, 4).map((row) => (
                           <div key={`c-${row.name}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
@@ -499,7 +486,7 @@ export default function ReportsPage() {
                       </div>
                     </SectionCard>
 
-                    <SectionCard title="Largest Facilities / Upcoming Maturities" icon={CalendarRange}>
+                    <SectionCard title="Largest Facilities / Upcoming Maturities" iconKey="clock-3">
                       <div className="space-y-2">
                         {filtered
                           .slice()
@@ -529,7 +516,7 @@ export default function ReportsPage() {
                     ['Portfolio by Risk', portfolioDist.risk],
                     ['Portfolio by Maturity', portfolioDist.maturity],
                   ] as [string, Array<{ name: string; value: number; pct: number }>][]) .map(([title, rows]) => (
-                    <SectionCard key={title} title={title} icon={PieChart}>
+                    <SectionCard key={title} title={title} iconKey="bar-chart-3">
                       <div className="space-y-2">
                         {rows.map((row) => (
                           <div key={`${title}-${row.name}`}>
@@ -550,7 +537,7 @@ export default function ReportsPage() {
 
               {activeTab === 'Funding Analytics' ? (
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <SectionCard title="Funding Pipeline" icon={Wallet}>
+                  <SectionCard title="Funding Pipeline" iconKey="wallet">
                     <div className="space-y-2 text-sm text-slate-200">
                       <p>Pipeline Size: {money(filtered.reduce((s, r) => s + r.funding, 0), deal.deal.currency)}</p>
                       <p>Average Funding Time: 2.8 days</p>
@@ -560,7 +547,7 @@ export default function ReportsPage() {
                       <p>Treasury Efficiency: 91.8%</p>
                     </div>
                   </SectionCard>
-                  <SectionCard title="Bank Utilisation" icon={Landmark}>
+                  <SectionCard title="Bank Utilisation" iconKey="landmark">
                     <div className="space-y-2">
                       {portfolioDist.bank.map((row) => (
                         <div key={`b-${row.name}`}>
@@ -575,7 +562,7 @@ export default function ReportsPage() {
 
               {activeTab === 'Collections Analytics' ? (
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <SectionCard title="Collections Core Metrics" icon={HandCoins}>
+                  <SectionCard title="Collections Core Metrics" iconKey="hand-coins">
                     <div className="space-y-2 text-sm text-slate-200">
                       <p>Collection Success: 98.4%</p>
                       <p>DSO: 21 Days</p>
@@ -584,7 +571,7 @@ export default function ReportsPage() {
                       <p>Ageing Buckets: 0-30 (58%), 31-60 (27%), 60+ (15%)</p>
                     </div>
                   </SectionCard>
-                  <SectionCard title="Buyer Performance" icon={ClipboardList}>
+                  <SectionCard title="Buyer Performance" iconKey="clipboard-list">
                     <div className="space-y-2">
                       {topBuyers.map((buyer) => (
                         <div key={`bp-${buyer.name}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2 text-sm text-slate-200">
@@ -599,7 +586,7 @@ export default function ReportsPage() {
 
               {activeTab === 'Risk Analytics' ? (
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <SectionCard title="Risk Heat Map" icon={ShieldAlert}>
+                  <SectionCard title="Risk Heat Map" iconKey="shield-alert">
                     <div className="grid gap-2 sm:grid-cols-2">
                       {portfolioDist.country.slice(0, 6).map((row) => (
                         <div key={`rh-${row.name}`} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
@@ -609,7 +596,7 @@ export default function ReportsPage() {
                       ))}
                     </div>
                   </SectionCard>
-                  <SectionCard title="Risk Concentration" icon={Filter}>
+                  <SectionCard title="Risk Concentration" iconKey="panels-top-left">
                     <div className="space-y-2 text-sm text-slate-200">
                       <p>Country Concentration: UAE + KSA = 62%</p>
                       <p>Industry Concentration: Logistics + Trading = 49%</p>
@@ -623,7 +610,7 @@ export default function ReportsPage() {
 
               {activeTab === 'Profitability' ? (
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <SectionCard title="Profitability Metrics" icon={TrendingUp}>
+                  <SectionCard title="Profitability Metrics" iconKey="trending-up">
                     <div className="grid gap-2 sm:grid-cols-2 text-sm text-slate-200">
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">Gross Yield: {percent(totals.avgYield + 1.3)}</div>
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">Net Yield: {percent(totals.avgYield)}</div>
@@ -633,7 +620,7 @@ export default function ReportsPage() {
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">Fees: AED 12.4M</div>
                     </div>
                   </SectionCard>
-                  <SectionCard title="Client / Facility Profitability" icon={BarChart3}>
+                  <SectionCard title="Client / Facility Profitability" iconKey="bar-chart-3">
                     <div className="space-y-2">
                       {filtered
                         .slice()
@@ -651,7 +638,7 @@ export default function ReportsPage() {
               ) : null}
 
               {activeTab === 'Investor Reports' ? (
-                <SectionCard title="Investor Reports" icon={FileText}>
+                <SectionCard title="Investor Reports" iconKey="file-text">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {investorReports.map((name) => (
                       <div key={name} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -666,7 +653,7 @@ export default function ReportsPage() {
               ) : null}
 
               {activeTab === 'Regulatory Reports' ? (
-                <SectionCard title="Regulatory Reports" icon={ShieldAlert}>
+                <SectionCard title="Regulatory Reports" iconKey="shield-alert">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {regulatoryReports.map((name) => (
                       <div key={name} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
@@ -679,7 +666,7 @@ export default function ReportsPage() {
               ) : null}
 
               {activeTab === 'Custom Reports' ? (
-                <SectionCard title="Custom Report Builder" icon={Move3D}>
+                <SectionCard title="Custom Report Builder" iconKey="sparkles">
                   <div className="grid gap-4 xl:grid-cols-2">
                     <div
                       onDragOver={(e) => e.preventDefault()}
@@ -735,7 +722,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="space-y-4">
-              <SectionCard title="Right Sidebar" icon={BellRing}>
+              <SectionCard title="Right Sidebar" iconKey="bell-ring">
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Scheduled Reports</p>

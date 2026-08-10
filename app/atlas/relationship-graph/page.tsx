@@ -3,19 +3,10 @@
 import Link from 'next/link';
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent } from 'react';
 import {
-  AlertTriangle,
   ArrowRight,
-  Banknote,
-  BarChart3,
   Building2,
   FileText,
-  Gavel,
-  Globe2,
-  HandCoins,
-  Network,
   Search,
-  ShieldAlert,
-  UserCircle2,
   Users,
 } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
@@ -500,7 +491,7 @@ export default function RelationshipGraphPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] p-4 sm:p-6">
       <div className="mx-auto max-w-[1900px] space-y-4">
-        <SectionCard title="Relationship Intelligence Graph" icon={Network}>
+        <SectionCard title="Relationship Intelligence Graph" iconKey="network">
           <p className="text-sm text-slate-300">Institutional Entity Mapping &amp; Exposure Analysis</p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
@@ -527,7 +518,7 @@ export default function RelationshipGraphPage() {
 
         <div className="grid gap-4 xl:grid-cols-[300px_1fr_360px]">
           <div className="space-y-4">
-            <SectionCard title="Filters" icon={ShieldAlert}>
+            <SectionCard title="Filters" iconKey="shield-alert">
               <div className="space-y-3">
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Entity Types</p>
@@ -606,7 +597,7 @@ export default function RelationshipGraphPage() {
           </div>
 
           <div className="space-y-4">
-            <SectionCard title="Institutional Network Graph" icon={Globe2}>
+            <SectionCard title="Institutional Network Graph" iconKey="globe-2">
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-300">Drag nodes</span>
                 <span className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-300">Scroll to zoom</span>
@@ -710,7 +701,7 @@ export default function RelationshipGraphPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Relationship Statistics" icon={BarChart3}>
+            <SectionCard title="Relationship Statistics" iconKey="bar-chart-3">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Most Connected Entity</p><p className="mt-1 text-sm text-slate-100">{bottomStats.mostConnected}</p></div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3"><p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Highest Exposure</p><p className="mt-1 text-sm text-slate-100">{bottomStats.highestExposure}</p></div>
@@ -725,7 +716,7 @@ export default function RelationshipGraphPage() {
           </div>
 
           <div className="space-y-4">
-            <SectionCard title="Entity Details" icon={UserCircle2}>
+            <SectionCard title="Entity Details" iconKey="users">
               {!selectedNode && (
                 <p className="text-sm text-slate-400">Select an entity to see details.</p>
               )}
@@ -771,7 +762,7 @@ export default function RelationshipGraphPage() {
               )}
             </SectionCard>
 
-            <SectionCard title="Node Legend" icon={Banknote}>
+            <SectionCard title="Node Legend" iconKey="wallet">
               <div className="grid gap-2 text-xs text-slate-300">
                 {NODE_TYPES.map((type) => (
                   <div key={type} className="flex items-center gap-2">
@@ -782,7 +773,7 @@ export default function RelationshipGraphPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Relationship Legend" icon={HandCoins}>
+            <SectionCard title="Relationship Legend" iconKey="hand-coins">
               <div className="grid gap-2 text-xs text-slate-300">
                 {Object.entries(RELATION_COLOR).map(([relation, color]) => (
                   <div key={relation} className="flex items-center gap-2">
@@ -793,7 +784,7 @@ export default function RelationshipGraphPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Risk Alerts" icon={AlertTriangle}>
+            <SectionCard title="Risk Alerts" iconKey="alert-triangle">
               <div className="space-y-2 text-xs">
                 <div className="rounded-lg border border-rose-900/40 bg-rose-950/20 p-2 text-rose-100">Buyer Orion Retail Group has elevated dispute risk exposure.</div>
                 <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-2 text-amber-100">Pending guarantee review for Gulf Trade Holdings.</div>
@@ -801,7 +792,7 @@ export default function RelationshipGraphPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Jurisdiction Snapshot" icon={Gavel}>
+            <SectionCard title="Jurisdiction Snapshot" iconKey="gavel">
               <div className="space-y-1 text-xs text-slate-300">
                 <p>UAE entities: {filteredNodes.filter((node) => node.country === 'UAE').length}</p>
                 <p>Saudi entities: {filteredNodes.filter((node) => node.country === 'Saudi Arabia').length}</p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Search, SlidersHorizontal, Activity, FileStack, ShieldCheck } from 'lucide-react';
+import { Search } from 'lucide-react';
 import SectionCard from '@/components/atlas/intelligence/SectionCard';
 import TrustScore from '@/components/atlas/intelligence/TrustScore';
 import ActionPanel from '@/components/atlas/intelligence/ActionPanel';
@@ -174,7 +174,7 @@ export default function CounterpartiesPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <SectionCard title="Counterparties Header" icon={Building2}>
+        <SectionCard title="Counterparties Header" iconKey="building-2">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-400">Workspace</p>
@@ -195,7 +195,7 @@ export default function CounterpartiesPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Search & Filters" icon={SlidersHorizontal}>
+        <SectionCard title="Search & Filters" iconKey="panels-top-left">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div className="xl:col-span-2">
               <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3">
@@ -242,7 +242,7 @@ export default function CounterpartiesPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Portfolio KPIs" icon={ShieldCheck}>
+        <SectionCard title="Portfolio KPIs" iconKey="shield-check">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {portfolioKpis.map((kpi) => (
               <div key={kpi.label} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -255,7 +255,7 @@ export default function CounterpartiesPage() {
         </SectionCard>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]">
-          <SectionCard title="Counterparty Table" icon={Building2} className="h-full">
+          <SectionCard title="Counterparty Table" iconKey="building-2" className="h-full">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800 text-sm">
                 <thead>
@@ -291,7 +291,7 @@ export default function CounterpartiesPage() {
           </SectionCard>
 
           <div className="space-y-6">
-            <SectionCard title="Profile Preview Panel" icon={FileStack}>
+            <SectionCard title="Profile Preview Panel" iconKey="folder-open">
               <div className="space-y-4">
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <p className="text-xs uppercase tracking-wide text-slate-400">Company Summary</p>
@@ -340,7 +340,7 @@ export default function CounterpartiesPage() {
           </div>
         </div>
 
-        <SectionCard title="AI Intelligence Summary" icon={ShieldCheck}>
+        <SectionCard title="AI Intelligence Summary" iconKey="shield-check">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {intelligencePlaceholders.map((engine) => (
               <div key={engine} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -352,7 +352,7 @@ export default function CounterpartiesPage() {
         </SectionCard>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <SectionCard title="Recent Activity" icon={Activity}>
+          <SectionCard title="Recent Activity" iconKey="activity">
             <div className="space-y-3">
               {recentActivity.map((item) => (
                 <div key={`${item.time}-${item.title}`} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
