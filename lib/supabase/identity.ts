@@ -40,6 +40,7 @@ export interface IdentityProfile {
   readonly metadata: Readonly<Record<string, string>>;
 }
 
+// IdentityContext captures the authenticated actor's runtime identity and access posture. It is not an institution-domain container.
 export interface IdentityContext {
   readonly identity: IdentityProfile;
   readonly principal: SupabasePrincipal | null;

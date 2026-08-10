@@ -21,6 +21,7 @@ export interface SupabaseAuthCookieAdapter {
   delete(name: string): void;
 }
 
+// SupabaseAuthenticationContext is the runtime authentication boundary for the current request or session.
 export interface SupabaseAuthenticationContext {
   readonly principal: SupabasePrincipal | null;
   readonly session: SupabaseSessionContext;

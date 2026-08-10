@@ -17,6 +17,7 @@ export interface CreateRelationshipInput {
   readonly metadata: RelationshipMetadata;
 }
 
+// RelationshipService preserves the relationship domain boundary and resolves relationship records independently of institution-scoped runtime context.
 export interface RelationshipService {
   create(input: CreateRelationshipInput): Promise<Relationship>;
   get(relationshipId: RelationshipId): Promise<Relationship | null>;

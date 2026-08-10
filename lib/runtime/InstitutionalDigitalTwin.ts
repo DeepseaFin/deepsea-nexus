@@ -5,6 +5,8 @@ import type { InstitutionContext } from "@/lib/workspaces/InstitutionContext";
 import type { WorkflowContext } from "@/lib/workflows/WorkflowContext";
 import type { RuntimeAuthContext } from "@/lib/supabase/runtimeAuth";
 
+// InstitutionalDigitalTwin is a runtime projection assembled from auth, workflow, and institution context.
+// It is read-oriented and consumed by workspaces; it is not a second source of truth or a new domain model.
 export interface InstitutionalDigitalTwin {
   readonly authentication: RuntimeAuthContext;
   readonly session: RuntimeAuthContext["session"];

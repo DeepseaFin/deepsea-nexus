@@ -23,6 +23,7 @@ function getTimelineState(index: number): "complete" | "current" | "upcoming" {
   return "upcoming";
 }
 
+// Relationship-oriented assemblers compose the current workspace view from existing relationship artifacts and do not absorb the relationship domain into InstitutionContext.
 export class RelationshipJourneyAssembler {
   build(
     businessDNA: BusinessDNA,

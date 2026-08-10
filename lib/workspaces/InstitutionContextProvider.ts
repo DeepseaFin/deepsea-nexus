@@ -5,6 +5,7 @@ import type {
 import { createInstitutionContextBuilder } from "@/lib/workspaces/InstitutionContextBuilder";
 import type { InstitutionContext } from "@/lib/workspaces/InstitutionContext";
 
+// Provider for the institution-scoped composition. It resolves the current institution view without owning actor identity or permissions.
 export interface InstitutionContextProvider {
   provide(input: BuildInstitutionContextInput): InstitutionContext;
 }

@@ -36,6 +36,7 @@ export interface SessionSnapshot {
   readonly expiresAtEpochMs?: number;
 }
 
+// SessionContext represents the authenticated runtime session boundary. It does not own institution, passport, relationship, or workflow business state.
 export interface SessionContext {
   readonly snapshot: SessionSnapshot;
   readonly authentication: SupabaseAuthenticationContext;

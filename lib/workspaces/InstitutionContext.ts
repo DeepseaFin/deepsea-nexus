@@ -25,6 +25,8 @@ export interface InstitutionWorkflowStatus {
   readonly lastUpdatedAt?: string;
 }
 
+// InstitutionContext is the institution-scoped composition for a runtime experience.
+// It owns institution-domain state and derived workspace summaries; it does not own authentication, permissions, or relationship lifecycle.
 export interface InstitutionContext {
   readonly contextId: string;
   readonly assembledAt: string;

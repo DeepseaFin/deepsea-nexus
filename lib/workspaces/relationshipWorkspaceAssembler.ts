@@ -50,6 +50,7 @@ function buildActions(): WorkspaceAction[] {
   ];
 }
 
+// Relationship workspace assembly stays at the orchestration layer and preserves the relationship domain as a distinct object.
 export class RelationshipWorkspaceAssembler {
   build(
     businessDNA: BusinessDNA,

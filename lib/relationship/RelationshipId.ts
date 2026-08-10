@@ -1,5 +1,6 @@
 const RELATIONSHIP_ID_PATTERN = /^[a-zA-Z0-9:_-]{6,128}$/;
 
+// Value object for the relationship identity. It remains a standalone contract and is not repurposed as an institution-context identifier.
 export class RelationshipId {
   private readonly value: string;
 

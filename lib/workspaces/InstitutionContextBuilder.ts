@@ -22,6 +22,7 @@ export interface BuildInstitutionContextInput {
   readonly assembledAt?: string;
 }
 
+// Builds the institution-scoped view used by workspace experiences without introducing auth or relationship ownership.
 export interface InstitutionContextBuilder {
   build(input: BuildInstitutionContextInput): InstitutionContext;
 }

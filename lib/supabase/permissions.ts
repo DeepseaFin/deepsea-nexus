@@ -37,6 +37,7 @@ export interface PermissionDefinition {
   readonly metadata?: Readonly<Record<string, string>>;
 }
 
+// PermissionContext evaluates access grants for the current runtime identity. It does not own institution state or relationship lifecycle.
 export interface PermissionContext {
   readonly identity: IdentityContext | null;
   readonly session: SessionContext | null;

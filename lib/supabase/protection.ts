@@ -14,6 +14,7 @@ export interface RouteProtectionDefinition {
   readonly metadata?: Readonly<Record<string, string>>;
 }
 
+// RouteProtectionContext captures session and route protection state for the current request. It is runtime access metadata, not institutional domain state.
 export interface RouteProtectionContext {
   readonly request: SupabaseRequestContext | null;
   readonly authentication: SupabaseAuthenticationContext | null;

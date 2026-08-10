@@ -19,6 +19,8 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import type { SupabasePrincipal, SupabaseRequestContext } from '@/lib/supabase/types';
 
+// RuntimeAuthContext stabilizes the authenticated principal and its runtime access context.
+// It does not own institution-domain state, passport state, evidence, knowledge, or workflow business state.
 export interface RuntimeAuthContext {
   readonly session: ReturnType<typeof createSessionContext>;
   readonly protection: ReturnType<typeof createRouteProtectionContext>;
