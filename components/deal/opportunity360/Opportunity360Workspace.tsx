@@ -15,6 +15,7 @@ import { createRelationshipEvidenceExplorer } from "@/lib/customer/RelationshipE
 import { createRelationshipKnowledgeExplorer } from "@/lib/customer/RelationshipKnowledgeExplorer";
 import type { RelationshipWorkspaceIntelligenceViewModel } from "@/lib/customer/RelationshipWorkspaceIntelligenceViewModel";
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
 import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
 import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
 import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
@@ -355,6 +356,7 @@ export default function Opportunity360Workspace({
   const recommendations = buildAiRecommendations();
   const { knowledgeExplorer, evidenceExplorer } = buildKnowledgeAndEvidence();
   const activityEvents = buildActivityEvents(selectedContext.opportunityId);
+  const documentsPanelModel = toDocumentsPanelClientModel(defaultDocumentsPanelModel);
   const documentSummary = summarizeDocumentBuckets();
   const workflowSummary = summarizeWorkflowStages();
 
@@ -499,7 +501,7 @@ export default function Opportunity360Workspace({
               </article>
             </div>
 
-            <DocumentsPanel model={defaultDocumentsPanelModel} />
+            <DocumentsPanel model={documentsPanelModel} />
           </div>
         </OracleSectionCard>
 

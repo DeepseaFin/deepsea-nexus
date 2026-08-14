@@ -9,22 +9,25 @@ import ApprovalParticipants from "@/components/customer/approval/ApprovalPartici
 import ApprovalStageTimeline from "@/components/customer/approval/ApprovalStageTimeline";
 import ApprovalSummaryCard from "@/components/customer/approval/ApprovalSummaryCard";
 import { approvalPanelConfig } from "@/lib/customer/approval/approval-panel.config";
-import type { ApprovalPanelConfig, ApprovalPanelModel } from "@/lib/customer/approval/approval-panel.types";
+import type {
+  ApprovalPanelConfig,
+  ApprovalPanelSerializedModel,
+} from "@/lib/customer/approval/approval-panel.types";
 import type { ApprovalPresentationViewModel } from "@/lib/presentation/presenters/ApprovalPresenter";
 import SectionCard from "@/components/ui/SectionCard";
 
 export interface ApprovalPanelProps {
   readonly config?: ApprovalPanelConfig;
   readonly viewModel?: ApprovalPresentationViewModel;
-  readonly model?: ApprovalPanelModel;
+  readonly model?: ApprovalPanelSerializedModel;
   readonly isLoading?: boolean;
   readonly error?: string;
 }
 
 function buildApprovalPanelModel(
   viewModel: ApprovalPresentationViewModel | undefined,
-  fallbackModel: ApprovalPanelModel | undefined,
-): ApprovalPanelModel | null {
+  fallbackModel: ApprovalPanelSerializedModel | undefined,
+): ApprovalPanelSerializedModel | null {
   if (!fallbackModel && !viewModel) {
     return null;
   }
@@ -40,18 +43,6 @@ function buildApprovalPanelModel(
   }
 
   const approvalProjection = viewModel.payload.approvalProjection;
-  const participants = model.participants.map((item, index) => {
-    const projectedParticipant = approvalProjection.participants[index];
-
-    if (!projectedParticipant) {
-      return item;
-    }
-
-    return {
-      ...item,
-      participant: projectedParticipant,
-    };
-  });
 
   return {
     ...model,
@@ -67,7 +58,6 @@ function buildApprovalPanelModel(
         createdAt: approvalProjection.metadata.generatedAt,
       },
     },
-    participants,
   };
 }
 

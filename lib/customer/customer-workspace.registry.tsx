@@ -11,6 +11,8 @@ import NextBestAction from "@/components/customer/workflow/NextBestAction";
 import PriorityBanner from "@/components/customer/workflow/PriorityBanner";
 import ReadinessProgress from "@/components/customer/workflow/ReadinessProgress";
 import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
+import { toApprovalPanelSerializedModel } from "@/lib/customer/approval/approval-panel.mapper";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
 import { PanelEmptyState, PanelErrorState, PanelLoadingState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
 import type { WorkspaceIntelligenceModel } from "@/lib/application/WorkspaceIntelligence";
@@ -139,7 +141,7 @@ export function createCustomerWorkspacePanelRegistry(
     documents: () => (
       <DocumentsPanel
         viewModel={models.documentsViewModel}
-        model={models.documentsPanelModel}
+        model={models.documentsPanelModel ? toDocumentsPanelClientModel(models.documentsPanelModel) : undefined}
         isLoading={models.loadingByTabId?.documents}
         error={models.errorByTabId?.documents}
       />
@@ -155,7 +157,7 @@ export function createCustomerWorkspacePanelRegistry(
     approvals: () => (
       <ApprovalPanel
         viewModel={models.approvalViewModel}
-        model={models.approvalPanelModel}
+        model={models.approvalPanelModel ? toApprovalPanelSerializedModel(models.approvalPanelModel) : undefined}
         isLoading={models.loadingByTabId?.approvals}
         error={models.errorByTabId?.approvals}
       />

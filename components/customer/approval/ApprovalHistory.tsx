@@ -3,7 +3,11 @@
 import React from "react";
 import { PanelEmptyState } from "@/components/customer/shared/PanelFeedback";
 import SectionCard from "@/components/ui/SectionCard";
-import type { ApprovalHistoryEvent, ApprovalPanelConfig } from "@/lib/customer/approval/approval-panel.types";
+import type {
+  ApprovalHistoryEvent,
+  ApprovalPanelConfig,
+  ApprovalSerializedHistoryEvent,
+} from "@/lib/customer/approval/approval-panel.types";
 
 function formatDateTime(value: string): string {
   const parsed = new Date(value);
@@ -27,7 +31,7 @@ function toLabel(value: string): string {
 
 export interface ApprovalHistoryProps {
   readonly config: ApprovalPanelConfig;
-  readonly events: readonly ApprovalHistoryEvent[];
+  readonly events: readonly (ApprovalHistoryEvent | ApprovalSerializedHistoryEvent)[];
 }
 
 export default function ApprovalHistory({ config, events }: ApprovalHistoryProps) {

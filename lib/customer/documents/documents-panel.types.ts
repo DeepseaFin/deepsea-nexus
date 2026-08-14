@@ -57,6 +57,12 @@ export interface DocumentTimelineEvent {
 
 export type DocumentEvidenceSummary = Pick<Evidence, "evidenceId" | "status" | "metadata">;
 
+export interface DocumentEvidenceSummarySerialized {
+  readonly evidenceId: string;
+  readonly status: DocumentEvidenceSummary["status"];
+  readonly metadata: DocumentEvidenceSummary["metadata"];
+}
+
 export interface DocumentsPanelConfig {
   readonly header: DocumentsPanelHeaderModel;
   readonly summaryTitle: string;
@@ -78,4 +84,13 @@ export interface DocumentsPanelModel {
   readonly missingDocuments: readonly MissingDocumentItem[];
   readonly timeline: readonly DocumentTimelineEvent[];
   readonly evidenceSummary?: readonly DocumentEvidenceSummary[];
+}
+
+export interface DocumentsPanelClientModel {
+  readonly summary: DocumentPortfolioSummary;
+  readonly statuses: readonly DocumentStatusItem[];
+  readonly checklist: readonly DocumentChecklistItem[];
+  readonly missingDocuments: readonly MissingDocumentItem[];
+  readonly timeline: readonly DocumentTimelineEvent[];
+  readonly evidenceSummary?: readonly DocumentEvidenceSummarySerialized[];
 }

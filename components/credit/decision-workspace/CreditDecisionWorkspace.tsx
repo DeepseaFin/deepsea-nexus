@@ -11,10 +11,12 @@ import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/Relat
 import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
 import OracleSectionCard from "@/app/atlas/oracle/OracleSectionCard";
 import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
+import { toApprovalPanelSerializedModel } from "@/lib/customer/approval/approval-panel.mapper";
 import { createRelationshipEvidenceExplorer } from "@/lib/customer/RelationshipEvidenceExplorer";
 import { createRelationshipKnowledgeExplorer } from "@/lib/customer/RelationshipKnowledgeExplorer";
 import type { RelationshipWorkspaceIntelligenceViewModel } from "@/lib/customer/RelationshipWorkspaceIntelligenceViewModel";
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
 import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
 import { defaultInstitutionalTimelineModel } from "@/lib/customer/timeline/timeline.config";
 import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
@@ -361,6 +363,8 @@ export default function CreditDecisionWorkspace({
   const recommendations = buildAiRecommendations();
   const { knowledgeExplorer, evidenceExplorer } = buildKnowledgeAndEvidence();
   const activityEvents = buildActivityEvents(selectedContext.opportunityId);
+  const approvalPanelModel = toApprovalPanelSerializedModel(defaultApprovalPanelModel);
+  const documentsPanelModel = toDocumentsPanelClientModel(defaultDocumentsPanelModel);
   const documentSummary = summarizeDocumentBuckets();
   const creditAssessment = buildCreditAssessment(selectedContext);
 
@@ -492,14 +496,14 @@ export default function CreditDecisionWorkspace({
               </article>
             </div>
 
-            <DocumentsPanel model={defaultDocumentsPanelModel} />
+            <DocumentsPanel model={documentsPanelModel} />
           </div>
         </OracleSectionCard>
 
         <SectionCard title="Approval Workflow" iconKey="workflow" badge={{ label: "Governance", variant: "warning" }}>
           <div className="space-y-4">
             <WorkflowStatus config={workflowPanelConfig} model={defaultWorkflowPanelModel.workflowStatus} />
-            <ApprovalPanel model={defaultApprovalPanelModel} />
+            <ApprovalPanel model={approvalPanelModel} />
           </div>
         </SectionCard>
 

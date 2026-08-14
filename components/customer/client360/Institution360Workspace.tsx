@@ -12,6 +12,7 @@ import RelationshipHealthCard from "@/components/customer/relationship/Relations
 import RelationshipSummary from "@/components/customer/relationship/RelationshipSummary";
 import StatusBadge from "@/components/customer/shared/StatusBadge";
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
 import { createRelationshipKnowledgeExplorer } from "@/lib/customer/RelationshipKnowledgeExplorer";
 import type { RelationshipWorkspaceIntelligenceViewModel } from "@/lib/customer/RelationshipWorkspaceIntelligenceViewModel";
 import { defaultRelationshipPanelModel, relationshipPanelConfig } from "@/lib/customer/relationship/relationship-panel.config";
@@ -215,6 +216,7 @@ export default function Institution360Workspace({
   const activityEvents = buildActivityEvents();
   const knowledgeExplorer = buildKnowledgeExplorer();
   const aiRecommendations = buildAiRecommendations();
+  const documentsPanelModel = toDocumentsPanelClientModel(defaultDocumentsPanelModel);
   const knowledgeInsights = getJourneyKnowledgeInsightsProjection();
 
   const resolvedInstitutionName = institutionName ?? passport.profiles.identityProfile.legalName ?? relationshipModel.summary.relationship.relationshipName;
@@ -373,7 +375,7 @@ export default function Institution360Workspace({
         </SectionCard>
 
         <SectionCard title="Documents" iconKey="folder-open" badge={{ label: defaultDocumentsPanelModel.missingDocuments.length ? "Action required" : "Current", variant: "warning" }}>
-          <DocumentsPanel model={defaultDocumentsPanelModel} />
+          <DocumentsPanel model={documentsPanelModel} />
         </SectionCard>
 
         <SectionCard title="Knowledge and AI" iconKey="book-open-text" badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>

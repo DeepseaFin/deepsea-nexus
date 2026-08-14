@@ -9,23 +9,31 @@ import DocumentSummaryCard from "@/components/customer/documents/DocumentSummary
 import DocumentTimeline from "@/components/customer/documents/DocumentTimeline";
 import MissingDocumentsCard from "@/components/customer/documents/MissingDocumentsCard";
 import { documentsPanelConfig } from "@/lib/customer/documents/documents-panel.config";
-import type { DocumentsPanelConfig, DocumentsPanelModel } from "@/lib/customer/documents/documents-panel.types";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
+import type {
+  DocumentsPanelClientModel,
+  DocumentsPanelConfig,
+} from "@/lib/customer/documents/documents-panel.types";
 import type { DocumentsPresentationViewModel } from "@/lib/presentation/presenters/DocumentsPresenter";
 import SectionCard from "@/components/ui/SectionCard";
 
 export interface DocumentsPanelProps {
   readonly config?: DocumentsPanelConfig;
   readonly viewModel?: DocumentsPresentationViewModel;
-  readonly model?: DocumentsPanelModel;
+  readonly model?: DocumentsPanelClientModel;
   readonly isLoading?: boolean;
   readonly error?: string;
 }
 
 function buildDocumentsPanelModel(
   viewModel: DocumentsPresentationViewModel | undefined,
-  fallbackModel: DocumentsPanelModel | undefined,
-): DocumentsPanelModel | null {
-  return viewModel?.payload.panelModel ?? fallbackModel ?? null;
+  fallbackModel: DocumentsPanelClientModel | undefined,
+): DocumentsPanelClientModel | null {
+  if (viewModel) {
+    return toDocumentsPanelClientModel(viewModel.payload.panelModel);
+  }
+
+  return fallbackModel ?? null;
 }
 
 export default function DocumentsPanel({

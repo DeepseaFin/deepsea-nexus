@@ -11,9 +11,11 @@ import RelationshipKnowledgeExplorer from "@/components/customer/knowledge/Relat
 import WorkflowStatus from "@/components/customer/workflow/WorkflowStatus";
 import OracleSectionCard from "@/app/atlas/oracle/OracleSectionCard";
 import { defaultApprovalPanelModel } from "@/lib/customer/approval/approval-panel.config";
+import { toApprovalPanelSerializedModel } from "@/lib/customer/approval/approval-panel.mapper";
 import { createRelationshipEvidenceExplorer } from "@/lib/customer/RelationshipEvidenceExplorer";
 import { createRelationshipKnowledgeExplorer } from "@/lib/customer/RelationshipKnowledgeExplorer";
 import type { RelationshipWorkspaceIntelligenceViewModel } from "@/lib/customer/RelationshipWorkspaceIntelligenceViewModel";
+import { toDocumentsPanelClientModel } from "@/lib/customer/documents/documents-panel.mapper";
 import { defaultDocumentsPanelModel } from "@/lib/customer/documents/documents-panel.config";
 import { defaultRelationshipPanelModel } from "@/lib/customer/relationship/relationship-panel.config";
 import { defaultWorkflowPanelModel, workflowPanelConfig } from "@/lib/customer/workflow/workflow.config";
@@ -265,7 +267,6 @@ function buildWorkQueueAssignments(contexts: readonly BusinessContext[]) {
       assignmentType: context.currentWorkspace,
       status: context.opportunityLifecycle === OpportunityLifecycle.UNDER_REVIEW ? "Pending Approval" : "In Progress",
       assignedAt: new Date().toISOString(),
-      completedAt: null,
       summaryMetadata: {
         sourceSystem: "operations_control_center",
         sourceReference: context.opportunityId,
@@ -307,6 +308,8 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
   const recommendations = buildAiRecommendations();
   const { knowledgeExplorer, evidenceExplorer } = buildKnowledgeAndEvidence();
   const activityEvents = buildActivityEvents();
+  const approvalPanelModel = toApprovalPanelSerializedModel(defaultApprovalPanelModel);
+  const documentsPanelModel = toDocumentsPanelClientModel(defaultDocumentsPanelModel);
 
   const resolvedQuickActions = quickActions ?? [
     {
@@ -365,7 +368,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
         </SectionCard>
 
         <SectionCard title="Pending Approvals" iconKey="badge-check" badge={{ label: "Governance", variant: "warning" }}>
-          <ApprovalPanel model={defaultApprovalPanelModel} />
+          <ApprovalPanel model={approvalPanelModel} />
         </SectionCard>
 
         <OracleSectionCard title="Document Operations" icon="fileText">
@@ -389,7 +392,7 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
               </article>
             </div>
 
-            <DocumentsPanel model={defaultDocumentsPanelModel} />
+            <DocumentsPanel model={documentsPanelModel} />
           </div>
         </OracleSectionCard>
 

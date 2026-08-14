@@ -6,6 +6,7 @@ import SectionCard from "@/components/ui/SectionCard";
 import type {
   ApprovalPanelConfig,
   ApprovalParticipantItem,
+  ApprovalSerializedParticipantItem,
 } from "@/lib/customer/approval/approval-panel.types";
 
 function toLabel(value: string): string {
@@ -30,7 +31,7 @@ function decisionTone(value: ApprovalParticipantItem["decision"]): string {
 
 export interface ApprovalParticipantsProps {
   readonly config: ApprovalPanelConfig;
-  readonly participants: readonly ApprovalParticipantItem[];
+  readonly participants: readonly (ApprovalParticipantItem | ApprovalSerializedParticipantItem)[];
 }
 
 export default function ApprovalParticipants({ config, participants }: ApprovalParticipantsProps) {
