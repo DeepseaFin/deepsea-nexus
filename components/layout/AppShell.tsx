@@ -7,11 +7,14 @@ import type { ProductSidebarItem } from "@/components/product/ProductSidebar";
 import type { WorkspaceSwitcherItem } from "@/components/product/WorkspaceSwitcher";
 import PublicShell from "@/components/layout/PublicShell";
 import { PUBLIC_PATHS } from "@/components/layout/publicNavigation";
+import {
+  createDefaultShellContext,
+  resolveShellContextFromSessionPayload,
+  type ShellContext,
+} from "@/lib/application/shell/ShellContext";
 import { getNavigationForRole } from "@/lib/design/navigation";
 import {
   USER_ROLE_LABELS,
-  resolveUserRoleFromIdentityRoles,
-  type UserRole,
 } from "@/lib/design/roles";
 
 export interface AppShellProps {
@@ -29,9 +32,7 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isPublicRoute = PUBLIC_PATHS.has(pathname);
-  const [role, setRole] = useState<UserRole>("relationship_manager");
-  const [userName, setUserName] = useState("Institution User");
-  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [shellContext, setShellContext] = useState<ShellContext>(() => createDefaultShellContext());
 
   useEffect(() => {
     if (isPublicRoute) {
@@ -56,20 +57,7 @@ export default function AppShell({ children }: AppShellProps) {
           return;
         }
 
-        const identityRoles = Array.isArray(payload?.identity?.roles)
-          ? payload.identity.roles.filter((value: unknown): value is string => typeof value === "string")
-          : [];
-        const mappedRole = resolveUserRoleFromIdentityRoles(identityRoles);
-
-        setRole(mappedRole);
-
-        if (typeof payload?.identity?.email === "string" && payload.identity.email.length > 0) {
-          setUserEmail(payload.identity.email);
-        }
-
-        if (typeof payload?.identity?.id === "string" && payload.identity.id.length > 0) {
-          setUserName(payload.identity.id === "anonymous" ? "Institution User" : payload.identity.id);
-        }
+        setShellContext(resolveShellContextFromSessionPayload(payload));
       } catch {
         // Preserve shell defaults when session introspection is unavailable.
       }
@@ -94,7 +82,7 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   const currentItem = useMemo(() => {
-    const items = getNavigationForRole(role);
+    const items = getNavigationForRole(shellContext.role);
 
     const matchingItems = items.filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
     if (matchingItems.length === 0) {
@@ -102,7 +90,7 @@ export default function AppShell({ children }: AppShellProps) {
     }
 
     return matchingItems.sort((left, right) => right.href.length - left.href.length)[0];
-  }, [pathname, role]);
+  }, [pathname, shellContext.role]);
 
   const breadcrumbs = useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
@@ -114,13 +102,13 @@ export default function AppShell({ children }: AppShellProps) {
   }, [pathname]);
 
   const sidebarItems = useMemo<readonly ProductSidebarItem[]>(() => {
-    return getNavigationForRole(role).map((item) => ({
+    return getNavigationForRole(shellContext.role).map((item) => ({
       id: item.id,
       label: item.label,
       href: item.href,
       icon: iconForProductNavigation(item.icon),
     }));
-  }, [role]);
+  }, [shellContext.role]);
 
   const workspaceItems = useMemo<readonly WorkspaceSwitcherItem[]>(
     () => [
@@ -131,7 +119,7 @@ export default function AppShell({ children }: AppShellProps) {
   );
 
   const pageTitle = currentItem?.label ?? toTitle(pathname.split("/").filter(Boolean).at(-1) ?? "workspace");
-  const subtitle = `Role context: ${USER_ROLE_LABELS[role]}`;
+  const subtitle = `Role context: ${USER_ROLE_LABELS[shellContext.role]}`;
 
   if (isPublicRoute) {
     return <PublicShell>{children}</PublicShell>;
@@ -147,9 +135,9 @@ export default function AppShell({ children }: AppShellProps) {
       sidebarItems={sidebarItems}
       activeSidebarItemId={currentItem?.id}
       user={{
-        name: userName,
-        roleLabel: USER_ROLE_LABELS[role],
-        email: userEmail,
+        name: shellContext.userName,
+        roleLabel: USER_ROLE_LABELS[shellContext.role],
+        email: shellContext.userEmail,
       }}
       userOptions={[
         {
