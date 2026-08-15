@@ -12,23 +12,15 @@ import {
   resolveShellContextFromSessionPayload,
   type ShellContext,
 } from "@/lib/application/shell/ShellContext";
+import { createShellExperience } from "@/lib/application/shell/ShellExperience";
 import {
   getNavigationForRole,
   getNavigationHomeHrefForRole,
 } from "@/lib/design/navigation";
-import {
-  USER_ROLE_LABELS,
-} from "@/lib/design/roles";
+import { USER_ROLE_LABELS } from "@/lib/design/roles";
 
 export interface AppShellProps {
   readonly children: React.ReactNode;
-}
-
-function toTitle(segment: string): string {
-  return segment
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 export default function AppShell({ children }: AppShellProps) {
@@ -121,8 +113,10 @@ export default function AppShell({ children }: AppShellProps) {
     [],
   );
 
-  const pageTitle = currentItem?.label ?? toTitle(pathname.split("/").filter(Boolean).at(-1) ?? "workspace");
-  const subtitle = `Role context: ${USER_ROLE_LABELS[shellContext.role]}`;
+  const shellExperience = useMemo(
+    () => createShellExperience({ pathname, currentItemLabel: currentItem?.label, shellContext }),
+    [currentItem?.label, pathname, shellContext],
+  );
 
   if (isPublicRoute) {
     return <PublicShell>{children}</PublicShell>;
@@ -130,8 +124,8 @@ export default function AppShell({ children }: AppShellProps) {
 
   return (
     <ProductShell
-      title={pageTitle}
-      subtitle={subtitle}
+      title={shellExperience.title}
+      subtitle={shellExperience.subtitle}
       breadcrumbs={breadcrumbs}
       workspaceItems={workspaceItems}
       activeWorkspaceId={pathname.startsWith("/atlas") ? "atlas" : "dnos"}
@@ -151,10 +145,7 @@ export default function AppShell({ children }: AppShellProps) {
           },
         },
       ]}
-      quickActions={[
-        { actionId: "new-case", label: "New Case" },
-        { actionId: "new-note", label: "New Note" },
-      ]}
+      quickActions={shellExperience.quickActions}
       notifications={[
         {
           id: "notif-1",
