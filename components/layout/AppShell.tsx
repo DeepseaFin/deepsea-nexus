@@ -12,7 +12,10 @@ import {
   resolveShellContextFromSessionPayload,
   type ShellContext,
 } from "@/lib/application/shell/ShellContext";
-import { getNavigationForRole } from "@/lib/design/navigation";
+import {
+  getNavigationForRole,
+  getNavigationHomeHrefForRole,
+} from "@/lib/design/navigation";
 import {
   USER_ROLE_LABELS,
 } from "@/lib/design/roles";
@@ -98,8 +101,8 @@ export default function AppShell({ children }: AppShellProps) {
       label: toTitle(segment),
       href: `/${segments.slice(0, index + 1).join("/")}`,
     }));
-    return [{ label: "Home", href: "/atlas/dashboard" }, ...generated];
-  }, [pathname]);
+    return [{ label: "Home", href: getNavigationHomeHrefForRole(shellContext.role) }, ...generated];
+  }, [pathname, shellContext.role]);
 
   const sidebarItems = useMemo<readonly ProductSidebarItem[]>(() => {
     return getNavigationForRole(shellContext.role).map((item) => ({

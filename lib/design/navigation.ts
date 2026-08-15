@@ -131,3 +131,11 @@ export const primaryNavigation: readonly NavigationItem[] = [
 export function getNavigationForRole(role: UserRole): readonly NavigationItem[] {
   return primaryNavigation.filter((item) => item.roles.includes(role));
 }
+
+export function getNavigationHomeHrefForRole(
+  role: UserRole,
+  fallbackHref = "/atlas/dashboard",
+): string {
+  const homeItem = getNavigationForRole(role).find((item) => item.id === "home");
+  return homeItem?.href ?? fallbackHref;
+}
