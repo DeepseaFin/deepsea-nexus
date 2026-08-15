@@ -3,7 +3,6 @@ import {
   createAnonymousSupabaseSessionContext,
   createAuthenticatedSupabaseSessionContext,
   createSupabaseAuthenticationContext,
-  resolveSupabaseAuthCookieNames,
 } from '@/lib/supabase/auth';
 import {
   createIdentityContext,
@@ -16,7 +15,7 @@ import { createPermissionContext } from '@/lib/supabase/permissions';
 import { createRouteProtectionContext } from '@/lib/supabase/protection';
 import { createSessionContext } from '@/lib/supabase/session';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerSessionClient } from '@/lib/supabase/serverSession';
 import type { SupabasePrincipal, SupabaseRequestContext } from '@/lib/supabase/types';
 
 // RuntimeAuthContext stabilizes the authenticated principal and its runtime access context.
@@ -31,17 +30,6 @@ export interface RuntimeAuthContext {
 
 export interface RuntimeAuthCookieAdapter {
   get(name: string): string | undefined;
-}
-
-function extractRuntimeSessionTokens(cookies: RuntimeAuthCookieAdapter): {
-  readonly accessToken?: string;
-  readonly refreshToken?: string;
-} {
-  const cookieNames = resolveSupabaseAuthCookieNames();
-  return Object.freeze({
-    accessToken: cookies.get(cookieNames.accessToken),
-    refreshToken: cookies.get(cookieNames.refreshToken),
-  });
 }
 
 function toRequestContext(input: {
@@ -143,27 +131,30 @@ export async function resolveServerRuntimeAuthContext(input: {
   readonly pathname: string;
   readonly headers: Headers;
   readonly searchParams: URLSearchParams;
-  readonly cookies: RuntimeAuthCookieAdapter;
+  readonly cookies?: RuntimeAuthCookieAdapter;
 }): Promise<RuntimeAuthContext> {
   const request = toRequestContext(input);
-  const tokens = extractRuntimeSessionTokens(input.cookies);
+  const supabase = createSupabaseServerSessionClient({
+    headers: input.headers,
+  });
 
   let authSessionContext = createAnonymousSupabaseSessionContext();
   let principal: SupabasePrincipal | null = null;
+  const [{ data: userData, error: userError }, { data: sessionData }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.auth.getSession(),
+  ]);
+  const authSession = sessionData.session;
 
-  if (tokens.accessToken) {
-    const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase.auth.getUser(tokens.accessToken);
-
-    if (!error && data.user) {
-      const user = data.user;
-      authSessionContext = createAuthenticatedSupabaseSessionContext({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        user,
-      });
-      principal = toPrincipalFromUser(user);
-    }
+  if (!userError && userData.user) {
+    const user = userData.user;
+    authSessionContext = createAuthenticatedSupabaseSessionContext({
+      accessToken: authSession?.access_token,
+      refreshToken: authSession?.refresh_token,
+      session: authSession ?? undefined,
+      user,
+    });
+    principal = toPrincipalFromUser(user);
   }
 
   const authentication = createSupabaseAuthenticationContext({

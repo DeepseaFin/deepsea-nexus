@@ -44,6 +44,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     },
     identity: {
       id: runtime.identity.identity.identityId,
+      email: runtime.identity.principal?.email,
       status: runtime.identity.identity.status,
       type: runtime.identity.identity.type,
       roles: runtime.identity.identity.roles,

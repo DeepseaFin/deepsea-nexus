@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import ProductShell, { iconForProductNavigation } from "@/components/product/ProductShell";
 import type { ProductSidebarItem } from "@/components/product/ProductSidebar";
 import type { WorkspaceSwitcherItem } from "@/components/product/WorkspaceSwitcher";
 import PublicShell from "@/components/layout/PublicShell";
 import { PUBLIC_PATHS } from "@/components/layout/publicNavigation";
 import { getNavigationForRole } from "@/lib/design/navigation";
-import { USER_ROLES, USER_ROLE_LABELS, type UserRole } from "@/lib/design/roles";
+import {
+  USER_ROLE_LABELS,
+  resolveUserRoleFromIdentityRoles,
+  type UserRole,
+} from "@/lib/design/roles";
 
 export interface AppShellProps {
   readonly children: React.ReactNode;
@@ -23,8 +27,71 @@ function toTitle(segment: string): string {
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isPublicRoute = PUBLIC_PATHS.has(pathname);
   const [role, setRole] = useState<UserRole>("relationship_manager");
+  const [userName, setUserName] = useState("Institution User");
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (isPublicRoute) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function hydrateIdentityContext() {
+      try {
+        const response = await fetch("/api/auth/session", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = await response.json();
+        if (cancelled) {
+          return;
+        }
+
+        const identityRoles = Array.isArray(payload?.identity?.roles)
+          ? payload.identity.roles.filter((value: unknown): value is string => typeof value === "string")
+          : [];
+        const mappedRole = resolveUserRoleFromIdentityRoles(identityRoles);
+
+        setRole(mappedRole);
+
+        if (typeof payload?.identity?.email === "string" && payload.identity.email.length > 0) {
+          setUserEmail(payload.identity.email);
+        }
+
+        if (typeof payload?.identity?.id === "string" && payload.identity.id.length > 0) {
+          setUserName(payload.identity.id === "anonymous" ? "Institution User" : payload.identity.id);
+        }
+      } catch {
+        // Preserve shell defaults when session introspection is unavailable.
+      }
+    }
+
+    void hydrateIdentityContext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPublicRoute]);
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
 
   const currentItem = useMemo(() => {
     const items = getNavigationForRole(role);
@@ -80,14 +147,19 @@ export default function AppShell({ children }: AppShellProps) {
       sidebarItems={sidebarItems}
       activeSidebarItemId={currentItem?.id}
       user={{
-        name: "Institution User",
+        name: userName,
         roleLabel: USER_ROLE_LABELS[role],
+        email: userEmail,
       }}
-      userOptions={USER_ROLES.map((candidateRole) => ({
-        id: candidateRole,
-        label: `Switch to ${USER_ROLE_LABELS[candidateRole]}`,
-        onSelect: () => setRole(candidateRole),
-      }))}
+      userOptions={[
+        {
+          id: "sign-out",
+          label: "Sign Out",
+          onSelect: () => {
+            void handleLogout();
+          },
+        },
+      ]}
       quickActions={[
         { actionId: "new-case", label: "New Case" },
         { actionId: "new-note", label: "New Note" },
