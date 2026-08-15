@@ -2,8 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import ProductShell, { iconForProductNavigation } from "@/components/product/ProductShell";
-import type { ProductSidebarItem } from "@/components/product/ProductSidebar";
+import ProductShell from "@/components/product/ProductShell";
 import type { WorkspaceSwitcherItem } from "@/components/product/WorkspaceSwitcher";
 import PublicShell from "@/components/layout/PublicShell";
 import { PUBLIC_PATHS } from "@/components/layout/publicNavigation";
@@ -13,10 +12,7 @@ import {
   type ShellContext,
 } from "@/lib/application/shell/ShellContext";
 import { createShellExperience } from "@/lib/application/shell/ShellExperience";
-import {
-  getNavigationForRole,
-  getNavigationHomeHrefForRole,
-} from "@/lib/design/navigation";
+import { createShellNavigation } from "@/lib/application/shell/ShellNavigation";
 import { USER_ROLE_LABELS } from "@/lib/design/roles";
 
 export interface AppShellProps {
@@ -76,34 +72,10 @@ export default function AppShell({ children }: AppShellProps) {
     }
   }
 
-  const currentItem = useMemo(() => {
-    const items = getNavigationForRole(shellContext.role);
-
-    const matchingItems = items.filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-    if (matchingItems.length === 0) {
-      return undefined;
-    }
-
-    return matchingItems.sort((left, right) => right.href.length - left.href.length)[0];
-  }, [pathname, shellContext.role]);
-
-  const breadcrumbs = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean);
-    const generated = segments.map((segment, index) => ({
-      label: toTitle(segment),
-      href: `/${segments.slice(0, index + 1).join("/")}`,
-    }));
-    return [{ label: "Home", href: getNavigationHomeHrefForRole(shellContext.role) }, ...generated];
-  }, [pathname, shellContext.role]);
-
-  const sidebarItems = useMemo<readonly ProductSidebarItem[]>(() => {
-    return getNavigationForRole(shellContext.role).map((item) => ({
-      id: item.id,
-      label: item.label,
-      href: item.href,
-      icon: iconForProductNavigation(item.icon),
-    }));
-  }, [shellContext.role]);
+  const shellNavigation = useMemo(
+    () => createShellNavigation({ role: shellContext.role, pathname }),
+    [pathname, shellContext.role],
+  );
 
   const workspaceItems = useMemo<readonly WorkspaceSwitcherItem[]>(
     () => [
@@ -114,8 +86,8 @@ export default function AppShell({ children }: AppShellProps) {
   );
 
   const shellExperience = useMemo(
-    () => createShellExperience({ pathname, currentItemLabel: currentItem?.label, shellContext }),
-    [currentItem?.label, pathname, shellContext],
+    () => createShellExperience({ pathname, currentItemLabel: shellNavigation.currentItem?.label, shellContext }),
+    [pathname, shellContext, shellNavigation.currentItem?.label],
   );
 
   if (isPublicRoute) {
@@ -126,11 +98,11 @@ export default function AppShell({ children }: AppShellProps) {
     <ProductShell
       title={shellExperience.title}
       subtitle={shellExperience.subtitle}
-      breadcrumbs={breadcrumbs}
+      breadcrumbs={shellNavigation.breadcrumbs}
       workspaceItems={workspaceItems}
       activeWorkspaceId={pathname.startsWith("/atlas") ? "atlas" : "dnos"}
-      sidebarItems={sidebarItems}
-      activeSidebarItemId={currentItem?.id}
+      sidebarItems={shellNavigation.sidebarItems}
+      activeSidebarItemId={shellNavigation.activeSidebarItemId}
       user={{
         name: shellContext.userName,
         roleLabel: USER_ROLE_LABELS[shellContext.role],
