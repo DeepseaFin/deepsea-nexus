@@ -82,7 +82,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<BusinessPassportPresentationViewModel>;
     },
     resolveDocumentsViewModel(
@@ -105,7 +105,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<DocumentsPresentationViewModel>;
     },
     resolveRelationshipViewModel(
@@ -128,7 +128,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<RelationshipPresentationViewModel>;
     },
     resolveApprovalViewModel(
@@ -151,7 +151,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<ApprovalPresentationViewModel>;
     },
     resolveFundingViewModel(
@@ -174,7 +174,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<FundingPresentationViewModel>;
     },
     resolveAiInsightsViewModel(
@@ -197,7 +197,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<AiInsightsPresentationViewModel>;
     },
     resolveInstitutionalTimelineViewModel(
@@ -220,7 +220,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<InstitutionalTimelinePresentationViewModel>;
     },
     resolveWorkflowViewModel(
@@ -243,7 +243,7 @@ export function createCustomerWorkspaceComposition(
         };
       }
 
-      const result = presenter.adapt(projection as never, presentationContext);
+      const result = presenter.adapt(projection, presentationContext);
       return result as PresentationResult<WorkflowPresentationViewModel>;
     },
     composeWorkspaceIntelligence(source: WorkspaceIntelligenceSource): WorkspaceIntelligenceModel {

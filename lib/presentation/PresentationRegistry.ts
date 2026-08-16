@@ -2,7 +2,9 @@ import type { PresentationAdapter } from "@/lib/presentation/PresentationAdapter
 import {
   PRESENTATION_CAPABILITIES,
   type PresentationCapability,
+  type PresentationContext,
 } from "@/lib/presentation/PresentationContext";
+import type { PresentationResult } from "@/lib/presentation/PresentationResult";
 import type { PresentationViewModel } from "@/lib/presentation/PresentationViewModel";
 import { aiInsightsPresenter } from "@/lib/presentation/presenters/AiInsightsPresenter";
 import { fundingPresenter } from "@/lib/presentation/presenters/FundingPresenter";
@@ -13,7 +15,52 @@ import { relationshipPresenter } from "@/lib/presentation/presenters/Relationshi
 import { institutionalTimelinePresenter } from "@/lib/presentation/presenters/InstitutionalTimelinePresenter";
 import { workflowPresenter } from "@/lib/presentation/presenters/WorkflowPresenter";
 
-export type RegisteredPresentationAdapter = PresentationAdapter<unknown, PresentationViewModel>;
+export interface RegisteredPresentationAdapter<
+  TProjection = unknown,
+  TViewModel extends PresentationViewModel = PresentationViewModel,
+> {
+  readonly id: string;
+  readonly capability: PresentationCapability;
+  readonly projectionType?: string;
+  canAdapt: (projection: unknown, context: PresentationContext) => projection is TProjection;
+  adapt: (projection: unknown, context: PresentationContext) => PresentationResult<TViewModel> | Promise<PresentationResult<TViewModel>>;
+}
+
+function createRegisteredAdapter<TProjection, TViewModel extends PresentationViewModel>(
+  adapter: PresentationAdapter<TProjection, TViewModel>,
+): RegisteredPresentationAdapter<TProjection, TViewModel> {
+  const canAdapt = adapter.canAdapt;
+
+  return {
+    id: adapter.id,
+    capability: adapter.capability,
+    projectionType: adapter.projectionType,
+    canAdapt: (projection: unknown, context: PresentationContext): projection is TProjection => {
+      if (!canAdapt) {
+        return false;
+      }
+
+      return canAdapt(projection, context);
+    },
+    adapt: (projection: unknown, context: PresentationContext) => {
+      if (!canAdapt) {
+        return {
+          ok: false,
+          reason: "Presentation adapter is not configured for adaptation.",
+        };
+      }
+
+      if (!canAdapt(projection, context)) {
+        return {
+          ok: false,
+          reason: "Projection cannot be adapted.",
+        };
+      }
+
+      return adapter.adapt(projection, context);
+    },
+  };
+}
 
 export class PresentationRegistry {
   private readonly adaptersByCapability = new Map<PresentationCapability, RegisteredPresentationAdapter[]>(
@@ -21,14 +68,17 @@ export class PresentationRegistry {
   );
   private readonly adaptersById = new Map<string, RegisteredPresentationAdapter>();
 
-  register(adapter: RegisteredPresentationAdapter): void {
-    this.adaptersById.set(adapter.id, adapter);
+  register<TProjection, TViewModel extends PresentationViewModel>(adapter: PresentationAdapter<TProjection, TViewModel>): void {
+    const registered = createRegisteredAdapter(adapter);
+    this.adaptersById.set(registered.id, registered);
 
-    const existing = this.adaptersByCapability.get(adapter.capability) ?? [];
-    this.adaptersByCapability.set(adapter.capability, [...existing, adapter]);
+    const existing = this.adaptersByCapability.get(registered.capability) ?? [];
+    this.adaptersByCapability.set(registered.capability, [...existing, registered]);
   }
 
-  registerMany(adapters: readonly RegisteredPresentationAdapter[]): void {
+  registerMany<TProjection, TViewModel extends PresentationViewModel>(
+    adapters: readonly PresentationAdapter<TProjection, TViewModel>[],
+  ): void {
     adapters.forEach((adapter) => this.register(adapter));
   }
 

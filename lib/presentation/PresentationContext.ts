@@ -5,7 +5,8 @@ export type PresentationCapability =
   | "approval"
   | "funding"
   | "timeline"
-  | "ai-insights";
+  | "ai-insights"
+  | "workflow";
 
 export const PRESENTATION_CAPABILITIES: readonly PresentationCapability[] = [
   "business-passport",
@@ -15,6 +16,7 @@ export const PRESENTATION_CAPABILITIES: readonly PresentationCapability[] = [
   "funding",
   "timeline",
   "ai-insights",
+  "workflow",
 ];
 
 export interface PresentationContext {

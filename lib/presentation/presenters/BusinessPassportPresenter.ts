@@ -29,8 +29,7 @@ function isBusinessPassportProjection(projection: unknown): projection is Busine
   const passportId = candidate.passportId as PassportId | string | undefined;
 
   return (
-    typeof passportId === "string" || (typeof passportId === "object" && passportId !== null)
-  ) &&
+    (typeof passportId === "string" || (typeof passportId === "object" && passportId !== null)) &&
     typeof candidate.status === "string" &&
     typeof candidate.lifecycle === "string" &&
     typeof candidate.confidenceScore === "number" &&
