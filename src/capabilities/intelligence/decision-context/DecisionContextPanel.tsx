@@ -30,5 +30,7 @@ function toDecisionContextPanel(
 }
 
 export default function DecisionContextPanel({ decisionContexts }: DecisionContextPanelProps) {
-  return <DecisionContextPanelView panel={toDecisionContextPanel(decisionContexts)} />;
+  return (
+    <DecisionContextPanelView panel={toDecisionContextPanel(decisionContexts)} />
+  );
 }

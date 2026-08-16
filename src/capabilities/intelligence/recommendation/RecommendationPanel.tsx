@@ -30,5 +30,7 @@ function toRecommendationPanel(
 }
 
 export default function RecommendationPanel({ recommendations }: RecommendationPanelProps) {
-  return <RecommendationPanelView panel={toRecommendationPanel(recommendations)} />;
+  return (
+    <RecommendationPanelView panel={toRecommendationPanel(recommendations)} />
+  );
 }

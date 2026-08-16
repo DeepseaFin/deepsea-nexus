@@ -7,5 +7,7 @@ interface RelationshipWorkspaceProps {
 }
 
 export default function RelationshipWorkspace({ projection, className }: RelationshipWorkspaceProps) {
-  return <RelationshipWorkspaceView projection={projection} className={className} />;
+  return (
+    <RelationshipWorkspaceView projection={projection} className={className} />
+  );
 }
