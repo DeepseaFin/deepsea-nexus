@@ -1,6 +1,10 @@
 import type { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
+import { canTransitionInstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
 import type { Institution } from "@/lib/institution/domain/Institution";
-import type { InstitutionIdentity } from "@/lib/institution/domain/InstitutionIdentity";
+import {
+  assertInstitutionId,
+  type InstitutionIdentity,
+} from "@/lib/institution/domain/InstitutionIdentity";
 import type { InstitutionProfile } from "@/lib/institution/domain/InstitutionProfile";
 import type { InstitutionMetadata } from "@/lib/institution/types/InstitutionMetadata";
 import type { InstitutionSnapshot } from "@/lib/institution/types/InstitutionSnapshot";
@@ -20,4 +24,135 @@ export interface InstitutionService {
     updatedBy: string,
   ): Promise<Institution>;
   snapshot(institutionId: InstitutionIdentity["institutionId"]): Promise<InstitutionSnapshot | null>;
+}
+
+export interface InstitutionValidationIssue {
+  readonly code: string;
+  readonly message: string;
+  readonly field?: string;
+}
+
+export interface InstitutionValidationResult {
+  readonly valid: boolean;
+  readonly issues: readonly InstitutionValidationIssue[];
+}
+
+function createIssue(code: string, message: string, field?: string): InstitutionValidationIssue {
+  return { code, message, field };
+}
+
+function createValidationResult(issues: readonly InstitutionValidationIssue[]): InstitutionValidationResult {
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
+}
+
+export function validateInstitutionIdentity(identity: InstitutionIdentity): InstitutionValidationResult {
+  const issues: InstitutionValidationIssue[] = [];
+
+  try {
+    assertInstitutionId(identity.institutionId);
+  } catch {
+    issues.push(createIssue("institution_id_invalid", "Institution id format is invalid.", "identity.institutionId"));
+  }
+
+  if (identity.legalName.trim().length === 0) {
+    issues.push(createIssue("legal_name_required", "Institution legal name is required.", "identity.legalName"));
+  }
+
+  if (identity.displayName.trim().length === 0) {
+    issues.push(createIssue("display_name_required", "Institution display name is required.", "identity.displayName"));
+  }
+
+  if (identity.jurisdiction.trim().length === 0) {
+    issues.push(createIssue("jurisdiction_required", "Institution jurisdiction is required.", "identity.jurisdiction"));
+  }
+
+  if (identity.registrationNumber.trim().length === 0) {
+    issues.push(
+      createIssue(
+        "registration_number_required",
+        "Institution registration number is required.",
+        "identity.registrationNumber",
+      ),
+    );
+  }
+
+  return createValidationResult(issues);
+}
+
+export function validateCreateInstitutionInput(input: CreateInstitutionInput): InstitutionValidationResult {
+  const issues: InstitutionValidationIssue[] = [];
+  const identityValidation = validateInstitutionIdentity(input.identity);
+  issues.push(...identityValidation.issues);
+
+  if (input.profile.legalForm.trim().length === 0) {
+    issues.push(createIssue("legal_form_required", "Institution legal form is required.", "profile.legalForm"));
+  }
+
+  if (input.profile.businessActivity.trim().length === 0) {
+    issues.push(
+      createIssue("business_activity_required", "Institution business activity is required.", "profile.businessActivity"),
+    );
+  }
+
+  if (input.metadata.createdAt.trim().length === 0) {
+    issues.push(createIssue("created_at_required", "Institution metadata createdAt is required.", "metadata.createdAt"));
+  }
+
+  if (input.metadata.updatedAt.trim().length === 0) {
+    issues.push(createIssue("updated_at_required", "Institution metadata updatedAt is required.", "metadata.updatedAt"));
+  }
+
+  if (input.metadata.createdBy.trim().length === 0) {
+    issues.push(createIssue("created_by_required", "Institution metadata createdBy is required.", "metadata.createdBy"));
+  }
+
+  if (input.metadata.updatedBy.trim().length === 0) {
+    issues.push(createIssue("updated_by_required", "Institution metadata updatedBy is required.", "metadata.updatedBy"));
+  }
+
+  if (input.metadata.source.trim().length === 0) {
+    issues.push(createIssue("source_required", "Institution metadata source is required.", "metadata.source"));
+  }
+
+  return createValidationResult(issues);
+}
+
+export function assertCreateInstitutionInput(input: CreateInstitutionInput): CreateInstitutionInput {
+  const validation = validateCreateInstitutionInput(input);
+
+  if (!validation.valid) {
+    throw new Error("Invalid institution create input.");
+  }
+
+  return input;
+}
+
+export function validateInstitutionStatusTransition(
+  from: InstitutionStatus,
+  to: InstitutionStatus,
+): InstitutionValidationResult {
+  if (canTransitionInstitutionStatus(from, to)) {
+    return createValidationResult([]);
+  }
+
+  const code = from === to ? "status_transition_noop" : "status_transition_invalid";
+  const message =
+    from === to
+      ? `Institution status transition from ${from} to ${to} is not allowed because it is a no-op.`
+      : `Institution status transition from ${from} to ${to} is not allowed.`;
+
+  return createValidationResult([createIssue(code, message, "status")]);
+}
+
+export function assertInstitutionStatusTransitionOrThrow(from: InstitutionStatus, to: InstitutionStatus): InstitutionStatus {
+  const validation = validateInstitutionStatusTransition(from, to);
+
+  if (!validation.valid) {
+    throw new Error(validation.issues[0]?.message ?? "Invalid institution status transition.");
+  }
+
+  return to;
 }
