@@ -1,11 +1,12 @@
-import type { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
-import { canTransitionInstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
+import { InstitutionStatus, canTransitionInstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
 import type { Institution } from "@/lib/institution/domain/Institution";
 import {
   assertInstitutionId,
+  createInstitutionId,
   type InstitutionIdentity,
 } from "@/lib/institution/domain/InstitutionIdentity";
 import type { InstitutionProfile } from "@/lib/institution/domain/InstitutionProfile";
+import type { InstitutionRepository } from "@/lib/institution/repositories/InstitutionRepository";
 import type { InstitutionMetadata } from "@/lib/institution/types/InstitutionMetadata";
 import type { InstitutionSnapshot } from "@/lib/institution/types/InstitutionSnapshot";
 
@@ -155,4 +156,103 @@ export function assertInstitutionStatusTransitionOrThrow(from: InstitutionStatus
   }
 
   return to;
+}
+
+function normalizeCreateInput(input: CreateInstitutionInput): CreateInstitutionInput {
+  const providedInstitutionId = input.identity.institutionId.trim();
+
+  return {
+    ...input,
+    identity: {
+      ...input.identity,
+      institutionId: providedInstitutionId.length > 0 ? providedInstitutionId : createInstitutionId(),
+    },
+  };
+}
+
+function toInstitutionSnapshot(institution: Institution): InstitutionSnapshot {
+  return {
+    institutionId: institution.identity.institutionId,
+    legalName: institution.identity.legalName,
+    institutionType: institution.identity.institutionType,
+    jurisdiction: institution.identity.jurisdiction,
+    status: institution.status,
+    businessPassportId: institution.profile.references.businessPassportId,
+    journeyId: institution.profile.references.journeyId,
+    timelineId: institution.profile.references.timelineId,
+    evidenceCount: institution.profile.references.evidenceIds.length,
+    knowledgeCount: institution.profile.references.knowledgeIds.length,
+  };
+}
+
+export function createInstitutionService(repository: InstitutionRepository): InstitutionService {
+  return {
+    async create(input: CreateInstitutionInput): Promise<Institution> {
+      const normalizedInput = normalizeCreateInput(input);
+      const validatedInput = assertCreateInstitutionInput(normalizedInput);
+
+      const institution: Institution = {
+        identity: {
+          ...validatedInput.identity,
+          institutionId: assertInstitutionId(validatedInput.identity.institutionId),
+        },
+        status: InstitutionStatus.Draft,
+        profile: validatedInput.profile,
+        metadata: validatedInput.metadata,
+      };
+
+      await repository.save(institution);
+
+      return institution;
+    },
+
+    async get(institutionId: InstitutionIdentity["institutionId"]): Promise<Institution | null> {
+      return repository.findById(assertInstitutionId(institutionId));
+    },
+
+    async updateStatus(
+      institutionId: InstitutionIdentity["institutionId"],
+      status: InstitutionStatus,
+      updatedBy: string,
+    ): Promise<Institution> {
+      const normalizedInstitutionId = assertInstitutionId(institutionId);
+      const currentInstitution = await repository.findById(normalizedInstitutionId);
+
+      if (!currentInstitution) {
+        throw new Error(`Institution ${normalizedInstitutionId} was not found.`);
+      }
+
+      assertInstitutionStatusTransitionOrThrow(currentInstitution.status, status);
+
+      const normalizedUpdatedBy = updatedBy.trim();
+
+      if (normalizedUpdatedBy.length === 0) {
+        throw new Error("updatedBy is required.");
+      }
+
+      const updatedInstitution: Institution = {
+        ...currentInstitution,
+        status,
+        metadata: {
+          ...currentInstitution.metadata,
+          updatedAt: new Date().toISOString(),
+          updatedBy: normalizedUpdatedBy,
+        },
+      };
+
+      await repository.save(updatedInstitution);
+
+      return updatedInstitution;
+    },
+
+    async snapshot(institutionId: InstitutionIdentity["institutionId"]): Promise<InstitutionSnapshot | null> {
+      const institution = await repository.findById(assertInstitutionId(institutionId));
+
+      if (!institution) {
+        return null;
+      }
+
+      return toInstitutionSnapshot(institution);
+    },
+  };
 }
