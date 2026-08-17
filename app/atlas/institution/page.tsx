@@ -2,8 +2,8 @@ import { cookies, headers } from "next/headers";
 import InstitutionWorkspace from "@/src/capabilities/institution/components/InstitutionWorkspace";
 import { createInstitutionWorkspaceState } from "@/src/capabilities/institution/services/InstitutionWorkspaceAssembler";
 import type { InstitutionWorkspaceState } from "@/src/capabilities/institution/types/InstitutionWorkspaceState";
+import { createInstitutionRuntimeFacade } from "@/lib/application/InstitutionRuntimeFacade";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
-import { createInstitutionContextProvider } from "@/lib/workspaces/InstitutionContextProvider";
 import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
 import { workflowContextRepository } from "@/lib/workflows/WorkflowContext";
 import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
@@ -54,8 +54,8 @@ export default async function InstitutionPage({ searchParams }: { searchParams?:
     ?? runtime.session.snapshot.metadata.issuedAt
     ?? new Date().toISOString();
 
-  const institutionContextProvider = createInstitutionContextProvider();
-  const institutionContext = institutionContextProvider.provide({
+  const runtimeFacade = createInstitutionRuntimeFacade();
+  const institutionContext = runtimeFacade.provideInstitutionContext({
     institution: {
       identity: {
         institutionId: businessContext?.institutionId ?? runtime.identity.identity.identityId,
