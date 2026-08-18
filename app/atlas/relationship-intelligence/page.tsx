@@ -3,7 +3,7 @@ import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus
 import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
 import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from "@/lib/runtime/InstitutionalDigitalTwin";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
-import { createInstitutionContextProvider } from "@/lib/workspaces/InstitutionContextProvider";
+import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
 import {
   createBusinessContext,
@@ -65,9 +65,9 @@ function createLiveInstitutionContext(input: {
   readonly workflowId: string;
   readonly timestamp: string;
 }) {
-  const institutionContextProvider = createInstitutionContextProvider();
+  const runtimeComposition = createInstitutionRuntimeComposition();
 
-  return institutionContextProvider.provide({
+  return runtimeComposition.facade.provideInstitutionContext({
     institution: {
       identity: {
         institutionId: input.businessContext.institutionId,
