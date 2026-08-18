@@ -3,6 +3,10 @@ import {
   type InstitutionRuntimeFacade,
   type InstitutionRuntimeFacadeOptions,
 } from "@/lib/application/InstitutionRuntimeFacade";
+import type { RelationshipRepository } from "@/lib/relationship/RelationshipRepository";
+import type { RelationshipService } from "@/lib/relationship/RelationshipService";
+import { createSupabaseRelationshipRepository } from "@/lib/relationship/repositories/SupabaseRelationshipRepository";
+import { createRelationshipService } from "@/lib/relationship/services/RelationshipServiceImpl";
 import {
   createInstitutionalRuntimeOrchestrator,
   type InstitutionalRuntimeOrchestrator,
@@ -13,16 +17,23 @@ export interface InstitutionRuntimeCompositionOptions {
   readonly orchestrator?: InstitutionalRuntimeOrchestrator;
   readonly orchestratorOptions?: InstitutionalRuntimeOrchestratorOptions;
   readonly facadeOptions?: InstitutionRuntimeFacadeOptions;
+  readonly relationshipRepository?: RelationshipRepository;
+  readonly relationshipService?: RelationshipService;
 }
 
 export interface InstitutionRuntimeComposition {
   readonly orchestrator: InstitutionalRuntimeOrchestrator;
   readonly facade: InstitutionRuntimeFacade;
+  readonly relationshipService: RelationshipService;
 }
 
 export function createInstitutionRuntimeComposition(
   options: InstitutionRuntimeCompositionOptions = {},
 ): InstitutionRuntimeComposition {
+  const relationshipRepository = options.relationshipRepository
+    ?? createSupabaseRelationshipRepository();
+  const relationshipService = options.relationshipService
+    ?? createRelationshipService({ repository: relationshipRepository });
   const orchestrator = options.orchestrator
     ?? createInstitutionalRuntimeOrchestrator(options.orchestratorOptions ?? {});
   const facade = options.facadeOptions
@@ -37,5 +48,6 @@ export function createInstitutionRuntimeComposition(
   return Object.freeze({
     orchestrator,
     facade,
+    relationshipService,
   });
 }
