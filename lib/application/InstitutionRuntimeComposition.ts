@@ -12,6 +12,8 @@ import {
   type InstitutionalRuntimeOrchestrator,
   type InstitutionalRuntimeOrchestratorOptions,
 } from "@/lib/runtime/InstitutionalRuntimeOrchestrator";
+import type { WorkflowContextRepository } from "@/lib/workflows/WorkflowContext";
+import { createWorkflowRepositoryProvider } from "@/lib/workflows/repositories/WorkflowRepositoryFactory";
 
 export interface InstitutionRuntimeCompositionOptions {
   readonly orchestrator?: InstitutionalRuntimeOrchestrator;
@@ -19,12 +21,14 @@ export interface InstitutionRuntimeCompositionOptions {
   readonly facadeOptions?: InstitutionRuntimeFacadeOptions;
   readonly relationshipRepository?: RelationshipRepository;
   readonly relationshipService?: RelationshipService;
+  readonly workflowContextRepository?: WorkflowContextRepository;
 }
 
 export interface InstitutionRuntimeComposition {
   readonly orchestrator: InstitutionalRuntimeOrchestrator;
   readonly facade: InstitutionRuntimeFacade;
   readonly relationshipService: RelationshipService;
+  readonly workflowContextRepository: WorkflowContextRepository;
 }
 
 export function createInstitutionRuntimeComposition(
@@ -34,6 +38,8 @@ export function createInstitutionRuntimeComposition(
     ?? createSupabaseRelationshipRepository();
   const relationshipService = options.relationshipService
     ?? createRelationshipService({ repository: relationshipRepository });
+  const workflowContextRepository = options.workflowContextRepository
+    ?? createWorkflowRepositoryProvider().createWorkflowContextRepository();
   const orchestrator = options.orchestrator
     ?? createInstitutionalRuntimeOrchestrator(options.orchestratorOptions ?? {});
   const facade = options.facadeOptions
@@ -49,5 +55,6 @@ export function createInstitutionRuntimeComposition(
     orchestrator,
     facade,
     relationshipService,
+    workflowContextRepository,
   });
 }

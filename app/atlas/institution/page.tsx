@@ -5,7 +5,7 @@ import type { InstitutionWorkspaceState } from "@/src/capabilities/institution/t
 import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
 import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
-import { workflowContextRepository } from "@/lib/workflows/WorkflowContext";
+import type { WorkflowContextRepository } from "@/lib/workflows/WorkflowContext";
 import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
 import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
 import { WorkflowRunState } from "@/lib/workflows/WorkflowExecutionState";
@@ -25,15 +25,18 @@ async function createCookieAdapter(): Promise<RuntimeAuthCookieAdapter> {
   };
 }
 
-function resolveBusinessContext(workflowId: string | undefined) {
+function resolveBusinessContext(
+  repository: WorkflowContextRepository,
+  workflowId: string | undefined,
+) {
   if (workflowId) {
-    const byWorkflowId = workflowContextRepository.findByWorkflowId(workflowId);
+    const byWorkflowId = repository.findByWorkflowId(workflowId);
     if (byWorkflowId) {
       return byWorkflowId;
     }
   }
 
-  const [latest] = workflowContextRepository.list();
+  const [latest] = repository.list();
   return latest;
 }
 
@@ -41,6 +44,7 @@ export default async function InstitutionPage({ searchParams }: { searchParams?:
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
+  const runtimeComposition = createInstitutionRuntimeComposition();
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/atlas/institution",
     method: "GET",
@@ -49,12 +53,14 @@ export default async function InstitutionPage({ searchParams }: { searchParams?:
     searchParams: new URLSearchParams(params.workflowId ? { workflowId: params.workflowId } : {}),
     cookies: requestCookies,
   });
-  const businessContext = resolveBusinessContext(params.workflowId);
+  const businessContext = resolveBusinessContext(
+    runtimeComposition.workflowContextRepository,
+    params.workflowId,
+  );
   const timestamp = runtime.session.snapshot.metadata.lastRefreshedAt
     ?? runtime.session.snapshot.metadata.issuedAt
     ?? new Date().toISOString();
 
-  const runtimeComposition = createInstitutionRuntimeComposition();
   const institutionContext = runtimeComposition.facade.provideInstitutionContext({
     institution: {
       identity: {
