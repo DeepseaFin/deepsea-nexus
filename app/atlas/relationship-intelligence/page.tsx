@@ -8,10 +8,10 @@ import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/Institu
 import {
   createBusinessContext,
   parseBusinessContext,
-  workflowContextRepository,
   type BusinessContext,
   type CustomerOnboardingWorkflowInput,
   type WorkflowContext,
+  type WorkflowContextRepository,
   type WorkflowContextServices,
 } from "@/lib/workflows/WorkflowContext";
 import { WorkflowRunState } from "@/lib/workflows/WorkflowExecutionState";
@@ -37,7 +37,10 @@ async function createCookieAdapter(): Promise<RuntimeAuthCookieAdapter> {
   };
 }
 
-function resolveBusinessContext(workflowId: string | undefined): BusinessContext | undefined {
+function resolveBusinessContext(
+  workflowContextRepository: WorkflowContextRepository,
+  workflowId: string | undefined,
+): BusinessContext | undefined {
   if (workflowId) {
     const byWorkflowId = workflowContextRepository.findByWorkflowId(workflowId);
     if (byWorkflowId) {
@@ -126,6 +129,8 @@ export default async function RelationshipIntelligencePage({ searchParams }: Rel
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
+  const runtimeComposition = createInstitutionRuntimeComposition();
+  const workflowContextRepository = runtimeComposition.workflowContextRepository;
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/atlas/relationship-intelligence",
     method: "GET",
@@ -136,7 +141,10 @@ export default async function RelationshipIntelligencePage({ searchParams }: Rel
   });
 
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
-  const repositoryBusinessContext = resolveBusinessContext(params.workflowId);
+  const repositoryBusinessContext = resolveBusinessContext(
+    workflowContextRepository,
+    params.workflowId,
+  );
   const businessContext = repositoryBusinessContext ?? parsedBusinessContext ?? createBusinessContext({
     institutionId: runtime.identity.identity.identityId,
     opportunityId: params.workflowId ? `OPP-${params.workflowId}` : `OPP-${runtime.identity.identity.identityId}`,
