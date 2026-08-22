@@ -40,6 +40,51 @@ function normalizeContext(context: BusinessContext): BusinessContext {
   return createBusinessContext(context);
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function toBusinessWorkspace(value: unknown): BusinessContext['currentWorkspace'] {
+  if (typeof value !== 'string' || !BUSINESS_WORKSPACES.has(value)) {
+    throw new Error('Failed to map workflow context row: current_workspace is invalid.');
+  }
+
+  return value as BusinessContext['currentWorkspace'];
+}
+
+function toOpportunityLifecycle(value: unknown): OpportunityLifecycle {
+  if (typeof value !== 'string' || !OPPORTUNITY_LIFECYCLES.has(value as OpportunityLifecycle)) {
+    throw new Error('Failed to map workflow context row: opportunity_lifecycle is invalid.');
+  }
+
+  return value as OpportunityLifecycle;
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error('Failed to map workflow context row: optional string field is invalid.');
+  }
+
+  return value;
+}
+
+function toRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== 'string') {
+    throw new Error(`Failed to map workflow context row: ${fieldName} is invalid.`);
+  }
+
+  return value;
+}
+
 function toWorkflowContextRow(context: BusinessContext): WorkflowContextRow {
   return {
     workflow_id: context.workflowId,
@@ -53,56 +98,48 @@ function toWorkflowContextRow(context: BusinessContext): WorkflowContextRow {
   };
 }
 
-function toBusinessContext(row: WorkflowContextRow): BusinessContext | undefined {
+function toBusinessContext(row: WorkflowContextRow): BusinessContext {
   const fromPayload = row.payload;
 
-  if (fromPayload && typeof fromPayload === 'object') {
-    const payload = fromPayload as Partial<BusinessContext>;
-
-    if (
-      typeof payload.workflowId === 'string'
-      && typeof payload.institutionId === 'string'
-      && typeof payload.opportunityId === 'string'
-      && typeof payload.currentOwner === 'string'
-      && typeof payload.currentWorkspace === 'string'
-      && typeof payload.opportunityLifecycle === 'string'
-      && BUSINESS_WORKSPACES.has(payload.currentWorkspace)
-      && OPPORTUNITY_LIFECYCLES.has(payload.opportunityLifecycle as OpportunityLifecycle)
-    ) {
-      return normalizeContext({
-        workflowId: payload.workflowId,
-        institutionId: payload.institutionId,
-        opportunityId: payload.opportunityId,
-        receivableId: payload.receivableId,
-        opportunityLifecycle: payload.opportunityLifecycle as OpportunityLifecycle,
-        currentOwner: payload.currentOwner,
-        currentWorkspace: payload.currentWorkspace as BusinessContext['currentWorkspace'],
-      });
-    }
+  if (!isPlainObject(fromPayload)) {
+    throw new Error('Failed to map workflow context row: payload must be an object.');
   }
+
+  const payload = fromPayload as Record<string, unknown>;
+
+  const contextFromPayload = normalizeContext({
+    workflowId: toRequiredString(payload.workflowId, 'payload.workflowId'),
+    institutionId: toRequiredString(payload.institutionId, 'payload.institutionId'),
+    opportunityId: toRequiredString(payload.opportunityId, 'payload.opportunityId'),
+    receivableId: toOptionalString(payload.receivableId),
+    opportunityLifecycle: toOpportunityLifecycle(payload.opportunityLifecycle),
+    currentOwner: toRequiredString(payload.currentOwner, 'payload.currentOwner'),
+    currentWorkspace: toBusinessWorkspace(payload.currentWorkspace),
+  });
+
+  const contextFromColumns = normalizeContext({
+    workflowId: toRequiredString(row.workflow_id, 'workflow_id'),
+    institutionId: toRequiredString(row.institution_id, 'institution_id'),
+    opportunityId: toRequiredString(row.opportunity_id, 'opportunity_id'),
+    receivableId: toOptionalString(row.receivable_id),
+    opportunityLifecycle: toOpportunityLifecycle(row.opportunity_lifecycle),
+    currentOwner: toRequiredString(row.current_owner, 'current_owner'),
+    currentWorkspace: toBusinessWorkspace(row.current_workspace),
+  });
 
   if (
-    typeof row.workflow_id !== 'string'
-    || typeof row.institution_id !== 'string'
-    || typeof row.opportunity_id !== 'string'
-    || typeof row.current_owner !== 'string'
-    || typeof row.current_workspace !== 'string'
-    || typeof row.opportunity_lifecycle !== 'string'
-    || !BUSINESS_WORKSPACES.has(row.current_workspace)
-    || !OPPORTUNITY_LIFECYCLES.has(row.opportunity_lifecycle as OpportunityLifecycle)
+    contextFromPayload.workflowId !== contextFromColumns.workflowId
+    || contextFromPayload.institutionId !== contextFromColumns.institutionId
+    || contextFromPayload.opportunityId !== contextFromColumns.opportunityId
+    || contextFromPayload.receivableId !== contextFromColumns.receivableId
+    || contextFromPayload.opportunityLifecycle !== contextFromColumns.opportunityLifecycle
+    || contextFromPayload.currentOwner !== contextFromColumns.currentOwner
+    || contextFromPayload.currentWorkspace !== contextFromColumns.currentWorkspace
   ) {
-    return undefined;
+    throw new Error('Failed to map workflow context row: payload does not match canonical columns.');
   }
 
-  return normalizeContext({
-    workflowId: row.workflow_id,
-    institutionId: row.institution_id,
-    opportunityId: row.opportunity_id,
-    receivableId: row.receivable_id ?? undefined,
-    opportunityLifecycle: row.opportunity_lifecycle as OpportunityLifecycle,
-    currentOwner: row.current_owner,
-    currentWorkspace: row.current_workspace as BusinessContext['currentWorkspace'],
-  });
+  return contextFromPayload;
 }
 
 class SupabaseWorkflowContextRepository implements WorkflowContextRepository {
@@ -188,10 +225,6 @@ class SupabaseWorkflowContextRepository implements WorkflowContextRepository {
 
     for (const row of (data ?? []) as WorkflowContextRow[]) {
       const context = toBusinessContext(row);
-      if (!context) {
-        continue;
-      }
-
       this.contexts.set(normalizeWorkflowId(context.workflowId), context);
     }
   }
@@ -204,7 +237,10 @@ class SupabaseWorkflowContextRepository implements WorkflowContextRepository {
 
       if (this.onPersistenceError) {
         this.onPersistenceError(normalized);
+        return;
       }
+
+      throw normalized;
     });
   }
 
