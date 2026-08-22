@@ -1,11 +1,12 @@
 import ForfaitingWorkspace from "@/src/capabilities/forfaiting/components/ForfaitingWorkspace";
 import type { ForfaittingWorkspaceState, ReceivableQueueItem } from "@/src/capabilities/forfaiting/types/ForfaittingWorkspaceState";
+import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import {
   createBusinessContext,
   parseBusinessContext,
   serializeBusinessContext,
   transitionBusinessContext,
-  workflowContextRepository,
+  type WorkflowContextRepository,
 } from "@/lib/workflows/WorkflowContext";
 import {
   OpportunityLifecycle,
@@ -152,8 +153,17 @@ function toReceivableStatus(value: OpportunityLifecycle): ReceivableQueueItem["s
   return "on_hold";
 }
 
+function resolveBusinessContext(
+  workflowContextRepository: WorkflowContextRepository,
+  workflowId: string,
+) {
+  return workflowContextRepository.findByWorkflowId(workflowId);
+}
+
 export default async function ForfaitingPage({ searchParams }: ForfaitingPageProps) {
   const params = (await searchParams) ?? {};
+  const runtimeComposition = createInstitutionRuntimeComposition();
+  const workflowContextRepository = runtimeComposition.workflowContextRepository;
   const demoScenario = getDemoScenario(params.demoScenario);
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
   const workflowId = parsedBusinessContext?.workflowId
@@ -165,7 +175,10 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
     workflowContextRepository.save(demoScenario.contexts.forfaitting);
   }
 
-  const repositoryBusinessContext = workflowContextRepository.findByWorkflowId(workflowId);
+  const repositoryBusinessContext = resolveBusinessContext(
+    workflowContextRepository,
+    workflowId,
+  );
   const resolvedBusinessContext = repositoryBusinessContext ?? parsedBusinessContext;
 
   if (!repositoryBusinessContext && parsedBusinessContext) {
