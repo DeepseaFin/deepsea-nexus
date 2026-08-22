@@ -1,11 +1,11 @@
 import TreasuryWorkspace from "@/src/capabilities/treasury/components/TreasuryWorkspace";
 import type { FundingQueueItem, TreasuryWorkspaceState } from "@/src/capabilities/treasury/types/TreasuryWorkspaceState";
+import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import {
   createBusinessContext,
   parseBusinessContext,
   serializeBusinessContext,
   transitionBusinessContext,
-  workflowContextRepository,
 } from "@/lib/workflows/WorkflowContext";
 import {
   OpportunityLifecycle,
@@ -162,6 +162,8 @@ function toQueueStatus(value: OpportunityLifecycle): FundingQueueItem["status"] 
 
 export default async function TreasuryPage({ searchParams }: TreasuryPageProps) {
   const params = (await searchParams) ?? {};
+  const runtimeComposition = createInstitutionRuntimeComposition();
+  const workflowContextRepository = runtimeComposition.workflowContextRepository;
   const demoScenario = getDemoScenario(params.demoScenario);
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
   const workflowId = parsedBusinessContext?.workflowId
