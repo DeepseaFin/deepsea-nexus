@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import WorkflowTimelinePanel from "@/components/atlas/workflows/WorkflowTimelinePanel";
 import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
 import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
+import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from "@/lib/runtime/InstitutionalDigitalTwin";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
 import ExecutiveAlerts from "@/src/capabilities/executive/components/ExecutiveAlerts";
@@ -19,10 +20,10 @@ import {
   parseBusinessContext,
   serializeBusinessContext,
   transitionBusinessContext,
-  workflowContextRepository,
   type BusinessContext,
   type CustomerOnboardingWorkflowInput,
   type WorkflowContext,
+  type WorkflowContextRepository,
   type WorkflowContextServices,
 } from "@/lib/workflows/WorkflowContext";
 import { buildMockWorkflowEvents } from "@/lib/workflows/WorkflowTimeline";
@@ -50,7 +51,10 @@ async function createCookieAdapter(): Promise<RuntimeAuthCookieAdapter> {
   };
 }
 
-function resolveBusinessContext(workflowId: string | undefined): BusinessContext | undefined {
+function resolveBusinessContext(
+  workflowContextRepository: WorkflowContextRepository,
+  workflowId: string | undefined,
+): BusinessContext | undefined {
   if (workflowId) {
     const byWorkflowId = workflowContextRepository.findByWorkflowId(workflowId);
     if (byWorkflowId) {
@@ -191,6 +195,8 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
+  const runtimeComposition = createInstitutionRuntimeComposition();
+  const workflowContextRepository = runtimeComposition.workflowContextRepository;
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/executive",
     method: "GET",
@@ -201,7 +207,10 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
   });
 
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
-  const repositoryBusinessContext = resolveBusinessContext(params.workflowId);
+  const repositoryBusinessContext = resolveBusinessContext(
+    workflowContextRepository,
+    params.workflowId,
+  );
   const businessContext = repositoryBusinessContext ?? parsedBusinessContext ?? createBusinessContext({
     institutionId: runtime.identity.identity.identityId,
     opportunityId: params.opportunityId ?? `OPP-${runtime.identity.identity.identityId}`,
