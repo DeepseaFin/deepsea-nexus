@@ -1,0 +1,517 @@
+diff --git a/app/atlas/institution-wizard/page.tsx b/app/atlas/institution-wizard/page.tsx
+new file mode 100644
+index 0000000..b20bcdb
+--- /dev/null
++++ b/app/atlas/institution-wizard/page.tsx
+@@ -0,0 +1,5 @@
++import InstitutionWizard from "@/src/capabilities/institution-wizard/components/InstitutionWizard";
++
++export default function InstitutionWizardPage() {
++  return <InstitutionWizard />;
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/BusinessProfileStep.tsx b/src/capabilities/institution-wizard/components/BusinessProfileStep.tsx
+new file mode 100644
+index 0000000..6a8dd74
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/BusinessProfileStep.tsx
+@@ -0,0 +1,37 @@
++import type { BusinessProfilePreview } from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
++
++type BusinessProfileStepProps = {
++  profile: BusinessProfilePreview;
++};
++
++export default function BusinessProfileStep({ profile }: BusinessProfileStepProps) {
++  return (
++    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <h2 className="text-lg font-semibold text-slate-100">Business Profile Preview</h2>
++      <p className="mt-1 text-sm text-slate-400">Preview the institution profile before relationship activation.</p>
++
++      <div className="mt-4 grid gap-2 sm:grid-cols-2">
++        <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
++          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Legal Name</p>
++          <p className="mt-1 text-sm font-medium text-slate-200">{profile.legalName}</p>
++        </article>
++        <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
++          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Jurisdiction</p>
++          <p className="mt-1 text-sm font-medium text-slate-200">{profile.jurisdiction}</p>
++        </article>
++        <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
++          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Business Type</p>
++          <p className="mt-1 text-sm font-medium text-slate-200">{profile.businessType}</p>
++        </article>
++        <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
++          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Registration Number</p>
++          <p className="mt-1 text-sm font-medium text-slate-200">{profile.registrationNumber}</p>
++        </article>
++        <article className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2 sm:col-span-2">
++          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Established On</p>
++          <p className="mt-1 text-sm font-medium text-slate-200">{profile.establishedOn}</p>
++        </article>
++      </div>
++    </section>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/InstitutionWizard.tsx b/src/capabilities/institution-wizard/components/InstitutionWizard.tsx
+new file mode 100644
+index 0000000..1936955
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/InstitutionWizard.tsx
+@@ -0,0 +1,61 @@
++"use client";
++
++import BusinessProfileStep from "@/src/capabilities/institution-wizard/components/BusinessProfileStep";
++import JourneyReadyStep from "@/src/capabilities/institution-wizard/components/JourneyReadyStep";
++import ReviewStep from "@/src/capabilities/institution-wizard/components/ReviewStep";
++import UploadStep from "@/src/capabilities/institution-wizard/components/UploadStep";
++import WizardFooter from "@/src/capabilities/institution-wizard/components/WizardFooter";
++import WizardHeader from "@/src/capabilities/institution-wizard/components/WizardHeader";
++import WizardStepper from "@/src/capabilities/institution-wizard/components/WizardStepper";
++import { useInstitutionWizard } from "@/src/capabilities/institution-wizard/hooks/useInstitutionWizard";
++
++export default function InstitutionWizard() {
++  const {
++    state,
++    isFirstStep,
++    isLastStep,
++    goToStep,
++    goNext,
++    goPrevious,
++    simulateUpload,
++  } = useInstitutionWizard();
++
++  const currentStep = state.steps.find((step) => step.id === state.currentStepId) ?? state.steps[0];
++
++  return (
++    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.45),transparent_40%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-5 sm:px-6 lg:px-8">
++      <div className="mx-auto max-w-[1920px] space-y-3 pb-8">
++        <WizardHeader
++          institutionName={state.businessProfile.legalName}
++          currentStepTitle={currentStep.title}
++        />
++
++        <div className="grid gap-2 xl:grid-cols-[300px_minmax(0,1fr)]">
++          <WizardStepper
++            steps={state.steps}
++            currentStepId={state.currentStepId}
++            onStepSelect={goToStep}
++          />
++
++          <main className="space-y-2">
++            {state.currentStepId === 1 && (
++              <UploadStep uploadedFiles={state.uploadedFiles} onSimulateUpload={simulateUpload} />
++            )}
++            {state.currentStepId === 2 && <ReviewStep reviewedFields={state.reviewedFields} />}
++            {state.currentStepId === 3 && <BusinessProfileStep profile={state.businessProfile} />}
++            {state.currentStepId === 4 && <JourneyReadyStep readinessNotes={state.journeyReadinessNotes} />}
++
++            <WizardFooter
++              currentStepId={state.currentStepId}
++              totalSteps={state.steps.length}
++              isFirstStep={isFirstStep}
++              isLastStep={isLastStep}
++              onPrevious={goPrevious}
++              onNext={goNext}
++            />
++          </main>
++        </div>
++      </div>
++    </div>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/JourneyReadyStep.tsx b/src/capabilities/institution-wizard/components/JourneyReadyStep.tsx
+new file mode 100644
+index 0000000..87f1108
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/JourneyReadyStep.tsx
+@@ -0,0 +1,20 @@
++type JourneyReadyStepProps = {
++  readinessNotes: readonly string[];
++};
++
++export default function JourneyReadyStep({ readinessNotes }: JourneyReadyStepProps) {
++  return (
++    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <h2 className="text-lg font-semibold text-slate-100">Relationship Journey Ready</h2>
++      <p className="mt-1 text-sm text-slate-400">Institution profile is ready to enter the relationship journey workflow.</p>
++
++      <div className="mt-4 space-y-2">
++        {readinessNotes.map((note) => (
++          <p key={note} className="rounded border border-emerald-700/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-100">
++            {note}
++          </p>
++        ))}
++      </div>
++    </section>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/ReviewStep.tsx b/src/capabilities/institution-wizard/components/ReviewStep.tsx
+new file mode 100644
+index 0000000..7e3945e
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/ReviewStep.tsx
+@@ -0,0 +1,23 @@
++import type { ReviewedField } from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
++
++type ReviewStepProps = {
++  reviewedFields: readonly ReviewedField[];
++};
++
++export default function ReviewStep({ reviewedFields }: ReviewStepProps) {
++  return (
++    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <h2 className="text-lg font-semibold text-slate-100">Review Information</h2>
++      <p className="mt-1 text-sm text-slate-400">Verify institutional details before profile preview.</p>
++
++      <div className="mt-4 grid gap-2 sm:grid-cols-2">
++        {reviewedFields.map((field) => (
++          <article key={field.label} className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2">
++            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{field.label}</p>
++            <p className="mt-1 text-sm font-medium text-slate-200">{field.value}</p>
++          </article>
++        ))}
++      </div>
++    </section>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/UploadStep.tsx b/src/capabilities/institution-wizard/components/UploadStep.tsx
+new file mode 100644
+index 0000000..9309768
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/UploadStep.tsx
+@@ -0,0 +1,39 @@
++type UploadStepProps = {
++  uploadedFiles: readonly string[];
++  onSimulateUpload: () => void;
++};
++
++export default function UploadStep({ uploadedFiles, onSimulateUpload }: UploadStepProps) {
++  return (
++    <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <h2 className="text-lg font-semibold text-slate-100">Upload Trade License</h2>
++      <p className="mt-1 text-sm text-slate-400">Placeholder upload interaction. No OCR is executed.</p>
++
++      <div className="mt-4 rounded border border-dashed border-cyan-700/50 bg-cyan-950/20 p-4">
++        <p className="text-sm text-cyan-100">Trade license document area</p>
++        <p className="mt-1 text-xs text-slate-300">Accepted format placeholder: PDF</p>
++        <button
++          type="button"
++          onClick={onSimulateUpload}
++          className="mt-3 rounded border border-cyan-700/40 bg-cyan-950/40 px-3 py-2 text-sm font-medium text-cyan-100"
++        >
++          Simulate Upload
++        </button>
++      </div>
++
++      <div className="mt-4">
++        <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">Uploaded Files</p>
++        <div className="mt-2 space-y-1">
++          {uploadedFiles.length === 0 && (
++            <p className="rounded border border-slate-800 bg-slate-950/70 px-2 py-1 text-sm text-slate-400">No files uploaded yet.</p>
++          )}
++          {uploadedFiles.map((file) => (
++            <p key={file} className="rounded border border-emerald-700/40 bg-emerald-950/20 px-2 py-1 text-sm text-emerald-200">
++              {file}
++            </p>
++          ))}
++        </div>
++      </div>
++    </section>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/WizardFooter.tsx b/src/capabilities/institution-wizard/components/WizardFooter.tsx
+new file mode 100644
+index 0000000..351c980
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/WizardFooter.tsx
+@@ -0,0 +1,47 @@
++type WizardFooterProps = {
++  currentStepId: number;
++  totalSteps: number;
++  isFirstStep: boolean;
++  isLastStep: boolean;
++  onPrevious: () => void;
++  onNext: () => void;
++};
++
++export default function WizardFooter({
++  currentStepId,
++  totalSteps,
++  isFirstStep,
++  isLastStep,
++  onPrevious,
++  onNext,
++}: WizardFooterProps) {
++  return (
++    <footer className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
++        <p className="text-sm text-slate-300">
++          Step {currentStepId} of {totalSteps}
++        </p>
++
++        <div className="flex items-center gap-2">
++          <button
++            type="button"
++            onClick={onPrevious}
++            disabled={isFirstStep}
++            className="rounded border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-medium text-slate-200 disabled:opacity-50"
++          >
++            Previous
++          </button>
++
++          <button
++            type="button"
++            onClick={onNext}
++            disabled={isLastStep}
++            className="rounded border border-cyan-700/40 bg-cyan-950/20 px-3 py-2 text-sm font-medium text-cyan-100 disabled:opacity-50"
++          >
++            {isLastStep ? "Completed" : "Next"}
++          </button>
++        </div>
++      </div>
++    </footer>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/WizardHeader.tsx b/src/capabilities/institution-wizard/components/WizardHeader.tsx
+new file mode 100644
+index 0000000..f80f796
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/WizardHeader.tsx
+@@ -0,0 +1,23 @@
++type WizardHeaderProps = {
++  institutionName: string;
++  currentStepTitle: string;
++};
++
++export default function WizardHeader({ institutionName, currentStepTitle }: WizardHeaderProps) {
++  return (
++    <header className="rounded-lg border border-slate-800 bg-slate-900/40 px-4 py-3">
++      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
++        <div>
++          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">ATLAS / INSTITUTION WIZARD</p>
++          <h1 className="mt-1 text-xl font-semibold text-slate-100 sm:text-2xl">Institution Onboarding Wizard</h1>
++        </div>
++
++        <div className="rounded border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs">
++          <p className="uppercase tracking-[0.14em] text-slate-500">Institution</p>
++          <p className="mt-1 font-semibold text-slate-200">{institutionName}</p>
++          <p className="mt-1 text-cyan-200">{currentStepTitle}</p>
++        </div>
++      </div>
++    </header>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/components/WizardStepper.tsx b/src/capabilities/institution-wizard/components/WizardStepper.tsx
+new file mode 100644
+index 0000000..5412809
+--- /dev/null
++++ b/src/capabilities/institution-wizard/components/WizardStepper.tsx
+@@ -0,0 +1,42 @@
++import type { WizardStepDefinition } from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
++
++type WizardStepperProps = {
++  steps: readonly WizardStepDefinition[];
++  currentStepId: number;
++  onStepSelect: (stepId: number) => void;
++};
++
++export default function WizardStepper({ steps, currentStepId, onStepSelect }: WizardStepperProps) {
++  return (
++    <aside className="space-y-2">
++      <section className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
++        <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Wizard Steps</h2>
++        <div className="mt-3 space-y-2">
++          {steps.map((step) => {
++            const isCurrent = step.id === currentStepId;
++            const isComplete = step.id < currentStepId;
++
++            return (
++              <button
++                key={step.id}
++                type="button"
++                onClick={() => onStepSelect(step.id)}
++                className={`w-full rounded border px-3 py-2 text-left ${
++                  isCurrent
++                    ? "border-cyan-700/70 bg-cyan-950/25 text-cyan-100"
++                    : isComplete
++                      ? "border-emerald-700/40 bg-emerald-950/20 text-emerald-200"
++                      : "border-slate-800 bg-slate-950/70 text-slate-300"
++                }`}
++              >
++                <p className="text-[11px] uppercase tracking-[0.14em] opacity-80">Step {step.id}</p>
++                <p className="mt-1 text-sm font-medium">{step.title}</p>
++                <p className="mt-1 text-xs opacity-80">{step.subtitle}</p>
++              </button>
++            );
++          })}
++        </div>
++      </section>
++    </aside>
++  );
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/hooks/useInstitutionWizard.ts b/src/capabilities/institution-wizard/hooks/useInstitutionWizard.ts
+new file mode 100644
+index 0000000..6cd8ae6
+--- /dev/null
++++ b/src/capabilities/institution-wizard/hooks/useInstitutionWizard.ts
+@@ -0,0 +1,116 @@
++"use client";
++
++import { useMemo, useState } from "react";
++import type {
++  BusinessProfilePreview,
++  InstitutionWizardState,
++  ReviewedField,
++  WizardStepDefinition,
++} from "@/src/capabilities/institution-wizard/state/InstitutionWizardState";
++
++const STEPS: readonly WizardStepDefinition[] = [
++  {
++    id: 1,
++    title: "Upload Trade License",
++    subtitle: "Provide the core registration document",
++  },
++  {
++    id: 2,
++    title: "Review Information",
++    subtitle: "Validate parsed institution details",
++  },
++  {
++    id: 3,
++    title: "Business Profile Preview",
++    subtitle: "Inspect profile before activation",
++  },
++  {
++    id: 4,
++    title: "Relationship Journey Ready",
++    subtitle: "Confirm readiness for journey launch",
++  },
++];
++
++const REVIEWED_FIELDS: readonly ReviewedField[] = [
++  { label: "Legal Name", value: "Al Noor Trading LLC" },
++  { label: "License Number", value: "TL-778190" },
++  { label: "Jurisdiction", value: "Dubai Mainland" },
++  { label: "Issued On", value: "2024-02-12" },
++  { label: "Expiry", value: "2027-02-11" },
++];
++
++const BUSINESS_PROFILE: BusinessProfilePreview = {
++  legalName: "Al Noor Trading LLC",
++  jurisdiction: "Dubai Mainland",
++  businessType: "General Trading",
++  registrationNumber: "REG-554201",
++  establishedOn: "2016-09-04",
++};
++
++const JOURNEY_NOTES: readonly string[] = [
++  "Identity and registration checkpoints are configured.",
++  "Document requirements are preloaded for the relationship journey.",
++  "Institution profile is ready for RM review.",
++];
++
++export interface UseInstitutionWizardResult {
++  readonly state: InstitutionWizardState;
++  readonly isFirstStep: boolean;
++  readonly isLastStep: boolean;
++  goToStep: (stepId: number) => void;
++  goNext: () => void;
++  goPrevious: () => void;
++  simulateUpload: () => void;
++}
++
++export function useInstitutionWizard(): UseInstitutionWizardResult {
++  const [currentStepId, setCurrentStepId] = useState<number>(1);
++  const [uploadedFiles, setUploadedFiles] = useState<readonly string[]>([]);
++
++  const isFirstStep = currentStepId === 1;
++  const isLastStep = currentStepId === STEPS.length;
++
++  const state: InstitutionWizardState = useMemo(
++    () => ({
++      currentStepId,
++      steps: STEPS,
++      uploadedFiles,
++      reviewedFields: REVIEWED_FIELDS,
++      businessProfile: BUSINESS_PROFILE,
++      journeyReadinessNotes: JOURNEY_NOTES,
++    }),
++    [currentStepId, uploadedFiles],
++  );
++
++  const goToStep = (stepId: number): void => {
++    if (stepId < 1 || stepId > STEPS.length) {
++      return;
++    }
++
++    setCurrentStepId(stepId);
++  };
++
++  const goNext = (): void => {
++    setCurrentStepId((previous) => (previous >= STEPS.length ? previous : previous + 1));
++  };
++
++  const goPrevious = (): void => {
++    setCurrentStepId((previous) => (previous <= 1 ? previous : previous - 1));
++  };
++
++  const simulateUpload = (): void => {
++    setUploadedFiles([
++      "trade-license-al-noor.pdf",
++    ]);
++  };
++
++  return {
++    state,
++    isFirstStep,
++    isLastStep,
++    goToStep,
++    goNext,
++    goPrevious,
++    simulateUpload,
++  };
++}
+\ No newline at end of file
+diff --git a/src/capabilities/institution-wizard/state/InstitutionWizardState.ts b/src/capabilities/institution-wizard/state/InstitutionWizardState.ts
+new file mode 100644
+index 0000000..bd6366e
+--- /dev/null
++++ b/src/capabilities/institution-wizard/state/InstitutionWizardState.ts
+@@ -0,0 +1,27 @@
++export interface WizardStepDefinition {
++  readonly id: number;
++  readonly title: string;
++  readonly subtitle: string;
++}
++
++export interface ReviewedField {
++  readonly label: string;
++  readonly value: string;
++}
++
++export interface BusinessProfilePreview {
++  readonly legalName: string;
++  readonly jurisdiction: string;
++  readonly businessType: string;
++  readonly registrationNumber: string;
++  readonly establishedOn: string;
++}
++
++export interface InstitutionWizardState {
++  readonly currentStepId: number;
++  readonly steps: readonly WizardStepDefinition[];
++  readonly uploadedFiles: readonly string[];
++  readonly reviewedFields: readonly ReviewedField[];
++  readonly businessProfile: BusinessProfilePreview;
++  readonly journeyReadinessNotes: readonly string[];
++}
+\ No newline at end of file

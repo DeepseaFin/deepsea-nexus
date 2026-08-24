@@ -1,0 +1,420 @@
+diff --git a/components/customer/passport/BusinessPassportWorkspace.tsx b/components/customer/passport/BusinessPassportWorkspace.tsx
+index d7664b2..37d003a 100644
+--- a/components/customer/passport/BusinessPassportWorkspace.tsx
++++ b/components/customer/passport/BusinessPassportWorkspace.tsx
+@@ -294,8 +294,9 @@ export default function BusinessPassportWorkspace({
+         disabled: section.disabled,
+         dirty: section.dirty,
+         validation: section.validationStatus,
++        recommended: orchestrator.nextRecommendedSection === section.id,
+       })),
+-    [orchestrator.sections],
++    [orchestrator.nextRecommendedSection, orchestrator.sections],
+   );
+ 
+   const actionItems = useMemo<readonly PassportQuickAction[]>(
+@@ -374,6 +375,7 @@ export default function BusinessPassportWorkspace({
+           onNextSection={orchestrator.goToNextSection}
+           canGoPrevious={canGoPrevious}
+           canGoNext={canGoNext}
++          recommendedSectionId={orchestrator.nextRecommendedSection}
+         />
+       </section>
+ 
+diff --git a/components/customer/passport/ContextNavigation.tsx b/components/customer/passport/ContextNavigation.tsx
+index d48e401..d0e6bcf 100644
+--- a/components/customer/passport/ContextNavigation.tsx
++++ b/components/customer/passport/ContextNavigation.tsx
+@@ -12,6 +12,7 @@ export interface ContextNavigationItem {
+   readonly disabled?: boolean;
+   readonly dirty?: boolean;
+   readonly validation?: BusinessPassportValidationStatus;
++  readonly recommended?: boolean;
+ }
+ 
+ export interface ContextNavigationProps {
+@@ -21,6 +22,7 @@ export interface ContextNavigationProps {
+   readonly onNextSection?: () => void;
+   readonly canGoPrevious?: boolean;
+   readonly canGoNext?: boolean;
++  readonly recommendedSectionId?: string | null;
+ }
+ 
+ function validationClass(status: BusinessPassportValidationStatus | undefined): string {
+@@ -46,6 +48,7 @@ export default function ContextNavigation({
+   onNextSection,
+   canGoPrevious = false,
+   canGoNext = false,
++  recommendedSectionId,
+ }: ContextNavigationProps) {
+   const visibleItems = useMemo(() => {
+     const orderById = new Map(getAllSections().map((section) => [section.id, section.order] as const));
+@@ -79,7 +82,16 @@ export default function ContextNavigation({
+       <nav aria-label="Section navigation" className="mt-3">
+         <ul className="flex flex-wrap gap-2">
+           {visibleItems.map((item) => {
+-            const stateLabel = item.completed ? "Completed" : item.disabled ? "Disabled" : item.dirty ? "Edited" : "Open";
++            const isRecommended = item.recommended ?? (recommendedSectionId != null && recommendedSectionId === item.id);
++            const stateLabel = item.completed
++              ? "Completed"
++              : item.disabled
++                ? "Blocked"
++                : isRecommended
++                  ? "Recommended"
++                  : item.dirty
++                    ? "Edited"
++                    : "Open";
+ 
+             return (
+               <li key={item.id}>
+diff --git a/lib/customer/passport/business-passport-section-registry.ts b/lib/customer/passport/business-passport-section-registry.ts
+index 24a1538..82b125b 100644
+--- a/lib/customer/passport/business-passport-section-registry.ts
++++ b/lib/customer/passport/business-passport-section-registry.ts
+@@ -44,12 +44,15 @@ export interface BusinessPassportSectionRegistryItem {
+   readonly title: string;
+   readonly description: string;
+   readonly order: number;
++  readonly workflowOrder?: number;
+   readonly enabled: boolean;
+   readonly icon: BusinessPassportSectionIconId;
+   readonly completionStrategy: BusinessPassportCompletionStrategyId;
+   readonly validationStrategy: BusinessPassportValidationStrategyId;
+   readonly navigationVisible: boolean;
+   readonly anchorId: string;
++  readonly prerequisites?: readonly BusinessPassportSectionId[];
++  readonly recommended?: boolean;
+ }
+ 
+ const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegistryItem[] = [
+@@ -58,125 +61,148 @@ const BUSINESS_PASSPORT_SECTION_REGISTRY: readonly BusinessPassportSectionRegist
+     title: "Identity",
+     description: "Legal and registration identity context.",
+     order: 1,
++    workflowOrder: 1,
+     enabled: true,
+     icon: "identity",
+     completionStrategy: "identity",
+     validationStrategy: "identity",
+     navigationVisible: true,
+     anchorId: "passport-identity",
++    prerequisites: [],
++    recommended: true,
+   },
+   {
+     id: "ownership",
+     title: "Ownership",
+     description: "Ownership structure and institution profile context.",
+     order: 2,
++    workflowOrder: 2,
+     enabled: true,
+     icon: "ownership",
+     completionStrategy: "ownership",
+     validationStrategy: "ownership",
+     navigationVisible: true,
+     anchorId: "passport-identity",
++    prerequisites: ["identity"],
+   },
+   {
+     id: "documents",
+     title: "Documents",
+     description: "Document readiness and lifecycle coverage.",
+     order: 3,
++    workflowOrder: 3,
+     enabled: true,
+     icon: "documents",
+     completionStrategy: "documents",
+     validationStrategy: "documents",
+     navigationVisible: true,
+     anchorId: "passport-documents",
++    prerequisites: ["ownership"],
+   },
+   {
+     id: "relationships",
+     title: "Relationships",
+     description: "Relationship strength and engagement signals.",
+     order: 4,
++    workflowOrder: 4,
+     enabled: true,
+     icon: "relationships",
+     completionStrategy: "relationships",
+     validationStrategy: "relationships",
+     navigationVisible: true,
+     anchorId: "passport-health",
++    prerequisites: ["documents"],
+   },
+   {
+     id: "compliance",
+     title: "Compliance",
+     description: "Compliance and governance control posture.",
+     order: 5,
++    workflowOrder: 5,
+     enabled: true,
+     icon: "compliance",
+     completionStrategy: "compliance",
+     validationStrategy: "compliance",
+     navigationVisible: true,
+     anchorId: "passport-evidence",
++    prerequisites: ["relationships"],
+   },
+   {
+     id: "financials",
+     title: "Financials",
+     description: "Financial profile completeness and validation.",
+     order: 6,
++    workflowOrder: 6,
+     enabled: true,
+     icon: "financials",
+     completionStrategy: "financials",
+     validationStrategy: "financials",
+     navigationVisible: true,
+     anchorId: "passport-metrics",
++    prerequisites: ["compliance"],
+   },
+   {
+     id: "evidence",
+     title: "Evidence",
+     description: "Evidence verification and outstanding artifacts.",
+     order: 7,
++    workflowOrder: 7,
+     enabled: true,
+     icon: "evidence",
+     completionStrategy: "evidence",
+     validationStrategy: "evidence",
+     navigationVisible: true,
+     anchorId: "passport-evidence",
++    prerequisites: ["financials"],
+   },
+   {
+     id: "knowledge",
+     title: "Knowledge",
+     description: "Knowledge confidence and coverage signals.",
+     order: 8,
++    workflowOrder: 8,
+     enabled: true,
+     icon: "knowledge",
+     completionStrategy: "knowledge",
+     validationStrategy: "knowledge",
+     navigationVisible: true,
+     anchorId: "passport-knowledge",
++    prerequisites: ["evidence"],
+   },
+   {
+     id: "workflow",
+     title: "Workflow",
+     description: "Workflow stage progress and blockers.",
+     order: 9,
++    workflowOrder: 9,
+     enabled: true,
+     icon: "workflow",
+     completionStrategy: "workflow",
+     validationStrategy: "workflow",
+     navigationVisible: true,
+     anchorId: "passport-workflow",
++    prerequisites: ["knowledge"],
+   },
+   {
+     id: "activity",
+     title: "Activity",
+     description: "Recent operational activity and execution cadence.",
+     order: 10,
++    workflowOrder: 10,
+     enabled: true,
+     icon: "activity",
+     completionStrategy: "activity",
+     validationStrategy: "activity",
+     navigationVisible: true,
+     anchorId: "passport-activity",
++    prerequisites: ["workflow"],
+   },
+ ] as const;
+ 
+ function sortedSections(): readonly BusinessPassportSectionRegistryItem[] {
+-  return [...BUSINESS_PASSPORT_SECTION_REGISTRY].sort((left, right) => left.order - right.order);
++  return [...BUSINESS_PASSPORT_SECTION_REGISTRY].sort(
++    (left, right) => (left.workflowOrder ?? left.order) - (right.workflowOrder ?? right.order),
++  );
+ }
+ 
+ export function getAllSections(): readonly BusinessPassportSectionRegistryItem[] {
+diff --git a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+index 788446f..86f65fd 100644
+--- a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
++++ b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+@@ -59,6 +59,13 @@ export interface BusinessPassportWorkspaceLoadingState {
+   readonly isLoading: boolean;
+ }
+ 
++export interface BusinessPassportWorkflowState {
++  readonly availableSections: readonly BusinessPassportSectionId[];
++  readonly blockedSections: readonly BusinessPassportSectionId[];
++  readonly completedSections: readonly BusinessPassportSectionId[];
++  readonly nextRecommendedSection: BusinessPassportSectionId | null;
++}
++
+ export type BusinessPassportWorkspaceFilters = Readonly<Record<string, string | number | boolean | readonly string[]>>;
+ 
+ export interface BusinessPassportWorkspaceViewState {
+@@ -84,6 +91,10 @@ export interface BusinessPassportWorkspaceOrchestrator {
+   readonly completion: BusinessPassportCompletionState;
+   readonly validation: BusinessPassportValidationState;
+   readonly dirtyState: BusinessPassportDirtyState;
++  readonly availableSections: readonly BusinessPassportSectionId[];
++  readonly blockedSections: readonly BusinessPassportSectionId[];
++  readonly nextRecommendedSection: BusinessPassportSectionId | null;
++  readonly workflow: BusinessPassportWorkflowState;
+   readonly viewState: BusinessPassportWorkspaceViewState;
+   readonly workspaceActions: readonly BusinessPassportWorkspaceAction[];
+   readonly setActiveSection: (sectionId: BusinessPassportSectionId) => void;
+@@ -99,4 +110,5 @@ export interface BusinessPassportWorkspaceOrchestrator {
+   readonly markSectionCompleted: (sectionId: BusinessPassportSectionId, completed: boolean) => void;
+   readonly setSectionValidation: (sectionId: BusinessPassportSectionId, status: BusinessPassportValidationStatus) => void;
+   readonly setSectionDirty: (sectionId: BusinessPassportSectionId, dirty: boolean) => void;
++  readonly canNavigate: (sectionId: BusinessPassportSectionId) => boolean;
+ }
+diff --git a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+index ea35806..2730f57 100644
+--- a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
++++ b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+@@ -6,6 +6,10 @@ import {
+   getNextSection,
+   getPreviousSection,
+ } from "@/lib/customer/passport/business-passport-section-registry";
++import {
++  canNavigateToSection,
++  evaluateBusinessPassportWorkflow,
++} from "@/lib/customer/passport/business-passport-workflow-engine";
+ import {
+   loadBusinessPassportWorkspacePersistence,
+   saveBusinessPassportWorkspacePersistence,
+@@ -188,16 +192,29 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     };
+   }, [sections]);
+ 
++  const workflow = useMemo(
++    () =>
++      evaluateBusinessPassportWorkflow({
++        sections,
++      }),
++    [sections],
++  );
++
++  const canNavigate = useCallback(
++    (sectionId: BusinessPassportSectionId) => canNavigateToSection(sectionId, workflow),
++    [workflow],
++  );
++
+   const setActiveSection = useCallback(
+     (sectionId: BusinessPassportSectionId) => {
+       const target = sections.find((section) => section.id === sectionId);
+-      if (!target || target.disabled) {
++      if (!target || target.disabled || !canNavigate(sectionId)) {
+         return;
+       }
+ 
+       setActiveSectionState(sectionId);
+     },
+-    [sections],
++    [canNavigate, sections],
+   );
+ 
+   const jumpToSection = useCallback(
+@@ -208,18 +225,30 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   );
+ 
+   const goToPreviousSection = useCallback(() => {
+-    const previousSection = getPreviousSection(activeSection)?.id;
+-    if (previousSection) {
+-      setActiveSectionState(previousSection);
++    let previousSection = getPreviousSection(activeSection)?.id;
++
++    while (previousSection) {
++      if (canNavigate(previousSection)) {
++        setActiveSectionState(previousSection);
++        return;
++      }
++
++      previousSection = getPreviousSection(previousSection)?.id;
+     }
+-  }, [activeSection]);
++  }, [activeSection, canNavigate]);
+ 
+   const goToNextSection = useCallback(() => {
+-    const nextSection = getNextSection(activeSection)?.id;
+-    if (nextSection) {
+-      setActiveSectionState(nextSection);
++    let nextSection = getNextSection(activeSection)?.id;
++
++    while (nextSection) {
++      if (canNavigate(nextSection)) {
++        setActiveSectionState(nextSection);
++        return;
++      }
++
++      nextSection = getNextSection(nextSection)?.id;
+     }
+-  }, [activeSection]);
++  }, [activeSection, canNavigate]);
+ 
+   const markSectionCompleted = useCallback((sectionId: BusinessPassportSectionId, completed: boolean) => {
+     setSectionStateById((currentState) => ({
+@@ -303,8 +332,15 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   }, [activeSection, expandedSections, filters, input.persistenceKey, sectionIds, selectedTab]);
+ 
+   const workspaceActions = useMemo<readonly BusinessPassportWorkspaceAction[]>(() => {
+-    const previousSectionId = getPreviousSection(activeSection)?.id;
+-    const nextSectionId = getNextSection(activeSection)?.id;
++    let previousSectionId = getPreviousSection(activeSection)?.id;
++    while (previousSectionId && !canNavigate(previousSectionId)) {
++      previousSectionId = getPreviousSection(previousSectionId)?.id;
++    }
++
++    let nextSectionId = getNextSection(activeSection)?.id;
++    while (nextSectionId && !canNavigate(nextSectionId)) {
++      nextSectionId = getNextSection(nextSectionId)?.id;
++    }
+ 
+     const baseActions: readonly BusinessPassportWorkspaceAction[] = [
+       {
+@@ -342,17 +378,32 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     }));
+ 
+     return [...baseActions, ...customActions];
+-  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
++  }, [activeSection, canNavigate, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, setSectionDirty, setSectionValidation]);
++
++  const workflowDisabledSet = useMemo(() => new Set(workflow.blockedSections), [workflow.blockedSections]);
++
++  const workflowAwareSections = useMemo(
++    () =>
++      sections.map((section) => ({
++        ...section,
++        disabled: section.disabled || workflowDisabledSet.has(section.id),
++      })),
++    [sections, workflowDisabledSet],
++  );
+ 
+   return {
+     loadingState: {
+       isLoading: Boolean(input.isLoading),
+     },
+     activeSection,
+-    sections,
++    sections: workflowAwareSections,
+     completion,
+     validation,
+     dirtyState,
++    availableSections: workflow.availableSections,
++    blockedSections: workflow.blockedSections,
++    nextRecommendedSection: workflow.nextRecommendedSection,
++    workflow,
+     viewState: {
+       expandedSections,
+       selectedTab,
+@@ -373,5 +424,6 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     markSectionCompleted,
+     setSectionValidation,
+     setSectionDirty,
++    canNavigate,
+   };
+ }

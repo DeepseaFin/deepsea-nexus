@@ -1,0 +1,141 @@
+diff --git a/src/capabilities/journey/hooks/useJourney.ts b/src/capabilities/journey/hooks/useJourney.ts
+index df8b2b6..4355569 100644
+--- a/src/capabilities/journey/hooks/useJourney.ts
++++ b/src/capabilities/journey/hooks/useJourney.ts
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useMemo, useState } from "react";
++import { useEffect, useMemo, useState } from "react";
+ import {
+   JourneyStatus,
+   JourneyStep,
+@@ -12,6 +12,19 @@ import {
+   type JourneyStep as JourneyStepType,
+   type JourneyTimelineEvent,
+ } from "@/lib/journey";
++import { resolveRelationshipJourneyCompletion } from "@/lib/relationship-journey/relationship-journey-completion";
++import {
++  loadRelationshipJourneyWorkspacePersistence,
++  saveRelationshipJourneyWorkspacePersistence,
++} from "@/lib/relationship-journey/relationship-journey-persistence";
++import {
++  createRelationshipJourneyWorkspaceRegistry,
++  formatRelationshipJourneyStep,
++} from "@/lib/relationship-journey/relationship-journey-workspace-registry";
++import {
++  canNavigateRelationshipJourneyStep,
++  evaluateRelationshipJourneyWorkflow,
++} from "@/lib/relationship-journey/relationship-journey-workflow";
+ import type { JourneyWorkspaceState } from "@/src/capabilities/journey/state/JourneyWorkspaceState";
+ 
+ type UseJourneyInput = {
+@@ -39,16 +52,25 @@ function nowIso(): string {
+ }
+ 
+ function asTitle(step: JourneyStepType): string {
+-  return step
+-    .split("_")
+-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+-    .join(" ");
++  return formatRelationshipJourneyStep(step);
+ }
+ 
+ export function useJourney(input: UseJourneyInput): UseJourneyResult {
+   const stateMachine = useMemo(() => createJourneyStateMachine({ stepOrder: input.steps }), [input.steps]);
+   const stepResolver = useMemo(() => createJourneyStepResolver({ stepOrder: input.steps }), [input.steps]);
+   const recommendationEngine = useMemo(() => createJourneyRecommendationEngine(), []);
++  const workspaceRegistry = useMemo(() => createRelationshipJourneyWorkspaceRegistry(input.steps), [input.steps]);
++  const workspaceStepIds = useMemo(
++    () => workspaceRegistry.getEnabledSections().map((section) => section.id),
++    [workspaceRegistry],
++  );
++  const persistedWorkspaceState = useMemo(
++    () =>
++      loadRelationshipJourneyWorkspacePersistence({
++        stepIds: workspaceStepIds,
++      }),
++    [workspaceStepIds],
++  );
+ 
+   const [journeyState, setJourneyState] = useState<JourneyState>(input.initialState);
+   const [timeline, setTimeline] = useState<readonly JourneyTimelineEvent[]>(input.initialTimeline);
+@@ -57,11 +79,40 @@ export function useJourney(input: UseJourneyInput): UseJourneyResult {
+   const [nextAction, setNextAction] = useState<string>(input.initialNextAction);
+   const [actions, setActions] = useState<readonly string[]>(input.initialActions);
+ 
+-  const progress = useMemo(
+-    () => stepResolver.resolveProgress(journeyState.currentStep, journeyState.completedSteps),
+-    [journeyState.currentStep, journeyState.completedSteps, stepResolver],
++  const progress = useMemo(() => {
++    const completedSteps = stepResolver.resolveCompletedSteps(journeyState.currentStep, journeyState.completedSteps);
++    const remainingSteps = stepResolver.resolveRemainingSteps(journeyState.currentStep, completedSteps);
++    return resolveRelationshipJourneyCompletion(input.steps, completedSteps, remainingSteps);
++  }, [input.steps, journeyState.completedSteps, journeyState.currentStep, stepResolver]);
++
++  const workflow = useMemo(
++    () =>
++      evaluateRelationshipJourneyWorkflow({
++        sectionDefinitions: workspaceRegistry.getEnabledSections(),
++        steps: input.steps,
++        currentStep: journeyState.currentStep,
++        completedSteps: journeyState.completedSteps,
++      }),
++    [input.steps, journeyState.completedSteps, journeyState.currentStep, workspaceRegistry],
+   );
+ 
++  useEffect(() => {
++    saveRelationshipJourneyWorkspacePersistence({
++      stepIds: workspaceStepIds,
++      activeStep: journeyState.currentStep,
++      expandedSteps: persistedWorkspaceState.expandedSteps,
++      selectedTab: persistedWorkspaceState.selectedTab,
++      filters: persistedWorkspaceState.filters,
++      lastVisitedAt: nowIso(),
++    });
++  }, [
++    journeyState.currentStep,
++    persistedWorkspaceState.expandedSteps,
++    persistedWorkspaceState.filters,
++    persistedWorkspaceState.selectedTab,
++    workspaceStepIds,
++  ]);
++
+   const recommendations = useMemo(() => {
+     const generated = recommendationEngine.forState(journeyState, nowIso());
+     return [...generated, ...baseRecommendations];
+@@ -107,20 +158,32 @@ export function useJourney(input: UseJourneyInput): UseJourneyResult {
+   };
+ 
+   const goToNext = (): void => {
+-    const next = stateMachine.getNextStep(journeyState.currentStep);
++    const next = workspaceRegistry.getNextSection(journeyState.currentStep)?.id ?? null;
+     if (!next) {
+       appendTimeline("No next step", "Journey is already at the final step.");
+       return;
+     }
++
++    if (!canNavigateRelationshipJourneyStep(next, workflow)) {
++      appendTimeline("No next step", "Next journey step is currently unavailable.");
++      return;
++    }
++
+     goToStep(next, "Next");
+   };
+ 
+   const goToPrevious = (): void => {
+-    const previous = stateMachine.getPreviousStep(journeyState.currentStep);
++    const previous = workspaceRegistry.getPreviousSection(journeyState.currentStep)?.id ?? null;
+     if (!previous) {
+       appendTimeline("No previous step", "Current step is the first step.");
+       return;
+     }
++
++    if (!canNavigateRelationshipJourneyStep(previous, workflow)) {
++      appendTimeline("No previous step", "Previous journey step is currently unavailable.");
++      return;
++    }
++
+     goToStep(previous, "Previous");
+   };
+ 

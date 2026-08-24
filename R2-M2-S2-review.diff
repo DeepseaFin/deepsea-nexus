@@ -1,0 +1,48 @@
+diff --git a/lib/workspaces/workspace-command-engine.ts b/lib/workspaces/workspace-command-engine.ts
+index 3ffd914..f3e3299 100644
+--- a/lib/workspaces/workspace-command-engine.ts
++++ b/lib/workspaces/workspace-command-engine.ts
+@@ -8,6 +8,10 @@ import {
+   createWorkspaceChangeMiddleware,
+   type WorkspaceChangeMiddlewareState,
+ } from "@/lib/workspaces/workspace-change-engine";
++import {
++  createWorkspaceSnapshotMiddleware,
++  getWorkspaceSnapshotEngine,
++} from "@/lib/workspaces/workspace-snapshot-engine";
+ import {
+   getWorkspaceEventBus,
+   nowWorkspaceEventTimestamp,
+@@ -211,6 +215,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
+   let middlewareCounter = 0;
+   const auditRecorder = getWorkspaceAuditRecorder();
+   const changeRecorder = getWorkspaceChangeRecorder();
++  const snapshotEngine = getWorkspaceSnapshotEngine();
+ 
+   const state: WorkspaceCommandEngineState = {
+     eventBus: options?.eventBus ?? getWorkspaceEventBus(),
+@@ -346,6 +351,16 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
+     id: "workspace.command.middleware.change-tracking",
+   });
+ 
++  const snapshotMiddleware = createWorkspaceSnapshotMiddleware<
++    WorkspaceCommand,
++    WorkspaceCommandContext,
++    WorkspaceCommandResult,
++    WorkspaceCommandPipelineState
++  >({
++    snapshotEngine,
++    id: "workspace.command.middleware.snapshot-capture",
++  });
++
+   const auditCompletionMiddleware: WorkspaceCommandMiddleware<
+     WorkspaceCommand,
+     WorkspaceCommandContext,
+@@ -462,6 +477,7 @@ export function createWorkspaceCommandEngine(options?: CreateWorkspaceCommandEng
+   pipeline.registerMiddleware(validationMiddleware);
+   pipeline.registerMiddleware(auditStartMiddleware);
+   pipeline.registerMiddleware(changeMiddleware);
++  pipeline.registerMiddleware(snapshotMiddleware);
+   pipeline.registerMiddleware(auditCompletionMiddleware);
+   pipeline.registerMiddleware(eventPublicationMiddleware);
+ 

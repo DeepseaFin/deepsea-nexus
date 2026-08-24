@@ -1,0 +1,260 @@
+diff --git a/lib/journey/constants/JourneyStatus.ts b/lib/journey/constants/JourneyStatus.ts
+new file mode 100644
+index 0000000..e0edd83
+--- /dev/null
++++ b/lib/journey/constants/JourneyStatus.ts
+@@ -0,0 +1,7 @@
++export enum JourneyStatus {
++  Draft = "draft",
++  InProgress = "in_progress",
++  Paused = "paused",
++  Completed = "completed",
++  Cancelled = "cancelled",
++}
+\ No newline at end of file
+diff --git a/lib/journey/constants/JourneyStep.ts b/lib/journey/constants/JourneyStep.ts
+new file mode 100644
+index 0000000..4ea89de
+--- /dev/null
++++ b/lib/journey/constants/JourneyStep.ts
+@@ -0,0 +1,12 @@
++export enum JourneyStep {
++  BeginRelationship = "begin_relationship",
++  Identity = "identity",
++  DocumentCollection = "document_collection",
++  OracleProcessing = "oracle_processing",
++  EvidenceValidation = "evidence_validation",
++  KnowledgeGeneration = "knowledge_generation",
++  BusinessPassport = "business_passport",
++  CreditReadiness = "credit_readiness",
++  Approval = "approval",
++  Completed = "completed",
++}
+\ No newline at end of file
+diff --git a/lib/journey/domain/Journey.ts b/lib/journey/domain/Journey.ts
+new file mode 100644
+index 0000000..6f623ce
+--- /dev/null
++++ b/lib/journey/domain/Journey.ts
+@@ -0,0 +1,21 @@
++import type { JourneyStatus } from "@/lib/journey/constants/JourneyStatus";
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++import type { JourneyRecommendation } from "@/lib/journey/domain/JourneyRecommendation";
++import type { JourneyTimelineEvent } from "@/lib/journey/domain/JourneyTimelineEvent";
++
++export type JourneyId = string;
++export type BusinessId = string;
++
++export interface Journey {
++  readonly journeyId: JourneyId;
++  readonly businessId: BusinessId;
++  readonly currentStep: JourneyStep;
++  readonly status: JourneyStatus;
++  readonly startedBy: string;
++  readonly startedAt: string;
++  readonly lastUpdated: string;
++  readonly completionPercentage: number;
++  readonly completedSteps: readonly JourneyStep[];
++  readonly recommendations: readonly JourneyRecommendation[];
++  readonly timeline: readonly JourneyTimelineEvent[];
++}
+\ No newline at end of file
+diff --git a/lib/journey/domain/JourneyProgress.ts b/lib/journey/domain/JourneyProgress.ts
+new file mode 100644
+index 0000000..b586f44
+--- /dev/null
++++ b/lib/journey/domain/JourneyProgress.ts
+@@ -0,0 +1,8 @@
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++
++export interface JourneyProgress {
++  readonly completionPercentage: number;
++  readonly completedSteps: readonly JourneyStep[];
++  readonly remainingSteps: readonly JourneyStep[];
++  readonly isComplete: boolean;
++}
+\ No newline at end of file
+diff --git a/lib/journey/domain/JourneyRecommendation.ts b/lib/journey/domain/JourneyRecommendation.ts
+new file mode 100644
+index 0000000..5a8a57a
+--- /dev/null
++++ b/lib/journey/domain/JourneyRecommendation.ts
+@@ -0,0 +1,8 @@
++export type JourneyRecommendationPriority = "low" | "medium" | "high" | "critical";
++
++export interface JourneyRecommendation {
++  readonly title: string;
++  readonly description: string;
++  readonly priority: JourneyRecommendationPriority;
++  readonly generatedAt: string;
++}
+\ No newline at end of file
+diff --git a/lib/journey/domain/JourneyTimelineEvent.ts b/lib/journey/domain/JourneyTimelineEvent.ts
+new file mode 100644
+index 0000000..88d6e29
+--- /dev/null
++++ b/lib/journey/domain/JourneyTimelineEvent.ts
+@@ -0,0 +1,6 @@
++export interface JourneyTimelineEvent {
++  readonly timestamp: string;
++  readonly event: string;
++  readonly performedBy: string;
++  readonly notes: string;
++}
+\ No newline at end of file
+diff --git a/lib/journey/index.ts b/lib/journey/index.ts
+new file mode 100644
+index 0000000..01bfae4
+--- /dev/null
++++ b/lib/journey/index.ts
+@@ -0,0 +1,17 @@
++export * from "@/lib/journey/constants/JourneyStatus";
++export * from "@/lib/journey/constants/JourneyStep";
++
++export * from "@/lib/journey/domain/Journey";
++export * from "@/lib/journey/domain/JourneyProgress";
++export * from "@/lib/journey/domain/JourneyTimelineEvent";
++export * from "@/lib/journey/domain/JourneyRecommendation";
++
++export * from "@/lib/journey/services/JourneyService";
++export * from "@/lib/journey/services/JourneyValidator";
++export * from "@/lib/journey/services/JourneyProgressCalculator";
++
++export * from "@/lib/journey/repositories/JourneyRepository";
++
++export * from "@/lib/journey/types/JourneySummary";
++export * from "@/lib/journey/types/JourneyMetrics";
++export * from "@/lib/journey/types/JourneySession";
+\ No newline at end of file
+diff --git a/lib/journey/repositories/JourneyRepository.ts b/lib/journey/repositories/JourneyRepository.ts
+new file mode 100644
+index 0000000..1c9df12
+--- /dev/null
++++ b/lib/journey/repositories/JourneyRepository.ts
+@@ -0,0 +1,11 @@
++import type { JourneyStatus } from "@/lib/journey/constants/JourneyStatus";
++import type { Journey } from "@/lib/journey/domain/Journey";
++import type { BusinessId } from "@/lib/journey/domain/Journey";
++import type { JourneyId } from "@/lib/journey/domain/Journey";
++
++export interface JourneyRepository {
++  findById(journeyId: JourneyId): Promise<Journey | null>;
++  save(journey: Journey): Promise<void>;
++  listByBusinessId(businessId: BusinessId): Promise<readonly Journey[]>;
++  listByStatus(status: JourneyStatus): Promise<readonly Journey[]>;
++}
+\ No newline at end of file
+diff --git a/lib/journey/services/JourneyProgressCalculator.ts b/lib/journey/services/JourneyProgressCalculator.ts
+new file mode 100644
+index 0000000..fb568c8
+--- /dev/null
++++ b/lib/journey/services/JourneyProgressCalculator.ts
+@@ -0,0 +1,6 @@
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++import type { JourneyProgress } from "@/lib/journey/domain/JourneyProgress";
++
++export interface JourneyProgressCalculator {
++  calculate(completedSteps: readonly JourneyStep[]): JourneyProgress;
++}
+\ No newline at end of file
+diff --git a/lib/journey/services/JourneyService.ts b/lib/journey/services/JourneyService.ts
+new file mode 100644
+index 0000000..a819495
+--- /dev/null
++++ b/lib/journey/services/JourneyService.ts
+@@ -0,0 +1,21 @@
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++import type { Journey } from "@/lib/journey/domain/Journey";
++import type { BusinessId } from "@/lib/journey/domain/Journey";
++import type { JourneyId } from "@/lib/journey/domain/Journey";
++import type { JourneyRecommendation } from "@/lib/journey/domain/JourneyRecommendation";
++import type { JourneyTimelineEvent } from "@/lib/journey/domain/JourneyTimelineEvent";
++
++export interface StartJourneyInput {
++  readonly journeyId: JourneyId;
++  readonly businessId: BusinessId;
++  readonly startedBy: string;
++  readonly startedAt: string;
++}
++
++export interface JourneyService {
++  startJourney(input: StartJourneyInput): Promise<Journey>;
++  getJourney(journeyId: JourneyId): Promise<Journey | null>;
++  moveToStep(journeyId: JourneyId, step: JourneyStep, updatedBy: string, updatedAt: string): Promise<Journey>;
++  addRecommendation(journeyId: JourneyId, recommendation: JourneyRecommendation, updatedBy: string): Promise<Journey>;
++  addTimelineEvent(journeyId: JourneyId, timelineEvent: JourneyTimelineEvent): Promise<Journey>;
++}
+\ No newline at end of file
+diff --git a/lib/journey/services/JourneyValidator.ts b/lib/journey/services/JourneyValidator.ts
+new file mode 100644
+index 0000000..4a803ff
+--- /dev/null
++++ b/lib/journey/services/JourneyValidator.ts
+@@ -0,0 +1,11 @@
++import type { Journey } from "@/lib/journey/domain/Journey";
++
++export interface JourneyValidationResult {
++  readonly isValid: boolean;
++  readonly errors: readonly string[];
++}
++
++export interface JourneyValidator {
++  validateForCreate(journey: Journey): JourneyValidationResult;
++  validateForUpdate(journey: Journey): JourneyValidationResult;
++}
+\ No newline at end of file
+diff --git a/lib/journey/types/JourneyMetrics.ts b/lib/journey/types/JourneyMetrics.ts
+new file mode 100644
+index 0000000..e63a8b1
+--- /dev/null
++++ b/lib/journey/types/JourneyMetrics.ts
+@@ -0,0 +1,7 @@
++export interface JourneyMetrics {
++  readonly totalJourneys: number;
++  readonly activeJourneys: number;
++  readonly completedJourneys: number;
++  readonly cancelledJourneys: number;
++  readonly averageCompletionPercentage: number;
++}
+\ No newline at end of file
+diff --git a/lib/journey/types/JourneySession.ts b/lib/journey/types/JourneySession.ts
+new file mode 100644
+index 0000000..8f3372e
+--- /dev/null
++++ b/lib/journey/types/JourneySession.ts
+@@ -0,0 +1,13 @@
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++import type { BusinessId } from "@/lib/journey/domain/Journey";
++import type { JourneyId } from "@/lib/journey/domain/Journey";
++
++export interface JourneySession {
++  readonly sessionId: string;
++  readonly journeyId: JourneyId;
++  readonly businessId: BusinessId;
++  readonly activeStep: JourneyStep;
++  readonly startedAt: string;
++  readonly endedAt?: string;
++  readonly actor: string;
++}
+\ No newline at end of file
+diff --git a/lib/journey/types/JourneySummary.ts b/lib/journey/types/JourneySummary.ts
+new file mode 100644
+index 0000000..4c9fcb6
+--- /dev/null
++++ b/lib/journey/types/JourneySummary.ts
+@@ -0,0 +1,14 @@
++import type { JourneyStatus } from "@/lib/journey/constants/JourneyStatus";
++import type { JourneyStep } from "@/lib/journey/constants/JourneyStep";
++import type { BusinessId } from "@/lib/journey/domain/Journey";
++import type { JourneyId } from "@/lib/journey/domain/Journey";
++
++export interface JourneySummary {
++  readonly journeyId: JourneyId;
++  readonly businessId: BusinessId;
++  readonly status: JourneyStatus;
++  readonly currentStep: JourneyStep;
++  readonly completionPercentage: number;
++  readonly startedAt: string;
++  readonly lastUpdated: string;
++}
+\ No newline at end of file

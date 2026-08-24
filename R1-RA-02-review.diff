@@ -1,0 +1,271 @@
+diff --git a/app/atlas/business-passport/page.tsx b/app/atlas/business-passport/page.tsx
+index a93f009..a63ea73 100644
+--- a/app/atlas/business-passport/page.tsx
++++ b/app/atlas/business-passport/page.tsx
+@@ -1,5 +1,11 @@
+ import BusinessPassportWorkspace from "@/components/customer/passport/BusinessPassportWorkspace";
+ import JourneyScreen from "@/components/customer/passport/JourneyScreen";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Business Passport | Deepsea Nexus",
++  description: "Institution identity and readiness workspace for relationship, evidence, workflow, and decision support.",
++};
+ 
+ export default function BusinessPassportPage() {
+   return (
+diff --git a/components/atlas/dashboard/ExecutiveCommandCenter.tsx b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+index 0803f6e..5f487ad 100644
+--- a/components/atlas/dashboard/ExecutiveCommandCenter.tsx
++++ b/components/atlas/dashboard/ExecutiveCommandCenter.tsx
+@@ -229,7 +229,7 @@ export default function ExecutiveCommandCenter() {
+   return (
+     <WorkspaceScaffold
+       title="Executive Command Center"
+-      subtitle="Executive home page for portfolio oversight, work queue prioritization, relationship posture, and institutional intelligence."
++      subtitle="Executive workspace for institutional oversight, current risk posture, and the next operational decisions."
+       status={{ label: "Live", tone: "success" }}
+       headerFields={[
+         { label: "Operating Surface", value: "ATLAS Executive Home" },
+@@ -239,18 +239,21 @@ export default function ExecutiveCommandCenter() {
+         { label: "Collections Due", value: portfolioMetrics[4].value },
+       ]}
+       actions={[
+-        { label: "New Client", href: "/atlas/clients" },
+-        { label: "New Deal", href: "/atlas/deals/new" },
+         { label: "Institution 360", href: "/atlas/institution-home" },
+-        { label: "Operations Control", href: "/atlas/operations-control" },
+-        { label: "Upload Documents", href: "/atlas/oracle" },
+         { label: "Business Passport", href: "/atlas/business-passport" },
+         { label: "Relationship Journey", href: "/atlas/journey" },
++        { label: "Operations Control", href: "/atlas/operations-control" },
++        { label: "Upload Documents", href: "/atlas/oracle" },
++        { label: "New Deal", href: "/atlas/deals/new" },
++        { label: "New Client", href: "/atlas/clients" },
+       ]}
+       activity={recentActivity}
+       main={(
+         <div className="space-y-4">
+           <SectionCard title="Portfolio Overview" icon={BriefcaseBusiness} badge={{ label: "Executive", variant: "info" }}>
++            <p className="mb-4 text-sm text-slate-400">
++              You are in Executive Command Center. Portfolio activity is live, relationship risk is monitored below, and the next step is to route priority institutions into Institution 360 or Operations Control.
++            </p>
+             <KPIGrid items={[...portfolioMetrics]} />
+           </SectionCard>
+ 
+@@ -377,9 +380,9 @@ export default function ExecutiveCommandCenter() {
+                 { label: "New Client", href: "/atlas/clients" },
+                 { label: "New Deal", href: "/atlas/deals/new" },
+                 { label: "Institution 360", href: "/atlas/institution-home" },
+-                { label: "Operations Control", href: "/atlas/operations-control" },
+                 { label: "Business Passport", href: "/atlas/business-passport" },
+                 { label: "Relationship Journey", href: "/atlas/journey" },
++                { label: "Operations Control", href: "/atlas/operations-control" },
+                 { label: "Upload Documents", href: "/atlas/oracle" },
+               ]}
+             />
+diff --git a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+index f9668cf..3a1a93e 100644
+--- a/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
++++ b/components/credit/decision-workspace/CreditDecisionWorkspace.tsx
+@@ -429,8 +429,8 @@ export default function CreditDecisionWorkspace({
+     { label: "Reject", href: "/atlas/approval-center?decision=reject" },
+     { label: "Request Information", href: "/atlas/clients" },
+     { label: "Escalate", href: "/atlas/notification-center" },
+-    { label: "Back to Institution", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Back to Opportunity", href: `/atlas/opportunity?opportunityId=${selectedContext.opportunityId}` },
++    { label: "Back to Institution", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Back to Executive", href: "/atlas/dashboard" },
+   ];
+ 
+@@ -438,9 +438,12 @@ export default function CreditDecisionWorkspace({
+     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Credit Summary" icon={BriefcaseBusiness} badge={{ label: "Decision", variant: "info" }}>
++          <p className="mb-4 text-sm text-slate-400">
++            You are in Credit Decision. Credit quality, evidence readiness, and approval status are shown below, and the next step is to issue an approval decision or return to Opportunity 360 for context.
++          </p>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
++              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{client}</p>
+             </article>
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+@@ -505,7 +508,7 @@ export default function CreditDecisionWorkspace({
+           </div>
+         </SectionCard>
+ 
+-        <SectionCard title="Evidence & Knowledge" icon={BadgeCheck} badge={{ label: "Intelligence", variant: "info" }}>
++        <SectionCard title="Knowledge and Evidence" icon={BadgeCheck} badge={{ label: "Intelligence", variant: "info" }}>
+           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
+             <div className="space-y-4">
+               <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+diff --git a/components/customer/client360/Institution360Workspace.tsx b/components/customer/client360/Institution360Workspace.tsx
+index 9e4bd16..06c8557 100644
+--- a/components/customer/client360/Institution360Workspace.tsx
++++ b/components/customer/client360/Institution360Workspace.tsx
+@@ -277,8 +277,12 @@ export default function Institution360Workspace({
+   const resolvedStatus = currentStatus ?? passport.status.replace(/_/g, " ");
+   const resolvedOverallHealth = overallHealth ?? `${relationshipModel.health.status} (${relationshipModel.health.score})`;
+   const resolvedQuickActions = quickActions ?? [
+-    { label: "New Deal", href: "/atlas/deals/new" },
+-    { label: "Upload Documents", href: "/atlas/oracle" },
++    {
++      label: "Open Opportunity 360",
++      href: primaryOpportunity
++        ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
++        : "/atlas/opportunity",
++    },
+     {
+       label: "Open Passport",
+       href: primaryOpportunity
+@@ -286,18 +290,17 @@ export default function Institution360Workspace({
+         : "/atlas/business-passport",
+     },
+     { label: "Relationship Journey", href: "/atlas/journey" },
+-    {
+-      label: "Open Opportunity 360",
+-      href: primaryOpportunity
+-        ? `/atlas/opportunity?opportunityId=${primaryOpportunity.opportunityId}`
+-        : "/atlas/opportunity",
+-    },
++    { label: "Upload Documents", href: "/atlas/oracle" },
++    { label: "New Deal", href: "/atlas/deals/new" },
+   ];
+ 
+   return (
+     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+-        <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Client 360", variant: "info" }}>
++        <SectionCard title="Institution 360" icon={Building2} badge={{ label: "Institution 360", variant: "info" }}>
++          <p className="mb-4 text-sm text-slate-400">
++            You are in Institution 360. Relationship health and active opportunities are shown below, and the next step is to open Opportunity 360 or Business Passport for action.
++          </p>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution Name</p>
+@@ -382,7 +385,7 @@ export default function Institution360Workspace({
+           <DocumentsPanel model={defaultDocumentsPanelModel} />
+         </SectionCard>
+ 
+-        <SectionCard title="Knowledge & AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
++        <SectionCard title="Knowledge and AI" icon={BookOpenText} badge={{ label: `${knowledgeExplorer.totalKnowledgeItems} facts`, variant: "info" }}>
+           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_320px]">
+             <RelationshipKnowledgeExplorer explorer={knowledgeExplorer} />
+             <JourneyAiPanel
+diff --git a/components/customer/passport/BusinessPassportHeader.tsx b/components/customer/passport/BusinessPassportHeader.tsx
+index 60f5ef4..f3850a5 100644
+--- a/components/customer/passport/BusinessPassportHeader.tsx
++++ b/components/customer/passport/BusinessPassportHeader.tsx
+@@ -24,6 +24,9 @@ export default function BusinessPassportHeader({
+           <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Business Passport</p>
+           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">{legalName}</h2>
+           <p className="mt-1 text-sm text-slate-400">{passportId}</p>
++          <p className="mt-2 text-sm text-slate-400">
++            You are in Business Passport. Institutional identity and readiness are in view, attention items are highlighted in workflow and evidence sections, and the next step is to progress the recommended journey action.
++          </p>
+         </div>
+         <StatusChip label={lifecycleStage} variant="info" />
+       </div>
+diff --git a/components/customer/passport/BusinessPassportWorkspace.tsx b/components/customer/passport/BusinessPassportWorkspace.tsx
+index 37d003a..cc62254 100644
+--- a/components/customer/passport/BusinessPassportWorkspace.tsx
++++ b/components/customer/passport/BusinessPassportWorkspace.tsx
+@@ -196,9 +196,9 @@ const defaultTimelineEntries: readonly PassportTimelineEntry[] = [
+ ];
+ 
+ const defaultQuickActions: readonly PassportQuickAction[] = [
+-  { id: "q-1", label: "Open Relationship Brief", variant: "primary" },
+-  { id: "q-2", label: "Request Evidence Refresh", variant: "secondary" },
+-  { id: "q-3", label: "Start Workflow Review", variant: "ghost" },
++  { id: "q-1", label: "Open Relationship Workspace", variant: "primary" },
++  { id: "q-3", label: "Start Workflow Review", variant: "secondary" },
++  { id: "q-2", label: "Request Evidence Refresh", variant: "ghost" },
+   { id: "q-4", label: "Prepare AI Readiness Pack", variant: "ghost" },
+ ];
+ 
+diff --git a/components/deal/opportunity360/Opportunity360Workspace.tsx b/components/deal/opportunity360/Opportunity360Workspace.tsx
+index dbbb71a..bcce847 100644
+--- a/components/deal/opportunity360/Opportunity360Workspace.tsx
++++ b/components/deal/opportunity360/Opportunity360Workspace.tsx
+@@ -415,25 +415,28 @@ export default function Opportunity360Workspace({
+   const product = toProductLabel(selectedContext.opportunityLifecycle);
+   const statusLabel = formatLifecycle(selectedContext.opportunityLifecycle);
+   const resolvedQuickActions = quickActions ?? [
++    { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
++    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Approve", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+     { label: "Send Back", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
+-    { label: "Upload Documents", href: "/atlas/oracle" },
+     { label: "Request Information", href: "/atlas/clients" },
+-    { label: "Open Institution 360", href: `/atlas/institution-home?opportunityId=${selectedContext.opportunityId}` },
+-    { label: "Open Credit Decision", href: `/atlas/credit-decision?opportunityId=${selectedContext.opportunityId}` },
++    { label: "Upload Documents", href: "/atlas/oracle" },
+   ];
+ 
+   return (
+     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Opportunity 360" icon={BriefcaseBusiness} badge={{ label: "Deal Cockpit", variant: "info" }}>
++          <p className="mb-4 text-sm text-slate-400">
++            You are in Opportunity 360. Workflow progress, risk signals, and documents are live, and the next step is to open Credit Decision for approval action.
++          </p>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-8">
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity Number</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{selectedContext.opportunityId}</p>
+             </div>
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Client</p>
++              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Institution</p>
+               <p className="mt-2 text-sm font-semibold text-slate-100">{clientName}</p>
+             </div>
+             <div className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+@@ -493,7 +496,7 @@ export default function Opportunity360Workspace({
+           </div>
+         </SectionCard>
+ 
+-        <SectionCard title="Risk & Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
++        <SectionCard title="Risk and Intelligence" icon={ShieldAlert} badge={{ label: "Live Signals", variant: "warning" }}>
+           <div className="space-y-4">
+             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+               {knowledgeInsights.riskIndicators.slice(0, 4).length === 0 ? (
+diff --git a/components/operations/control-center/OperationsControlCenter.tsx b/components/operations/control-center/OperationsControlCenter.tsx
+index a48ba53..8d3b71a 100644
+--- a/components/operations/control-center/OperationsControlCenter.tsx
++++ b/components/operations/control-center/OperationsControlCenter.tsx
+@@ -344,12 +344,12 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+   const activityEvents = buildActivityEvents();
+ 
+   const resolvedQuickActions = quickActions ?? [
+-    { label: "Assign Case", href: "/atlas/work-queue" },
+-    { label: "Approve", href: "/atlas/approval-center" },
+     {
+       label: "Open Opportunity 360",
+       href: contexts[0] ? `/atlas/opportunity?workflowId=${contexts[0].workflowId}` : "/atlas/opportunity",
+     },
++    { label: "Approve", href: "/atlas/approval-center" },
++    { label: "Assign Case", href: "/atlas/work-queue" },
+     { label: "Upload Documents", href: "/atlas/oracle" },
+     { label: "Escalate", href: "/atlas/notification-center" },
+   ];
+@@ -358,13 +358,16 @@ export default function OperationsControlCenter({ quickActions }: OperationsCont
+     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.48),transparent_42%),linear-gradient(180deg,#020617_0%,#020617_45%,#030712_100%)] px-4 py-6 sm:px-6 lg:px-8">
+       <div className="mx-auto max-w-[1880px] space-y-5 pb-10">
+         <SectionCard title="Operations KPIs" icon={BriefcaseBusiness} badge={{ label: "Live", variant: "info" }}>
++          <p className="mb-4 text-sm text-slate-400">
++            You are in Operations Control. Active operations, approval pressure, and workflow bottlenecks are shown below, and the next step is to open Opportunity 360 or Work Queue assignment.
++          </p>
+           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Clients</p>
++              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Active Institutions</p>
+               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.activeClients}</p>
+             </article>
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Deals Processing</p>
++              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunities in Progress</p>
+               <p className="mt-2 text-2xl font-semibold text-slate-100">{operationsKpis.dealsProcessing}</p>
+             </article>
+             <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4">

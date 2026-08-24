@@ -1,0 +1,392 @@
+diff --git a/components/customer/passport/BusinessPassportWorkspace.tsx b/components/customer/passport/BusinessPassportWorkspace.tsx
+index 51da2b3..8aae2c9 100644
+--- a/components/customer/passport/BusinessPassportWorkspace.tsx
++++ b/components/customer/passport/BusinessPassportWorkspace.tsx
+@@ -20,6 +20,8 @@ import {
+   type BusinessPassportSectionId,
+   type BusinessPassportWorkspaceSectionConfig,
+ } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
++import { defaultPassportPanelModel } from "@/lib/customer/business-passport/passport-panel.config";
++import { computeBusinessPassportSectionStates } from "@/lib/customer/passport/business-passport-section-completion-engine";
+ import { useBusinessPassportWorkspaceOrchestrator } from "@/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator";
+ 
+ export interface BusinessPassportWorkspaceProps {
+@@ -218,28 +220,87 @@ export default function BusinessPassportWorkspace({
+ }: BusinessPassportWorkspaceProps) {
+   const orchestratorSections = useMemo<readonly BusinessPassportWorkspaceSectionConfig[]>(
+     () => [
+-      { id: "identity", label: "Identity", anchorId: "passport-identity", completed: true, validation: "valid" },
+-      { id: "ownership", label: "Ownership", anchorId: "passport-identity", disabled: true, validation: "unknown" },
+-      { id: "documents", label: "Documents", anchorId: "passport-documents", dirty: true, validation: "warning" },
+-      { id: "relationships", label: "Relationships", anchorId: "passport-health", completed: true, validation: "valid" },
+-      { id: "compliance", label: "Compliance", anchorId: "passport-evidence", validation: "warning" },
+-      { id: "financials", label: "Financials", anchorId: "passport-metrics", completed: true, validation: "valid" },
+-      { id: "evidence", label: "Evidence", anchorId: "passport-evidence", validation: "warning" },
+-      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge", completed: true, validation: "valid" },
+-      { id: "workflow", label: "Workflow", anchorId: "passport-workflow", validation: "warning" },
+-      { id: "activity", label: "Activity", anchorId: "passport-activity", completed: true, validation: "valid" },
++      { id: "identity", label: "Identity", anchorId: "passport-identity" },
++      { id: "ownership", label: "Ownership", anchorId: "passport-identity" },
++      { id: "documents", label: "Documents", anchorId: "passport-documents" },
++      { id: "relationships", label: "Relationships", anchorId: "passport-health" },
++      { id: "compliance", label: "Compliance", anchorId: "passport-evidence" },
++      { id: "financials", label: "Financials", anchorId: "passport-metrics" },
++      { id: "evidence", label: "Evidence", anchorId: "passport-evidence" },
++      { id: "knowledge", label: "Knowledge", anchorId: "passport-knowledge" },
++      { id: "workflow", label: "Workflow", anchorId: "passport-workflow" },
++      { id: "activity", label: "Activity", anchorId: "passport-activity" },
+     ],
+     [],
+   );
+ 
++  const computedSectionStates = useMemo(
++    () =>
++      computeBusinessPassportSectionStates({
++        sectionConfigs: orchestratorSections,
++        passportPanelModel: defaultPassportPanelModel,
++        businessIdentity: {
++          legalName: business.legalName,
++          registrationNumber: business.registrationNumber,
++          jurisdiction: business.jurisdiction,
++          country: business.jurisdiction,
++          incorporationDate: business.incorporationDate,
++          entityType: business.legalForm,
++          industry: business.sector,
++        },
++        documentState: documents.map((item) => ({
++          status: item.status,
++          name: item.category,
++        })),
++        evidenceState: evidenceItems.map((item) => ({
++          status: item.status,
++          name: item.category,
++        })),
++        relationshipState: {
++          score: relationshipHealth.score,
++          posture: relationshipHealth.posture,
++          watchItems: relationshipHealth.watchItems,
++        },
++        workflowState: workflowStages.map((item) => ({
++          status: item.status,
++          name: item.stage,
++        })),
++        knowledgeState: knowledgeSignals.map((item) => ({
++          confidence: item.confidence,
++          title: item.title,
++        })),
++        activityCount: activityItems.length,
++      }),
++    [
++      activityItems.length,
++      business.incorporationDate,
++      business.jurisdiction,
++      business.legalForm,
++      business.legalName,
++      business.registrationNumber,
++      business.sector,
++      documents,
++      evidenceItems,
++      knowledgeSignals,
++      orchestratorSections,
++      relationshipHealth.posture,
++      relationshipHealth.score,
++      relationshipHealth.watchItems,
++      workflowStages,
++    ],
++  );
++
+   const orchestrator = useBusinessPassportWorkspaceOrchestrator({
+-    sections: orchestratorSections,
++    sectionStates: computedSectionStates,
+     initialActiveSection: "identity",
+     actions: quickActions.map((action) => ({
+       id: action.id,
+       label: action.label,
+       variant: action.variant,
+     })),
++    initialDirtyBySectionId: {
++      documents: true,
++    },
+     isLoading: false,
+   });
+ 
+@@ -249,10 +310,10 @@ export default function BusinessPassportWorkspace({
+         id: section.id,
+         label: section.label,
+         active: section.active,
+-        completed: section.completed,
++        completed: section.completionStatus === "completed",
+         disabled: section.disabled,
+         dirty: section.dirty,
+-        validation: section.validation,
++        validation: section.validationStatus,
+       })),
+     [orchestrator.sections],
+   );
+@@ -339,7 +400,7 @@ export default function BusinessPassportWorkspace({
+         <div className="grid gap-3 sm:grid-cols-3">
+           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Completion</p>
+-            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.completion.percent}%</p>
++            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.completion.overallPercentage}%</p>
+             <p className="text-xs text-slate-400">
+               {orchestrator.completion.completedSections}/{orchestrator.completion.totalSections} sections complete
+             </p>
+@@ -347,7 +408,7 @@ export default function BusinessPassportWorkspace({
+ 
+           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Validation</p>
+-            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.validation.validSections} Valid</p>
++            <p className="mt-1 text-lg font-semibold text-slate-100">{orchestrator.validation.successSections} Success</p>
+             <p className="text-xs text-slate-400">
+               {orchestrator.validation.warningSections} warning • {orchestrator.validation.errorSections} error
+             </p>
+diff --git a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+index 84687b3..3ea71ff 100644
+--- a/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
++++ b/lib/customer/passport/business-passport-workspace-orchestrator.types.ts
+@@ -15,22 +15,26 @@ export const BUSINESS_PASSPORT_SECTION_IDS = [
+ 
+ export type BusinessPassportSectionId = (typeof BUSINESS_PASSPORT_SECTION_IDS)[number];
+ 
+-export type BusinessPassportValidationStatus = "valid" | "warning" | "error" | "unknown";
++export type BusinessPassportSectionCompletionStatus = "not_started" | "in_progress" | "completed";
++
++export type BusinessPassportValidationStatus = "success" | "warning" | "error";
+ 
+ export interface BusinessPassportWorkspaceSectionConfig {
+   readonly id: BusinessPassportSectionId;
+   readonly label: string;
+   readonly anchorId?: string;
+   readonly disabled?: boolean;
+-  readonly completed?: boolean;
+-  readonly dirty?: boolean;
+-  readonly validation?: BusinessPassportValidationStatus;
+ }
+ 
+-export interface BusinessPassportWorkspaceSectionState extends BusinessPassportWorkspaceSectionConfig {
+-  readonly completed: boolean;
++export interface BusinessPassportWorkspaceSectionComputedState extends BusinessPassportWorkspaceSectionConfig {
++  readonly completionPercentage: number;
++  readonly completionStatus: BusinessPassportSectionCompletionStatus;
++  readonly validationStatus: BusinessPassportValidationStatus;
++  readonly missingRequiredFields: readonly string[];
++}
++
++export interface BusinessPassportWorkspaceSectionState extends BusinessPassportWorkspaceSectionComputedState {
+   readonly dirty: boolean;
+-  readonly validation: BusinessPassportValidationStatus;
+   readonly disabled: boolean;
+   readonly active: boolean;
+ }
+@@ -44,14 +48,16 @@ export interface BusinessPassportWorkspaceAction {
+ }
+ 
+ export interface BusinessPassportCompletionState {
++  readonly overallPercentage: number;
+   readonly completedSections: number;
+   readonly totalSections: number;
+-  readonly percent: number;
++  readonly inProgressSections: number;
++  readonly notStartedSections: number;
+ }
+ 
+ export interface BusinessPassportValidationState {
+   readonly bySection: Readonly<Record<BusinessPassportSectionId, BusinessPassportValidationStatus>>;
+-  readonly validSections: number;
++  readonly successSections: number;
+   readonly warningSections: number;
+   readonly errorSections: number;
+ }
+@@ -66,9 +72,10 @@ export interface BusinessPassportWorkspaceLoadingState {
+ }
+ 
+ export interface UseBusinessPassportWorkspaceOrchestratorInput {
+-  readonly sections: readonly BusinessPassportWorkspaceSectionConfig[];
++  readonly sectionStates: readonly BusinessPassportWorkspaceSectionComputedState[];
+   readonly initialActiveSection?: BusinessPassportSectionId;
+-  readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute" | "disabled">[];
++  readonly actions?: readonly Omit<BusinessPassportWorkspaceAction, "execute">[];
++  readonly initialDirtyBySectionId?: Partial<Record<BusinessPassportSectionId, boolean>>;
+   readonly isLoading?: boolean;
+ }
+ 
+diff --git a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+index 7304f84..b494ff5 100644
+--- a/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
++++ b/lib/customer/passport/useBusinessPassportWorkspaceOrchestrator.ts
+@@ -5,6 +5,7 @@ import type {
+   BusinessPassportCompletionState,
+   BusinessPassportDirtyState,
+   BusinessPassportSectionId,
++  BusinessPassportSectionCompletionStatus,
+   BusinessPassportValidationState,
+   BusinessPassportWorkspaceAction,
+   BusinessPassportWorkspaceOrchestrator,
+@@ -13,19 +14,23 @@ import type {
+ } from "@/lib/customer/passport/business-passport-workspace-orchestrator.types";
+ 
+ interface MutableSectionState {
+-  readonly completed: boolean;
++  readonly completionPercentage: number;
++  readonly completionStatus: BusinessPassportSectionCompletionStatus;
+   readonly dirty: boolean;
+-  readonly validation: BusinessPassportWorkspaceSectionState["validation"];
++  readonly validationStatus: BusinessPassportWorkspaceSectionState["validationStatus"];
++  readonly missingRequiredFields: readonly string[];
+ }
+ 
+ function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestratorInput): Readonly<Record<BusinessPassportSectionId, MutableSectionState>> {
+-  return input.sections.reduce((accumulator, section) => {
++  return input.sectionStates.reduce((accumulator, section) => {
+     return {
+       ...accumulator,
+       [section.id]: {
+-        completed: Boolean(section.completed),
+-        dirty: Boolean(section.dirty),
+-        validation: section.validation ?? "unknown",
++        completionPercentage: section.completionPercentage,
++        completionStatus: section.completionStatus,
++        dirty: Boolean(input.initialDirtyBySectionId?.[section.id]),
++        validationStatus: section.validationStatus,
++        missingRequiredFields: section.missingRequiredFields,
+       },
+     };
+   }, {} as Record<BusinessPassportSectionId, MutableSectionState>);
+@@ -33,14 +38,14 @@ function createInitialSectionState(input: UseBusinessPassportWorkspaceOrchestrat
+ 
+ function resolveInitialActiveSection(input: UseBusinessPassportWorkspaceOrchestratorInput): BusinessPassportSectionId {
+   if (input.initialActiveSection) {
+-    const candidate = input.sections.find((section) => section.id === input.initialActiveSection);
++    const candidate = input.sectionStates.find((section) => section.id === input.initialActiveSection);
+     if (candidate && !candidate.disabled) {
+       return candidate.id;
+     }
+   }
+ 
+-  const firstEnabled = input.sections.find((section) => !section.disabled);
+-  return firstEnabled?.id ?? input.sections[0]?.id ?? "identity";
++  const firstEnabled = input.sectionStates.find((section) => !section.disabled);
++  return firstEnabled?.id ?? input.sectionStates[0]?.id ?? "identity";
+ }
+ 
+ function findPreviousEnabledSection(
+@@ -88,28 +93,39 @@ export function useBusinessPassportWorkspaceOrchestrator(
+   );
+ 
+   const sections = useMemo<readonly BusinessPassportWorkspaceSectionState[]>(() => {
+-    return input.sections.map((section) => {
++    return input.sectionStates.map((section) => {
+       const state = sectionStateById[section.id];
+       return {
+         ...section,
+         disabled: Boolean(section.disabled),
+-        completed: state?.completed ?? false,
++        completionPercentage: state?.completionPercentage ?? section.completionPercentage,
++        completionStatus: state?.completionStatus ?? section.completionStatus,
+         dirty: state?.dirty ?? false,
+-        validation: state?.validation ?? "unknown",
++        validationStatus: state?.validationStatus ?? section.validationStatus,
++        missingRequiredFields: state?.missingRequiredFields ?? section.missingRequiredFields,
+         active: activeSection === section.id,
+       };
+     });
+-  }, [activeSection, input.sections, sectionStateById]);
++  }, [activeSection, input.sectionStates, sectionStateById]);
+ 
+   const completion = useMemo<BusinessPassportCompletionState>(() => {
+-    const totalSections = sections.filter((section) => !section.disabled).length;
+-    const completedSections = sections.filter((section) => !section.disabled && section.completed).length;
+-    const percent = totalSections === 0 ? 0 : Math.round((completedSections / totalSections) * 100);
++    const availableSections = sections.filter((section) => !section.disabled);
++    const totalSections = availableSections.length;
++    const completedSections = availableSections.filter((section) => section.completionStatus === "completed").length;
++    const inProgressSections = availableSections.filter((section) => section.completionStatus === "in_progress").length;
++    const notStartedSections = availableSections.filter((section) => section.completionStatus === "not_started").length;
++    const overallPercentage = totalSections === 0
++      ? 0
++      : Math.round(
++        availableSections.reduce((sum, section) => sum + section.completionPercentage, 0) / totalSections,
++      );
+ 
+     return {
++      overallPercentage,
+       completedSections,
+       totalSections,
+-      percent,
++      inProgressSections,
++      notStartedSections,
+     };
+   }, [sections]);
+ 
+@@ -117,15 +133,15 @@ export function useBusinessPassportWorkspaceOrchestrator(
+     const bySection = sections.reduce((accumulator, section) => {
+       return {
+         ...accumulator,
+-        [section.id]: section.validation,
++        [section.id]: section.validationStatus,
+       };
+-    }, {} as Record<BusinessPassportSectionId, BusinessPassportWorkspaceSectionState["validation"]>);
++    }, {} as Record<BusinessPassportSectionId, BusinessPassportWorkspaceSectionState["validationStatus"]>);
+ 
+     return {
+       bySection,
+-      validSections: sections.filter((section) => section.validation === "valid").length,
+-      warningSections: sections.filter((section) => section.validation === "warning").length,
+-      errorSections: sections.filter((section) => section.validation === "error").length,
++      successSections: sections.filter((section) => section.validationStatus === "success").length,
++      warningSections: sections.filter((section) => section.validationStatus === "warning").length,
++      errorSections: sections.filter((section) => section.validationStatus === "error").length,
+     };
+   }, [sections]);
+ 
+@@ -176,18 +192,19 @@ export function useBusinessPassportWorkspaceOrchestrator(
+       ...currentState,
+       [sectionId]: {
+         ...currentState[sectionId],
+-        completed,
++        completionStatus: completed ? "completed" : "in_progress",
++        completionPercentage: completed ? 100 : Math.min(currentState[sectionId]?.completionPercentage ?? 0, 99),
+       },
+     }));
+   }, []);
+ 
+   const setSectionValidation = useCallback(
+-    (sectionId: BusinessPassportSectionId, status: BusinessPassportWorkspaceSectionState["validation"]) => {
++    (sectionId: BusinessPassportSectionId, status: BusinessPassportWorkspaceSectionState["validationStatus"]) => {
+       setSectionStateById((currentState) => ({
+         ...currentState,
+         [sectionId]: {
+           ...currentState[sectionId],
+-          validation: status,
++          validationStatus: status,
+         },
+       }));
+     },
+@@ -227,20 +244,24 @@ export function useBusinessPassportWorkspaceOrchestrator(
+         id: "workspace.mark-reviewed",
+         label: "Mark Current Section Complete",
+         variant: "secondary",
+-        execute: () => markSectionCompleted(activeSection, true),
++        execute: () => {
++          markSectionCompleted(activeSection, true);
++          setSectionValidation(activeSection, "success");
++        },
+       },
+     ];
+ 
+     const customActions = (input.actions ?? []).map<BusinessPassportWorkspaceAction>((action) => ({
+       ...action,
+       variant: action.variant ?? "ghost",
++      disabled: action.disabled,
+       execute: () => {
+         setSectionDirty(activeSection, false);
+       },
+     }));
+ 
+     return [...baseActions, ...customActions];
+-  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, sections, setSectionDirty]);
++  }, [activeSection, goToNextSection, goToPreviousSection, input.actions, markSectionCompleted, sections, setSectionDirty, setSectionValidation]);
+ 
+   return {
+     loadingState: {
