@@ -36,6 +36,40 @@ export interface RouteLookupInput {
 
 const DEFAULT_METHOD = 'GET';
 
+function splitPathSegments(pathname: string): readonly string[] {
+  const normalized = normalizeRoutePathname(pathname);
+  if (normalized === '/') {
+    return Object.freeze([]);
+  }
+
+  return Object.freeze(normalized.split('/').filter(Boolean));
+}
+
+function isPathWithinDefinition(pathname: string, definitionPathname: string): boolean {
+  const requestSegments = splitPathSegments(pathname);
+  const definitionSegments = splitPathSegments(definitionPathname);
+
+  if (definitionSegments.length === 0) {
+    return false;
+  }
+
+  if (requestSegments.length < definitionSegments.length) {
+    return false;
+  }
+
+  return definitionSegments.every((segment, index) => requestSegments[index] === segment);
+}
+
+function chooseMostSpecificRouteDefinition(definitions: readonly RouteProtectionDefinition[]): RouteProtectionDefinition | null {
+  if (definitions.length === 0) {
+    return null;
+  }
+
+  return definitions
+    .slice()
+    .sort((left, right) => splitPathSegments(right.pathname).length - splitPathSegments(left.pathname).length)[0] ?? null;
+}
+
 function normalizeMethod(method?: string): string {
   if (!method) {
     return DEFAULT_METHOD;
@@ -115,16 +149,26 @@ export function findRouteProtectionDefinition(
 ): RouteProtectionDefinition | null {
   const pathname = normalizeRoutePathname(input.pathname);
   const method = normalizeMethod(input.method);
-  const candidates = registry.byPath.get(pathname) ?? [];
 
-  return candidates.find((definition) => isMethodAllowed(definition, method)) ?? null;
+  const candidates = registry.definitions.filter((definition) => {
+    if (!isMethodAllowed(definition, method)) {
+      return false;
+    }
+
+    return pathname === definition.pathname || isPathWithinDefinition(pathname, definition.pathname);
+  });
+
+  return chooseMostSpecificRouteDefinition(candidates);
 }
 
 export function listRouteProtectionDefinitions(
   registry: RouteProtectionRegistry,
   pathname: string,
 ): readonly RouteProtectionDefinition[] {
-  return registry.byPath.get(normalizeRoutePathname(pathname)) ?? Object.freeze([]);
+  const normalized = normalizeRoutePathname(pathname);
+  return registry.definitions.filter((definition) => {
+    return normalized === definition.pathname || isPathWithinDefinition(normalized, definition.pathname);
+  });
 }
 
 export function createRouteProtectionContext(input: {
@@ -209,5 +253,7 @@ export const RELEASE_1_ROUTE_PROTECTION_REGISTRY = createRouteProtectionRegistry
 
 export function isReleaseOneProtectedPath(pathname: string): boolean {
   const normalized = normalizeRoutePathname(pathname);
-  return RELEASE_1_ROUTE_PROTECTION_DEFINITIONS.some((definition) => definition.pathname === normalized);
+  return RELEASE_1_ROUTE_PROTECTION_DEFINITIONS.some((definition) => {
+    return normalized === definition.pathname || isPathWithinDefinition(normalized, definition.pathname);
+  });
 }

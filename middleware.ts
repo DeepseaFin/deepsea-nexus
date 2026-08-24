@@ -7,15 +7,7 @@ import {
   RELEASE_1_ROUTE_PROTECTION_REGISTRY,
   resolveRouteProtectionLevel,
 } from '@/lib/supabase/protection';
-import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from '@/lib/supabase/runtimeAuth';
-
-function createCookieAdapter(request: NextRequest): RuntimeAuthCookieAdapter {
-  return {
-    get(name: string): string | undefined {
-      return request.cookies.get(name)?.value;
-    },
-  };
-}
+import { resolveServerRuntimeAuthContext } from '@/lib/supabase/runtimeAuth';
 
 function toLoginRedirectUrl(request: NextRequest): URL {
   const loginUrl = request.nextUrl.clone();
@@ -51,7 +43,6 @@ export async function middleware(request: NextRequest) {
     pathname,
     headers: request.headers,
     searchParams: new URLSearchParams(search),
-    cookies: createCookieAdapter(request),
   });
 
   const protectionLevel = resolveRouteProtectionLevel(definition, 'public');
