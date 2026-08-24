@@ -18,6 +18,17 @@ function toLoginRedirectUrl(request: NextRequest): URL {
   return loginUrl;
 }
 
+function applyRefreshedCookies(
+  response: NextResponse,
+  refreshedCookies: SupabaseSessionCookieToSet[],
+): NextResponse {
+  refreshedCookies.forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value, cookie.options);
+  });
+
+  return response;
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const refreshedCookies: SupabaseSessionCookieToSet[] = [];
   const { pathname, search } = request.nextUrl;
@@ -30,13 +41,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   });
 
   const { data, error } = await supabase.auth.getUser();
+  const shouldRedirectToLogin = error || !data.user;
 
   if (isSupabaseApiRoute(pathname) || isSupabaseStaticAsset(pathname) || isSupabasePublicAsset(pathname)) {
-    const response = NextResponse.next({ request });
-    refreshedCookies.forEach((cookie) => {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return response;
+    return applyRefreshedCookies(NextResponse.next({ request }), refreshedCookies);
   }
 
   const definition = findRouteProtectionDefinition(RELEASE_1_ROUTE_PROTECTION_REGISTRY, {
@@ -45,19 +53,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!definition && !isReleaseOneProtectedPath(pathname)) {
-    const response = NextResponse.next({ request });
-    refreshedCookies.forEach((cookie) => {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return response;
+    const response = shouldRedirectToLogin
+      ? NextResponse.redirect(toLoginRedirectUrl(request))
+      : NextResponse.next({ request });
+
+    return applyRefreshedCookies(response, refreshedCookies);
   }
 
   if (!definition) {
-    const response = new NextResponse('Forbidden', { status: 403 });
-    refreshedCookies.forEach((cookie) => {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return response;
+    return applyRefreshedCookies(new NextResponse('Forbidden', { status: 403 }), refreshedCookies);
   }
 
   const runtime = await resolveServerRuntimeAuthContext({
@@ -72,31 +76,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const requiredPermission = definition.metadata?.requiredPermission;
 
   if (protectionLevel !== 'public' && (!runtime.session.isAuthenticated || runtime.session.isExpired)) {
-    const response = NextResponse.redirect(toLoginRedirectUrl(request));
-    refreshedCookies.forEach((cookie) => {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return response;
+    return applyRefreshedCookies(NextResponse.redirect(toLoginRedirectUrl(request)), refreshedCookies);
   }
 
   if (requiredPermission && !hasPermission(runtime.permissions.granted, requiredPermission)) {
-    const response = new NextResponse('Forbidden', { status: 403 });
-    refreshedCookies.forEach((cookie) => {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return response;
+    return applyRefreshedCookies(new NextResponse('Forbidden', { status: 403 }), refreshedCookies);
   }
 
-  const response = NextResponse.next({ request });
-  refreshedCookies.forEach((cookie) => {
-    response.cookies.set(cookie.name, cookie.value, cookie.options);
-  });
+  const response = shouldRedirectToLogin
+    ? NextResponse.redirect(toLoginRedirectUrl(request))
+    : NextResponse.next({ request });
 
-  if (error || !data.user) {
-    return NextResponse.redirect(toLoginRedirectUrl(request));
-  }
-
-  return response;
+  return applyRefreshedCookies(response, refreshedCookies);
 }
 
 export const config = {
