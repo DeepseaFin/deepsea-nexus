@@ -1,7 +1,21 @@
+import { cookies, headers } from "next/headers";
 import CommercialWorkspace from "@/src/capabilities/commercial/components/CommercialWorkspace";
 import type { CommercialWorkflowState } from "@/src/capabilities/commercial/types/CommercialWorkflowState";
+import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
+import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
 import { OpportunityLifecycle } from "@/lib/workflows/WorkflowTransition";
 import { getDemoScenario } from "@/lib/workflows/DemoScenario";
+
+async function createCookieAdapter(): Promise<RuntimeAuthCookieAdapter> {
+  const cookieStore = await cookies();
+
+  return {
+    get(name: string): string | undefined {
+      return cookieStore.get(name)?.value;
+    },
+  };
+}
 
 const COMMERCIAL_WORKFLOW_STATE: Omit<CommercialWorkflowState, "currentStepId" | "steps"> = {
   workflowId: "COM-ORIG-9001",
@@ -70,6 +84,28 @@ export default async function CommercialPage({ searchParams }: CommercialPagePro
   const demoScenario = getDemoScenario(params.demoScenario);
   const readinessScore = Number(params.readinessScore);
 
+  async function saveWorkflowContext(context: BusinessContext): Promise<void> {
+    "use server";
+
+    const requestHeaders = await headers();
+    const requestCookies = await createCookieAdapter();
+    const runtime = await resolveServerRuntimeAuthContext({
+      url: "http://localhost/atlas/commercial",
+      method: "POST",
+      pathname: "/atlas/commercial",
+      headers: requestHeaders,
+      searchParams: new URLSearchParams(),
+      cookies: requestCookies,
+    });
+
+    if (!runtime.session.isAuthenticated || runtime.session.isExpired) {
+      throw new Error("Unauthorized");
+    }
+
+    const runtimeComposition = createInstitutionRuntimeComposition();
+    runtimeComposition.workflowContextRepository.save(context);
+  }
+
   const initialState: Omit<CommercialWorkflowState, "currentStepId" | "steps"> = {
     ...COMMERCIAL_WORKFLOW_STATE,
     workflowId: demoScenario?.contexts.commercial.workflowId ?? COMMERCIAL_WORKFLOW_STATE.workflowId,
@@ -92,5 +128,5 @@ export default async function CommercialPage({ searchParams }: CommercialPagePro
     },
   };
 
-  return <CommercialWorkspace initialState={initialState} />;
+  return <CommercialWorkspace initialState={initialState} saveWorkflowContext={saveWorkflowContext} />;
 }

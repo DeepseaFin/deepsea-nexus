@@ -5,7 +5,7 @@ import WorkflowTimelinePanel from "@/components/atlas/workflows/WorkflowTimeline
 import {
   createBusinessContext,
   serializeBusinessContext,
-  workflowContextRepository,
+  type BusinessContext,
 } from "@/lib/workflows/WorkflowContext";
 import { buildMockWorkflowEvents } from "@/lib/workflows/WorkflowTimeline";
 import {
@@ -29,9 +29,10 @@ import type { CommercialWorkflowState } from "@/src/capabilities/commercial/type
 
 type CommercialWorkspaceProps = {
   readonly initialState: Omit<CommercialWorkflowState, "currentStepId" | "steps">;
+  readonly saveWorkflowContext: (context: BusinessContext) => Promise<void>;
 };
 
-export default function CommercialWorkspace({ initialState }: CommercialWorkspaceProps) {
+export default function CommercialWorkspace({ initialState, saveWorkflowContext }: CommercialWorkspaceProps) {
   const router = useRouter();
   const {
     state,
@@ -83,7 +84,7 @@ export default function CommercialWorkspace({ initialState }: CommercialWorkspac
     submittedBy: state.opportunity.relationshipManager,
   });
 
-  const handleSubmitForApproval = (): void => {
+  const handleSubmitForApproval = async (): Promise<void> => {
     if (isSubmitting) {
       return;
     }
@@ -112,7 +113,7 @@ export default function CommercialWorkspace({ initialState }: CommercialWorkspac
         currentWorkspace: "commercial",
       });
 
-      workflowContextRepository.save(businessContext);
+      await saveWorkflowContext(businessContext);
 
       const params = new URLSearchParams({
         businessContext: serializeBusinessContext(businessContext),
