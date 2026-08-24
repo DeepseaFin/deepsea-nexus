@@ -151,3 +151,63 @@ export function resolveRouteProtectionLevel(
 ): RouteProtectionLevel {
   return definition?.level ?? fallback;
 }
+
+export const RELEASE_1_ROUTE_PROTECTION_DEFINITIONS = Object.freeze([
+  createRouteProtectionDefinition({
+    id: 'atlas-root',
+    pathname: '/atlas',
+    level: 'session',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'institution.read' },
+  }),
+  createRouteProtectionDefinition({
+    id: 'atlas-institution',
+    pathname: '/atlas/institution',
+    level: 'session',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'institution.read' },
+  }),
+  createRouteProtectionDefinition({
+    id: 'atlas-commercial',
+    pathname: '/atlas/commercial',
+    level: 'strict',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'commercial.read' },
+  }),
+  createRouteProtectionDefinition({
+    id: 'atlas-forfaiting',
+    pathname: '/atlas/forfaiting',
+    level: 'strict',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'forfaiting.read' },
+  }),
+  createRouteProtectionDefinition({
+    id: 'atlas-treasury',
+    pathname: '/atlas/treasury',
+    level: 'strict',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'treasury.read' },
+  }),
+  createRouteProtectionDefinition({
+    id: 'executive',
+    pathname: '/executive',
+    level: 'strict',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    tags: ['release-1'],
+    metadata: { requiredPermission: 'executive.read' },
+  }),
+]);
+
+export const RELEASE_1_ROUTE_PROTECTION_REGISTRY = createRouteProtectionRegistry(
+  RELEASE_1_ROUTE_PROTECTION_DEFINITIONS,
+);
+
+export function isReleaseOneProtectedPath(pathname: string): boolean {
+  const normalized = normalizeRoutePathname(pathname);
+  return RELEASE_1_ROUTE_PROTECTION_DEFINITIONS.some((definition) => definition.pathname === normalized);
+}
