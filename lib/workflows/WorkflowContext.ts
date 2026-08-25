@@ -134,14 +134,15 @@ export function parseBusinessContext(value: string | undefined): BusinessContext
 }
 
 export interface WorkflowContextRepository {
-  save(context: BusinessContext): void;
-  saveMany(contexts: readonly BusinessContext[]): void;
+  save(context: BusinessContext): Promise<void>;
+  saveMany(contexts: readonly BusinessContext[]): Promise<void>;
   findByWorkflowId(workflowId: string): BusinessContext | undefined;
   hasWorkflowId(workflowId: string): boolean;
   deleteByWorkflowId(workflowId: string): boolean;
   list(): readonly BusinessContext[];
   count(): number;
   clear(): void;
+  hydrate?(): Promise<void>;
 }
 
 class InMemoryWorkflowContextRepository implements WorkflowContextRepository {
@@ -155,15 +156,15 @@ class InMemoryWorkflowContextRepository implements WorkflowContextRepository {
     return createBusinessContext(context);
   }
 
-  save(context: BusinessContext): void {
+  async save(context: BusinessContext): Promise<void> {
     const normalized = InMemoryWorkflowContextRepository.normalizeBusinessContext(context);
     const workflowId = InMemoryWorkflowContextRepository.normalizeWorkflowId(normalized.workflowId);
     this.contexts.set(workflowId, normalized);
   }
 
-  saveMany(contexts: readonly BusinessContext[]): void {
+  async saveMany(contexts: readonly BusinessContext[]): Promise<void> {
     for (const context of contexts) {
-      this.save(context);
+      await this.save(context);
     }
   }
 
@@ -195,6 +196,10 @@ class InMemoryWorkflowContextRepository implements WorkflowContextRepository {
 
   clear(): void {
     this.contexts.clear();
+  }
+
+  async hydrate(): Promise<void> {
+    return;
   }
 }
 

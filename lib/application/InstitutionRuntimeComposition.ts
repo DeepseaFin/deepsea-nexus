@@ -13,7 +13,10 @@ import {
   type InstitutionalRuntimeOrchestratorOptions,
 } from "@/lib/runtime/InstitutionalRuntimeOrchestrator";
 import type { WorkflowContextRepository } from "@/lib/workflows/WorkflowContext";
-import { createWorkflowRepositoryProvider } from "@/lib/workflows/repositories/WorkflowRepositoryFactory";
+import {
+  createWorkflowRepositoryProvider,
+  type WorkflowRepositoryBackend,
+} from "@/lib/workflows/repositories/WorkflowRepositoryFactory";
 
 export interface InstitutionRuntimeCompositionOptions {
   readonly orchestrator?: InstitutionalRuntimeOrchestrator;
@@ -22,6 +25,7 @@ export interface InstitutionRuntimeCompositionOptions {
   readonly relationshipRepository?: RelationshipRepository;
   readonly relationshipService?: RelationshipService;
   readonly workflowContextRepository?: WorkflowContextRepository;
+  readonly workflowContextBackend?: WorkflowRepositoryBackend;
 }
 
 export interface InstitutionRuntimeComposition {
@@ -39,7 +43,9 @@ export function createInstitutionRuntimeComposition(
   const relationshipService = options.relationshipService
     ?? createRelationshipService({ repository: relationshipRepository });
   const workflowContextRepository = options.workflowContextRepository
-    ?? createWorkflowRepositoryProvider().createWorkflowContextRepository();
+    ?? createWorkflowRepositoryProvider().createWorkflowContextRepository({
+      backend: options.workflowContextBackend ?? 'in-memory',
+    });
   const orchestrator = options.orchestrator
     ?? createInstitutionalRuntimeOrchestrator(options.orchestratorOptions ?? {});
   const facade = options.facadeOptions
@@ -56,5 +62,14 @@ export function createInstitutionRuntimeComposition(
     facade,
     relationshipService,
     workflowContextRepository,
+  });
+}
+
+export function createCanonicalReleaseOneRuntimeComposition(
+  options: InstitutionRuntimeCompositionOptions = {},
+): InstitutionRuntimeComposition {
+  return createInstitutionRuntimeComposition({
+    ...options,
+    workflowContextBackend: 'supabase',
   });
 }

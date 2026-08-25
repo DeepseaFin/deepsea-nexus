@@ -1,6 +1,6 @@
 import TreasuryWorkspace from "@/src/capabilities/treasury/components/TreasuryWorkspace";
 import type { FundingQueueItem, TreasuryWorkspaceState } from "@/src/capabilities/treasury/types/TreasuryWorkspaceState";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import {
   createBusinessContext,
   parseBusinessContext,
@@ -162,8 +162,9 @@ function toQueueStatus(value: OpportunityLifecycle): FundingQueueItem["status"] 
 
 export default async function TreasuryPage({ searchParams }: TreasuryPageProps) {
   const params = (await searchParams) ?? {};
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
   const workflowContextRepository = runtimeComposition.workflowContextRepository;
+  await workflowContextRepository.hydrate?.();
   const demoScenario = getDemoScenario(params.demoScenario);
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
   const workflowId = parsedBusinessContext?.workflowId
@@ -172,14 +173,14 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
     ?? "COM-ORIG-9001";
 
   if (demoScenario) {
-    workflowContextRepository.save(demoScenario.contexts.treasury);
+    await workflowContextRepository.save(demoScenario.contexts.treasury);
   }
 
   const repositoryBusinessContext = workflowContextRepository.findByWorkflowId(workflowId);
   const resolvedBusinessContext = repositoryBusinessContext ?? parsedBusinessContext;
 
   if (!repositoryBusinessContext && parsedBusinessContext) {
-    workflowContextRepository.save(parsedBusinessContext);
+    await workflowContextRepository.save(parsedBusinessContext);
   }
 
   const hasApprovedFunding = Boolean(resolvedBusinessContext?.opportunityId ?? params.opportunityId);
@@ -201,7 +202,7 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
         currentWorkspace: "treasury",
       });
 
-  workflowContextRepository.save(treasuryBusinessContext);
+  await workflowContextRepository.save(treasuryBusinessContext);
 
   const approvedItem: FundingQueueItem = {
     id: params.fundingId ?? `FQ-${treasuryBusinessContext.opportunityId}`,
@@ -260,7 +261,7 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
     ],
   };
 
-  const fundingQueueWithHrefs: FundingQueueItem[] = state.fundingQueue.map((item) => {
+  const fundingQueueWithHrefs: FundingQueueItem[] = await Promise.all(state.fundingQueue.map(async (item) => {
     const itemParams = new URLSearchParams({
       fundingId: item.id,
       institutionName: item.counterparty,
@@ -298,7 +299,7 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
       });
     }
 
-    workflowContextRepository.save(releaseBusinessContext);
+    await workflowContextRepository.save(releaseBusinessContext);
 
     const releaseParams = new URLSearchParams({
       receivableId: item.opportunityReference ?? item.id,
@@ -318,7 +319,7 @@ export default async function TreasuryPage({ searchParams }: TreasuryPageProps) 
       itemHref: `/atlas/treasury?${itemParams.toString()}`,
       releaseHref: `/atlas/forfaiting?${releaseParams.toString()}`,
     };
-  });
+  }));
 
   const hydratedState: TreasuryWorkspaceState = {
     ...state,

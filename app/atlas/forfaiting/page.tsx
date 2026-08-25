@@ -1,6 +1,6 @@
 import ForfaitingWorkspace from "@/src/capabilities/forfaiting/components/ForfaitingWorkspace";
 import type { ForfaittingWorkspaceState, ReceivableQueueItem } from "@/src/capabilities/forfaiting/types/ForfaittingWorkspaceState";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import {
   createBusinessContext,
   parseBusinessContext,
@@ -162,8 +162,9 @@ function resolveBusinessContext(
 
 export default async function ForfaitingPage({ searchParams }: ForfaitingPageProps) {
   const params = (await searchParams) ?? {};
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
   const workflowContextRepository = runtimeComposition.workflowContextRepository;
+  await workflowContextRepository.hydrate?.();
   const demoScenario = getDemoScenario(params.demoScenario);
   const parsedBusinessContext = parseBusinessContext(params.businessContext);
   const workflowId = parsedBusinessContext?.workflowId
@@ -172,7 +173,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
     ?? "COM-ORIG-9001";
 
   if (demoScenario) {
-    workflowContextRepository.save(demoScenario.contexts.forfaitting);
+    await workflowContextRepository.save(demoScenario.contexts.forfaitting);
   }
 
   const repositoryBusinessContext = resolveBusinessContext(
@@ -182,7 +183,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
   const resolvedBusinessContext = repositoryBusinessContext ?? parsedBusinessContext;
 
   if (!repositoryBusinessContext && parsedBusinessContext) {
-    workflowContextRepository.save(parsedBusinessContext);
+    await workflowContextRepository.save(parsedBusinessContext);
   }
 
   const hasReleasedItem = Boolean(resolvedBusinessContext?.receivableId ?? params.receivableId);
@@ -208,7 +209,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
         currentWorkspace: "forfaitting",
       });
 
-  workflowContextRepository.save(forfaittingBusinessContext);
+  await workflowContextRepository.save(forfaittingBusinessContext);
 
   const releasedReceivable: ReceivableQueueItem = {
     id: forfaittingBusinessContext.receivableId ?? params.receivableId ?? "RQ-TRS-9001",
@@ -299,7 +300,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
     ),
   };
 
-  const receivableQueueWithHrefs: ReceivableQueueItem[] = state.receivableQueue.map((item) => {
+  const receivableQueueWithHrefs: ReceivableQueueItem[] = await Promise.all(state.receivableQueue.map(async (item) => {
     let nextLifecycle = item.lifecycleStatus ?? forfaittingBusinessContext.opportunityLifecycle;
     let nextBusinessContext = createBusinessContext({
       ...forfaittingBusinessContext,
@@ -319,7 +320,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
       });
     }
 
-    workflowContextRepository.save(nextBusinessContext);
+    await workflowContextRepository.save(nextBusinessContext);
 
     const itemParams = new URLSearchParams({
       receivableId: item.id,
@@ -338,7 +339,7 @@ export default async function ForfaitingPage({ searchParams }: ForfaitingPagePro
       ...item,
       itemHref: `/atlas/forfaiting?${itemParams.toString()}`,
     };
-  });
+  }));
 
   const hydratedState: ForfaittingWorkspaceState = {
     ...state,
