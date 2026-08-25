@@ -35,7 +35,7 @@ export default function BusinessPassportSections({ viewModel }: BusinessPassport
       {viewModel.sections?.map((section) => (
         <SectionCard key={section.id} title={section.title} subtitle={section.description}>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {section.items.map((item) => (
+            {section.items?.map((item) => (
               <article key={item.label} className="rounded-lg border border-slate-800 bg-slate-950/70 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{item.label}</p>
                 <p className="mt-1 text-sm font-medium text-slate-100">{renderText(item.value)}</p>
