@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import CommercialWorkspace from "@/src/capabilities/commercial/components/CommercialWorkspace";
 import type { CommercialWorkflowState } from "@/src/capabilities/commercial/types/CommercialWorkflowState";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
 import type { BusinessContext } from "@/lib/workflows/WorkflowContext";
 import { OpportunityLifecycle } from "@/lib/workflows/WorkflowTransition";
@@ -102,8 +102,8 @@ export default async function CommercialPage({ searchParams }: CommercialPagePro
       throw new Error("Unauthorized");
     }
 
-    const runtimeComposition = createInstitutionRuntimeComposition();
-    runtimeComposition.workflowContextRepository.save(context);
+    const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
+    await runtimeComposition.workflowContextRepository.save(context);
   }
 
   const initialState: Omit<CommercialWorkflowState, "currentStepId" | "steps"> = {

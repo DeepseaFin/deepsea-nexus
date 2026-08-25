@@ -3,7 +3,7 @@ import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus
 import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
 import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from "@/lib/runtime/InstitutionalDigitalTwin";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
 import {
   createBusinessContext,
@@ -68,7 +68,7 @@ function createLiveInstitutionContext(input: {
   readonly workflowId: string;
   readonly timestamp: string;
 }) {
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
 
   return runtimeComposition.facade.provideInstitutionContext({
     institution: {
@@ -129,8 +129,9 @@ export default async function RelationshipIntelligencePage({ searchParams }: Rel
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
   const workflowContextRepository = runtimeComposition.workflowContextRepository;
+  await workflowContextRepository.hydrate?.();
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/atlas/relationship-intelligence",
     method: "GET",
@@ -155,11 +156,11 @@ export default async function RelationshipIntelligencePage({ searchParams }: Rel
   });
 
   if (parsedBusinessContext && !repositoryBusinessContext) {
-    workflowContextRepository.save(parsedBusinessContext);
+    await workflowContextRepository.save(parsedBusinessContext);
   }
 
   if (!repositoryBusinessContext) {
-    workflowContextRepository.save(businessContext);
+    await workflowContextRepository.save(businessContext);
   }
 
   const timestamp = runtime.session.snapshot.metadata.lastRefreshedAt

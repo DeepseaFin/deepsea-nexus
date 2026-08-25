@@ -154,14 +154,14 @@ class SupabaseWorkflowContextRepository implements WorkflowContextRepository {
     this.onPersistenceError = options.onPersistenceError;
   }
 
-  save(context: BusinessContext): void {
+  async save(context: BusinessContext): Promise<void> {
     const normalized = normalizeContext(context);
     const workflowId = normalizeWorkflowId(normalized.workflowId);
     this.contexts.set(workflowId, normalized);
-    this.schedule(this.persistUpsert([normalized]));
+    await this.persistUpsert([normalized]);
   }
 
-  saveMany(contexts: readonly BusinessContext[]): void {
+  async saveMany(contexts: readonly BusinessContext[]): Promise<void> {
     const normalizedBatch: BusinessContext[] = [];
 
     for (const context of contexts) {
@@ -172,7 +172,7 @@ class SupabaseWorkflowContextRepository implements WorkflowContextRepository {
     }
 
     if (normalizedBatch.length > 0) {
-      this.schedule(this.persistUpsert(normalizedBatch));
+      await this.persistUpsert(normalizedBatch);
     }
   }
 

@@ -12,7 +12,8 @@ export interface BusinessPassportPresentationField {
   readonly value: string;
 }
 
-export interface BusinessPassportPresentationViewModel extends PresentationViewModel {
+export interface BusinessPassportPresentationViewModel
+  extends PresentationViewModel<BusinessPassportPresentationField> {
   readonly title: string;
   readonly subtitle: string;
   readonly payload: {

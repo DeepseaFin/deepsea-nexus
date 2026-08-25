@@ -3,7 +3,7 @@ import { cookies, headers } from "next/headers";
 import WorkflowTimelinePanel from "@/components/atlas/workflows/WorkflowTimelinePanel";
 import { InstitutionStatus } from "@/lib/institution/constants/InstitutionStatus";
 import { InstitutionType } from "@/lib/institution/constants/InstitutionType";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { createInstitutionalDigitalTwin, type InstitutionalDigitalTwin } from "@/lib/runtime/InstitutionalDigitalTwin";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
 import ExecutiveAlerts from "@/src/capabilities/executive/components/ExecutiveAlerts";
@@ -195,8 +195,9 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
   const workflowContextRepository = runtimeComposition.workflowContextRepository;
+  await workflowContextRepository.hydrate?.();
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/executive",
     method: "GET",
@@ -221,11 +222,11 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
   });
 
   if (parsedBusinessContext && !repositoryBusinessContext) {
-    workflowContextRepository.save(parsedBusinessContext);
+    await workflowContextRepository.save(parsedBusinessContext);
   }
 
   if (!repositoryBusinessContext) {
-    workflowContextRepository.save(businessContext);
+    await workflowContextRepository.save(businessContext);
   }
 
   const timestamp = runtime.session.snapshot.metadata.lastRefreshedAt
@@ -303,7 +304,7 @@ export default async function ExecutivePage({ searchParams }: ExecutivePageProps
     });
   }
 
-  workflowContextRepository.save(treasuryBusinessContext);
+  await workflowContextRepository.save(treasuryBusinessContext);
 
   const executiveWorkspaceViewModel = createLiveExecutiveWorkspaceViewModel({
     institutionContext,

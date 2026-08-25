@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers";
 import InstitutionWorkspace from "@/src/capabilities/institution/components/InstitutionWorkspace";
 import { createInstitutionWorkspaceState } from "@/src/capabilities/institution/services/InstitutionWorkspaceAssembler";
 import type { InstitutionWorkspaceState } from "@/src/capabilities/institution/types/InstitutionWorkspaceState";
-import { createInstitutionRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
+import { createCanonicalReleaseOneRuntimeComposition } from "@/lib/application/InstitutionRuntimeComposition";
 import { resolveServerRuntimeAuthContext, type RuntimeAuthCookieAdapter } from "@/lib/supabase/runtimeAuth";
 import { createInstitutionContextSummaryBuilder } from "@/lib/workspaces/InstitutionContextSummary";
 import type { WorkflowContextRepository } from "@/lib/workflows/WorkflowContext";
@@ -44,7 +44,8 @@ export default async function InstitutionPage({ searchParams }: { searchParams?:
   const params = (await searchParams) ?? {};
   const requestHeaders = await headers();
   const requestCookies = await createCookieAdapter();
-  const runtimeComposition = createInstitutionRuntimeComposition();
+  const runtimeComposition = createCanonicalReleaseOneRuntimeComposition();
+  await runtimeComposition.workflowContextRepository.hydrate?.();
   const runtime = await resolveServerRuntimeAuthContext({
     url: "http://localhost/atlas/institution",
     method: "GET",
