@@ -28,14 +28,14 @@ function toLabel(value: string): string {
 
 const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 transition-colors hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70";
 
-const CONFIDENCE_OPTIONS: readonly Array<"all" | ConfidenceBand> = [
+const CONFIDENCE_OPTIONS: ReadonlyArray<"all" | ConfidenceBand> = [
   "all",
   "very_high",
   "high",
   "moderate",
   "low",
   "very_low",
-] as const;
+];
 
 function EvidenceToolbar({ value, domains, onChange }: EvidenceToolbarProps) {
   return (
