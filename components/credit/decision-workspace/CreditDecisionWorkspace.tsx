@@ -313,7 +313,7 @@ function buildDealCommandCenterProps(context: BusinessContext): DealCommandCente
   };
 }
 
-function buildCreditAssessment(context: ContextRecord) {
+function buildCreditAssessment(context: BusinessContext) {
   const requestedAmount = getOpportunityValue(context.opportunityId);
   const evidenceCount = getJourneyEvidenceProjectionResults().length;
   const documentSummary = summarizeDocumentBuckets();
