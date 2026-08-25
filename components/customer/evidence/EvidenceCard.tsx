@@ -28,7 +28,7 @@ function EvidenceCard({ item }: EvidenceCardProps) {
     <article className="h-full rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition-colors hover:border-slate-700 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-400/40">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h4 className="text-sm font-semibold text-slate-100">{item.businessFact}</h4>
-        <ConfidenceBadge score={item.confidence.score} label={item.confidence.band} />
+        <ConfidenceBadge score={item.confidence.score} />
       </div>
 
       <div className="mt-3 grid gap-3 md:grid-cols-2">
