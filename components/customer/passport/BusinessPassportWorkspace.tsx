@@ -230,7 +230,7 @@ export default function BusinessPassportWorkspace({
         },
         documentState: documents.map((item) => ({
           status: item.status,
-          name: item.category,
+          name: item.documentGroup,
         })),
         evidenceState: evidenceItems.map((item) => ({
           status: item.status,
