@@ -4,7 +4,7 @@ import { memo } from "react";
 import FilterPanel from "@/components/customer/shared/FilterPanel";
 import SearchBar from "@/components/customer/shared/SearchBar";
 import Toolbar from "@/components/customer/shared/Toolbar";
-import type { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
+import { ConfidenceBand } from "@/lib/business-passport/types/Confidence";
 import type { RelationshipEvidenceBusinessDomain } from "@/lib/customer/RelationshipEvidenceExplorerViewModel";
 
 export type EvidenceSortOrder = "newest" | "oldest" | "confidence-high" | "confidence-low";
@@ -30,11 +30,11 @@ const SELECT_CLASS = "rounded-lg border border-slate-700 bg-slate-950/70 px-3 py
 
 const CONFIDENCE_OPTIONS: ReadonlyArray<"all" | ConfidenceBand> = [
   "all",
-  "very_high",
-  "high",
-  "moderate",
-  "low",
-  "very_low",
+  ConfidenceBand.VeryHigh,
+  ConfidenceBand.High,
+  ConfidenceBand.Moderate,
+  ConfidenceBand.Low,
+  ConfidenceBand.VeryLow,
 ];
 
 function EvidenceToolbar({ value, domains, onChange }: EvidenceToolbarProps) {
