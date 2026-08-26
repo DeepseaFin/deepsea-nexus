@@ -174,7 +174,7 @@ function toRepositoryLoaderEntries(adapters?: CustomerWorkspaceRepositoryAdapter
     { key: "insightsPanelModel", tabId: "ai-insights", load: adapters.insightsPanelModel },
     { key: "institutionalTimelineModel", tabId: "timeline", load: adapters.institutionalTimelineModel },
     { key: "workflowPanelModel", tabId: "overview", load: adapters.workflowPanelModel },
-  ].filter((entry) => typeof entry.load === "function");
+  ].filter((entry): entry is LoaderEntry => typeof entry.load === "function");
 }
 
 function toCompositionBindingEntries(
