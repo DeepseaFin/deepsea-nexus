@@ -215,12 +215,16 @@ function toCompositionBindingEntries(
 export function getCustomerWorkspaceRepositoryLoadingState(
   adaptersOrComposition?: CustomerWorkspaceRepositoryAdapters | CustomerWorkspaceRepositoryComposition,
 ): Partial<Record<CustomerWorkspaceTabId, boolean>> {
-  const adapters: CustomerWorkspaceRepositoryAdapters | undefined = adaptersOrComposition && "adapters" in adaptersOrComposition
-    ? adaptersOrComposition.adapters
-    : adaptersOrComposition;
-  const composition = adaptersOrComposition && "adapters" in adaptersOrComposition
-    ? adaptersOrComposition
-    : undefined;
+  let adapters: CustomerWorkspaceRepositoryAdapters | undefined;
+  let composition: CustomerWorkspaceRepositoryComposition | undefined;
+
+  if (adaptersOrComposition && "adapters" in adaptersOrComposition) {
+    composition = adaptersOrComposition;
+    adapters = adaptersOrComposition.adapters;
+  } else {
+    adapters = adaptersOrComposition as CustomerWorkspaceRepositoryAdapters | undefined;
+  }
+
   const loadingState: Partial<Record<CustomerWorkspaceTabId, boolean>> = {};
 
   for (const entry of toRepositoryLoaderEntries(adapters)) {
