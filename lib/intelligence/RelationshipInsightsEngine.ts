@@ -214,14 +214,15 @@ export function createRelationshipInsightsEngine(
         }),
       ]);
 
-      const missingIdentityFields = [
+      const identityFields: readonly [string, string | undefined][] = [
         ["legalName", relationshipReport.corporateIdentitySummary.legalName],
         ["registrationNumber", relationshipReport.corporateIdentitySummary.registrationNumber],
         ["jurisdiction", relationshipReport.corporateIdentitySummary.jurisdiction],
         ["entityType", relationshipReport.corporateIdentitySummary.entityType],
-      ]
-        .filter((entry) => !entry[1])
-        .map((entry) => entry[0]);
+      ];
+      const missingIdentityFields = identityFields
+        .filter(([, value]) => !value)
+        .map(([field]) => field);
 
       const conflictingFacts = correlationReport.facts
         .filter((fact) => fact.conflicts.length > 0)
