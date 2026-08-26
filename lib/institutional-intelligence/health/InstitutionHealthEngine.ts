@@ -1,8 +1,8 @@
 import type { InstitutionHealth } from "@/lib/institutional-intelligence/health/InstitutionHealth";
 import { InstitutionHealthCategory } from "@/lib/institutional-intelligence/health/InstitutionHealthCategory";
-import type {
-  InstitutionHealthDimension,
+import {
   InstitutionHealthDimensionType,
+  type InstitutionHealthDimension,
 } from "@/lib/institutional-intelligence/health/InstitutionHealthDimension";
 import { InstitutionHealthStatus } from "@/lib/institutional-intelligence/health/InstitutionHealthDimension";
 import type { InstitutionalProfile } from "@/lib/institutional-intelligence/profile/InstitutionalProfile";
