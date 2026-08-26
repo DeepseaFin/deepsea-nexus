@@ -3,7 +3,11 @@ import {
   canNavigateWorkspaceSection,
   evaluateWorkspaceWorkflow,
 } from "@/lib/workspaces/workspace-workflow";
-import type { WorkspaceWorkflowEvaluation } from "@/lib/workspaces/workspace.types";
+import type {
+  WorkspaceCompletionStatus,
+  WorkspaceSectionStateLike,
+  WorkspaceWorkflowEvaluation,
+} from "@/lib/workspaces/workspace.types";
 import type { RelationshipJourneyWorkspaceSectionDefinition } from "@/lib/relationship-journey/relationship-journey-workspace-registry";
 
 export interface EvaluateRelationshipJourneyWorkflowInput {
@@ -20,11 +24,13 @@ export function evaluateRelationshipJourneyWorkflow(
 ): RelationshipJourneyWorkflowEvaluation {
   const completedSet = new Set(input.completedSteps);
 
-  const sectionStates = input.steps.map((step) => ({
+  const sectionStates: readonly WorkspaceSectionStateLike<JourneyStepType>[] = input.steps.map((step) => ({
     id: step,
-    completionStatus: completedSet.has(step) || step === input.currentStep
-      ? "completed"
-      : "not_started",
+    completionStatus: (
+      completedSet.has(step) || step === input.currentStep
+        ? "completed"
+        : "not_started"
+    ) as WorkspaceCompletionStatus,
     disabled: false,
   }));
 
