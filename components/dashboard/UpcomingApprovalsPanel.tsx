@@ -25,7 +25,7 @@ export default function UpcomingApprovalsPanel({ approvals }: UpcomingApprovalsP
             <li key={approval.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-sm font-medium text-slate-100">{approval.subject}</h3>
-                <StatusChip label={approval.status} variant={approval.status} />
+                <StatusChip label={approval.status ?? "default"} variant={approval.status ?? "default"} />
               </div>
               <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
                 <span>Stage: {approval.stage}</span>

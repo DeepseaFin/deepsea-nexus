@@ -34,7 +34,7 @@ export default function InstitutionalKpiPanel({
                 icon={item.icon}
               />
               <div className="flex items-center justify-between gap-2 px-1">
-                <StatusChip label={item.status} variant={item.status} />
+                <StatusChip label={item.status ?? "default"} variant={item.status ?? "default"} />
                 {item.footer ? <span className="text-xs text-slate-500">{item.footer}</span> : null}
               </div>
             </div>

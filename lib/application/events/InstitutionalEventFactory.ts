@@ -20,7 +20,7 @@ export interface InstitutionalEventFactoryInput {
 
 function toTitleCase(input: string): string {
   return input
-    .split(/[_\-\s]+/g)
+    .split(/[\_\-\s]+/g)
     .filter(Boolean)
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
     .join(" ");
@@ -87,7 +87,7 @@ function mapMissingDocumentEvents(missingDocuments: readonly MissingDocumentItem
 }
 
 function mapFundingEvents(fundingMilestones: readonly WorkflowEvent[]): InstitutionalEvent[] {
-  return fundingMilestones.flatMap((event) => {
+  return fundingMilestones.flatMap((event): InstitutionalEvent[] => {
     const message = (event.message ?? event.metadata.eventLabel ?? event.type).toLowerCase();
 
     if (message.includes("expir")) {

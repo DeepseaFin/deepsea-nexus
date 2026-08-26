@@ -25,7 +25,7 @@ export default function MyTasksPanel({ tasks }: MyTasksPanelProps) {
             <li key={task.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-sm font-medium text-slate-100">{task.title}</h3>
-                <StatusChip label={task.status} variant={task.status} />
+                <StatusChip label={task.status ?? "default"} variant={task.status ?? "default"} />
               </div>
               <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
                 {task.owner ? <span>Owner: {task.owner}</span> : null}

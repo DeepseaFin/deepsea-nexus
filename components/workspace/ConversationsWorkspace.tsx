@@ -248,7 +248,7 @@ export default function ConversationsWorkspace() {
 
         <div className="space-y-4">
           {conversationFeed.map((item) => (
-            <article key={item.title + item.timestamp} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+            <article key={item.author + item.timestamp} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/60 text-xs font-semibold text-slate-100">

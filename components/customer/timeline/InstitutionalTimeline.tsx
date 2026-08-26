@@ -34,14 +34,15 @@ export default function InstitutionalTimeline({
 }: InstitutionalTimelineProps) {
   const [activeFilter, setActiveFilter] = useState<TimelineFilterValue>("All");
   const presentationModel = viewModel?.payload.panelModel ?? model;
+  const events = presentationModel?.events ?? [];
 
   const visibleEvents = useMemo(() => {
     if (activeFilter === "All") {
-      return presentationModel.events;
+      return events;
     }
 
-    return presentationModel.events.filter((event) => event.filter === activeFilter);
-  }, [activeFilter, presentationModel.events]);
+    return events.filter((event) => event.filter === activeFilter);
+  }, [activeFilter, events]);
 
   if (isLoading) {
     return <PanelLoadingState title={config.title} subtitle={config.subtitle} />;

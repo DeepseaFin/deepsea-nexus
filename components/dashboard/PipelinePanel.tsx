@@ -22,7 +22,7 @@ export default function PipelinePanel({ stages }: PipelinePanelProps) {
             <article key={stage.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-medium text-slate-100">{stage.stage}</h3>
-                <StatusChip label={stage.status} variant={stage.status} />
+                <StatusChip label={stage.status ?? "default"} variant={stage.status ?? "default"} />
               </div>
               <p className="mt-2 text-xl font-semibold text-slate-100">{stage.count}</p>
               {stage.amount ? <p className="mt-1 text-xs text-slate-500">{stage.amount}</p> : null}

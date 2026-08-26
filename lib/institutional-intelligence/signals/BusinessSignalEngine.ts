@@ -17,6 +17,8 @@ interface GraphNodeBuckets {
   readonly knowledgeFactNodes: readonly InstitutionalNode[];
 }
 
+type KnowledgeNode = Extract<InstitutionalNode, { readonly type: InstitutionalNodeType.KnowledgeFact }>;
+
 function clampConfidence(value: number): number {
   if (value < 0) {
     return 0;
@@ -63,7 +65,7 @@ function deepFreeze<T>(value: T): T {
   return Object.freeze(value);
 }
 
-function isKnowledgeNode(node: InstitutionalNode): boolean {
+function isKnowledgeNode(node: InstitutionalNode): node is KnowledgeNode {
   return node.type === InstitutionalNodeType.KnowledgeFact;
 }
 

@@ -307,10 +307,12 @@ export function useBusinessPassportWorkspaceOrchestrator(
   }, []);
 
   const mergeFilters = useCallback((nextFilters: Partial<BusinessPassportWorkspaceFilters>) => {
-    setFiltersState((current) => ({
-      ...current,
-      ...nextFilters,
-    }));
+    setFiltersState((current) => {
+      const merged = { ...current, ...nextFilters };
+      return Object.fromEntries(
+        Object.entries(merged).filter(([, value]) => typeof value !== "undefined"),
+      ) as BusinessPassportWorkspaceFilters;
+    });
   }, []);
 
   const clearFilters = useCallback(() => {

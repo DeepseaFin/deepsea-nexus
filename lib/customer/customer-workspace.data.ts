@@ -174,7 +174,7 @@ function toRepositoryLoaderEntries(adapters?: CustomerWorkspaceRepositoryAdapter
     { key: "insightsPanelModel", tabId: "ai-insights", load: adapters.insightsPanelModel },
     { key: "institutionalTimelineModel", tabId: "timeline", load: adapters.institutionalTimelineModel },
     { key: "workflowPanelModel", tabId: "overview", load: adapters.workflowPanelModel },
-  ].filter((entry) => typeof entry.load === "function");
+  ].filter((entry): entry is LoaderEntry => typeof entry.load === "function");
 }
 
 function toCompositionBindingEntries(
@@ -190,7 +190,7 @@ function toCompositionBindingEntries(
         loadingTabs: ["documents"],
         toAdapters: () => createDocumentsRepositoryBackedAdapters(documentsBinding),
       }
-    : documentsBinding;
+    : undefined;
 
   const businessPassportBinding = composition.businessPassport;
   const businessPassportDeferred: DeferredRepositoryBinding | undefined = businessPassportBinding
@@ -215,12 +215,16 @@ function toCompositionBindingEntries(
 export function getCustomerWorkspaceRepositoryLoadingState(
   adaptersOrComposition?: CustomerWorkspaceRepositoryAdapters | CustomerWorkspaceRepositoryComposition,
 ): Partial<Record<CustomerWorkspaceTabId, boolean>> {
-  const composition = adaptersOrComposition && "adapters" in adaptersOrComposition
-    ? adaptersOrComposition
-    : undefined;
-  const adapters = composition
-    ? composition.adapters
-    : adaptersOrComposition;
+  let adapters: CustomerWorkspaceRepositoryAdapters | undefined;
+  let composition: CustomerWorkspaceRepositoryComposition | undefined;
+
+  if (adaptersOrComposition && "adapters" in adaptersOrComposition) {
+    composition = adaptersOrComposition;
+    adapters = adaptersOrComposition.adapters;
+  } else {
+    adapters = adaptersOrComposition as CustomerWorkspaceRepositoryAdapters | undefined;
+  }
+
   const loadingState: Partial<Record<CustomerWorkspaceTabId, boolean>> = {};
 
   for (const entry of toRepositoryLoaderEntries(adapters)) {
