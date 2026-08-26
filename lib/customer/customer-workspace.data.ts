@@ -190,7 +190,7 @@ function toCompositionBindingEntries(
         loadingTabs: ["documents"],
         toAdapters: () => createDocumentsRepositoryBackedAdapters(documentsBinding),
       }
-    : documentsBinding;
+    : undefined;
 
   const businessPassportBinding = composition.businessPassport;
   const businessPassportDeferred: DeferredRepositoryBinding | undefined = businessPassportBinding
