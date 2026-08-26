@@ -1,14 +1,11 @@
 import type { InstitutionalProfile } from "@/lib/institutional-intelligence/profile/InstitutionalProfile";
-import type {
-  InstitutionalProfileDimension,
+import {
   InstitutionalProfileDimensionType,
+  type InstitutionalProfileDimension,
 } from "@/lib/institutional-intelligence/profile/InstitutionalProfileDimension";
 import {
   InstitutionalProfileCategory,
 } from "@/lib/institutional-intelligence/profile/InstitutionalProfileCategory";
-import {
-  InstitutionalProfileDimensionType,
-} from "@/lib/institutional-intelligence/profile/InstitutionalProfileDimension";
 import type { BusinessSignal } from "@/lib/institutional-intelligence/signals/BusinessSignal";
 import { BusinessSignalSeverity } from "@/lib/institutional-intelligence/signals/BusinessSignalSeverity";
 import { BusinessSignalType } from "@/lib/institutional-intelligence/signals/BusinessSignalType";
