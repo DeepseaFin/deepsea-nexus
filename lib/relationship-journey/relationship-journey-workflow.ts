@@ -26,7 +26,7 @@ export function evaluateRelationshipJourneyWorkflow(
       ? "completed"
       : "not_started",
     disabled: false,
-  })) as const;
+  }));
 
   return evaluateWorkspaceWorkflow({
     sectionDefinitions: input.sectionDefinitions,
